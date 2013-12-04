@@ -14,24 +14,14 @@
 
 package it.smc.calendar.sync.listener;
 
-import com.liferay.portal.kernel.log.Log;
-import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.util.BasePortalLifecycle;
 import com.liferay.portal.kernel.webdav.WebDAVStorage;
 import com.liferay.portal.kernel.webdav.WebDAVUtil;
 import com.liferay.portal.kernel.webdav.methods.MethodFactory;
 import com.liferay.portal.kernel.webdav.methods.MethodFactoryRegistryUtil;
-import com.liferay.portal.model.ResourceConstants;
-import com.liferay.portal.model.Role;
-import com.liferay.portal.model.RoleConstants;
-import com.liferay.portal.security.permission.ActionKeys;
-import com.liferay.portal.service.ResourcePermissionLocalServiceUtil;
-import com.liferay.portal.service.RoleLocalServiceUtil;
-import com.liferay.portal.util.PortalUtil;
 
 import it.smc.calendar.sync.caldav.CalDAVMethodFactory;
 import it.smc.calendar.sync.caldav.LiferayCalDAVStorageImpl;
-import it.smc.calendar.sync.caldav.util.PortletKeys;
 import it.smc.calendar.sync.caldav.util.WebKeys;
 
 import javax.servlet.ServletContextEvent;
@@ -43,38 +33,12 @@ import javax.servlet.ServletContextListener;
 public class CalendarSyncServletContextListener
 	extends BasePortalLifecycle implements ServletContextListener {
 
-	@Override
 	public void contextDestroyed(ServletContextEvent servletContextEvent) {
 		portalDestroy();
 	}
 
-	@Override
 	public void contextInitialized(ServletContextEvent servletContextEvent) {
 		registerPortalLifecycle();
-
-		// temporally workaround
-
-		try {
-
-			String[] actionKeys = new String[] {
-				ActionKeys.ACCESS_IN_CONTROL_PANEL, ActionKeys.VIEW};
-
-			for (long companyId : PortalUtil.getCompanyIds()) {
-				Role roleUser = RoleLocalServiceUtil.getRole(
-					companyId, RoleConstants.USER);
-
-				for (String actionKey : actionKeys) {
-					ResourcePermissionLocalServiceUtil.addResourcePermission(
-						companyId, PortletKeys.CALDAV,
-						ResourceConstants.SCOPE_COMPANY,
-						String.valueOf(companyId),
-						roleUser.getRoleId(), actionKey);
-				}
-			}
-		}
-		catch (Exception e) {
-			_log.debug(e);
-		}
 	}
 
 	@Override
@@ -112,8 +76,5 @@ public class CalendarSyncServletContextListener
 
 	private MethodFactory _methodFactory;
 	private WebDAVStorage _storage;
-
-	private static Log _log = LogFactoryUtil.getLog(
-		CalendarSyncServletContextListener.class);
 
 }
