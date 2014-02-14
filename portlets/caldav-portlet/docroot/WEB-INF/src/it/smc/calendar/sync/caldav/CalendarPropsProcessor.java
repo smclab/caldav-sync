@@ -30,7 +30,6 @@ import com.liferay.util.xml.DocUtil;
 import it.smc.calendar.sync.caldav.util.CalDAVProps;
 import it.smc.calendar.sync.caldav.util.CalDAVUtil;
 import it.smc.calendar.sync.caldav.util.WebKeys;
-
 import net.fortuna.ical4j.data.CalendarOutputter;
 import net.fortuna.ical4j.model.ComponentList;
 import net.fortuna.ical4j.model.PropertyList;
@@ -82,6 +81,26 @@ public class CalendarPropsProcessor extends BasePropsProcessor {
 
 		Element calendarHomeSetElement = DocUtil.add(
 			successPropElement, CalDAVProps.CALDAV_CALENDAR_HOME_SET);
+
+		DocUtil.add(
+			calendarHomeSetElement, CalDAVProps.createQName("href"),
+			CalDAVUtil.getCalendarResourceURL(calendarResource));
+	}
+
+	@Override
+	protected void processCalDAVCalendarUserAddressSet() {
+		CalendarResource calendarResource;
+
+		try {
+			calendarResource = _calendar.getCalendarResource();
+		}
+		catch (Exception e) {
+			_log.error(e);
+			return;
+		}
+
+		Element calendarHomeSetElement = DocUtil.add(
+			successPropElement, CalDAVProps.CALDAV_CALENDAR_USER_ADDRESS_SET);
 
 		DocUtil.add(
 			calendarHomeSetElement, CalDAVProps.createQName("href"),
