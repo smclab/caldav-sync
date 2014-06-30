@@ -33,8 +33,12 @@ public class CalDAVRequestThreadLocal {
 	public static Document getRequestDocument() {
 
 		if (_document.get() == null) {
+			String content = _content.get();
+			if(content == null){
+				return null;
+			}
 			try {
-				setRequestDocument(SAXReaderUtil.read(_content.get()));
+				setRequestDocument(SAXReaderUtil.read(content));
 			}
 			catch (DocumentException e) {
 				_log.error(e);
