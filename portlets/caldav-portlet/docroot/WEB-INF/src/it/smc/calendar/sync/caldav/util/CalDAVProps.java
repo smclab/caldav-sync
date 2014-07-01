@@ -98,6 +98,8 @@ public class CalDAVProps {
 
 	public static final QName DAV_LOCKDISCOVERY = createQName("lockdiscovery");
 
+	public static final QName DAV_OWNER = createQName("owner");
+
 	public static final QName DAV_PRINCIPAL_COLLECTION_SET = createQName(
 		"principal-collection-set");
 

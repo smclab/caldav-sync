@@ -80,6 +80,13 @@ public class CalendarResourcePropsProcessor extends BasePropsProcessor {
 		}
 	}
 
+	@Override
+	protected void processDAVOwner() {
+		DocUtil.add(
+			successPropElement, CalDAVProps.DAV_ISREADONLY,
+			CalDAVUtil.getPrincipalURL(_calendarResource.getUserId()));
+	}
+
 	private CalendarResource _calendarResource;
 
 }

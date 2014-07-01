@@ -154,7 +154,18 @@ public class CalendarPropsProcessor extends BasePropsProcessor {
 			successPropElement,
 			CalDAVProps.CALDAV_SUPPORTED_CALENDAR_COMPONENT_SET);
 
-		if (!resource.isCollection()) {
+		if (CalDAVUtil.isMacOSX(webDAVRequest)) {
+			DocUtil.add(
+				supportedCalendarComponentSet, CalDAVProps.DAV_COMP,
+				"VTODO");
+			DocUtil.add(
+				supportedCalendarComponentSet, CalDAVProps.DAV_COMP,
+				WebKeys.VEVENT);
+			DocUtil.add(
+				supportedCalendarComponentSet, CalDAVProps.DAV_COMP,
+				"VJOURNAL");
+		}
+		else if (!resource.isCollection()) {
 			DocUtil.add(
 				supportedCalendarComponentSet, CalDAVProps.DAV_COMP,
 				WebKeys.VCALENDAR);
@@ -206,6 +217,13 @@ public class CalendarPropsProcessor extends BasePropsProcessor {
 		DocUtil.add(
 			successPropElement, CalDAVProps.DAV_GETCONTENTLENGTH,
 			resource.getSize());
+	}
+
+	@Override
+	protected void processDAVOwner() {
+		DocUtil.add(
+			successPropElement, CalDAVProps.DAV_ISREADONLY,
+			CalDAVUtil.getPrincipalURL(_calendar.getUserId()));
 	}
 
 	@Override

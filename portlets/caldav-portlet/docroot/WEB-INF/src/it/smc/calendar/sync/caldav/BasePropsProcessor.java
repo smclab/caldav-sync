@@ -14,9 +14,13 @@
 
 package it.smc.calendar.sync.caldav;
 
+import com.liferay.calendar.model.CalendarResource;
+import com.liferay.calendar.service.CalendarResourceLocalServiceUtil;
+import com.liferay.compat.portal.util.PortalUtil;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
+import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.kernel.webdav.Resource;
 import com.liferay.portal.kernel.webdav.WebDAVRequest;
 import com.liferay.portal.kernel.xml.Element;
@@ -141,6 +145,10 @@ public abstract class BasePropsProcessor implements PropsProcessor {
 			props.remove(CalDAVProps.DAV_ISREADONLY);
 		}
 
+		if (props.contains(CalDAVProps.DAV_ISREADONLY)) {
+			processDAVOwner();
+			props.remove(CalDAVProps.DAV_ISREADONLY);
+		}
 		if (props.contains(CalDAVProps.DAV_PRINCIPAL_COLLECTION_SET)) {
 			processDAVPrincipalCollectionSet();
 			props.remove(CalDAVProps.DAV_PRINCIPAL_COLLECTION_SET);
@@ -246,8 +254,34 @@ public abstract class BasePropsProcessor implements PropsProcessor {
 	}
 
 	protected void processCalDAVCalendarUserAddressSet() {
-		DocUtil.add(
-			failurePropElement, CalDAVProps.CALDAV_CALENDAR_USER_ADDRESS_SET);
+
+		// TODO: check for iCal
+
+		CalendarResource resource = null;
+
+		try {
+			resource = CalendarResourceLocalServiceUtil.fetchCalendarResource(
+				PortalUtil.getClassNameId(User.class),
+				webDAVRequest.getUserId());
+		}
+		catch (Exception e) {
+			_log.warn(e);
+		}
+
+		if (resource != null) {
+			Element calendarHomeSetElement = DocUtil.add(
+				successPropElement,
+				CalDAVProps.CALDAV_CALENDAR_USER_ADDRESS_SET);
+
+			DocUtil.add(
+				calendarHomeSetElement, CalDAVProps.createQName("href"),
+				CalDAVUtil.getCalendarResourceURL(resource));
+		}
+		else {
+			DocUtil.add(
+				failurePropElement,
+				CalDAVProps.CALDAV_CALENDAR_USER_ADDRESS_SET);
+		}
 	}
 
 	protected void processCalDAVGetCTag() {
@@ -321,9 +355,12 @@ public abstract class BasePropsProcessor implements PropsProcessor {
 	}
 
 	protected void processDAVDisplayName() {
+
+		// TODO: remove replaceAll if not necessary for iCal
+
 		DocUtil.add(
 			successPropElement, CalDAVProps.DAV_DISPLAYNAME,
-			resource.getDisplayName());
+			resource.getDisplayName().replaceAll(StringPool.SPACE, StringPool.BLANK));
 	}
 
 	protected void processDAVGetContentLength() {
@@ -354,9 +391,39 @@ public abstract class BasePropsProcessor implements PropsProcessor {
 			resource.isLocked());
 	}
 
+	protected void processDAVOwner() {
+		DocUtil.add(failurePropElement, CalDAVProps.DAV_OWNER);
+	}
+
 	protected void processDAVPrincipalCollectionSet() {
-		DocUtil.add(
-			failurePropElement, CalDAVProps.DAV_PRINCIPAL_COLLECTION_SET);
+
+		// TODO: check for iCal
+
+		CalendarResource resource = null;
+
+		try {
+			resource = CalendarResourceLocalServiceUtil.fetchCalendarResource(
+				PortalUtil.getClassNameId(User.class),
+				webDAVRequest.getUserId());
+		}
+		catch (Exception e) {
+			_log.warn(e);
+		}
+
+		if (resource != null) {
+			Element calendarHomeSetElement = DocUtil.add(
+				successPropElement,
+				CalDAVProps.DAV_PRINCIPAL_COLLECTION_SET);
+
+			DocUtil.add(
+				calendarHomeSetElement, CalDAVProps.createQName("href"),
+				CalDAVUtil.getCalendarResourceURL(resource));
+		}
+		else {
+			DocUtil.add(
+				failurePropElement,
+				CalDAVProps.DAV_PRINCIPAL_COLLECTION_SET);
+		}
 	}
 
 	protected void processDAVPrincipalURL() {
