@@ -73,7 +73,9 @@ public abstract class BasePropsProcessor implements PropsProcessor {
 		}
 
 		if (props.contains(CalDAVProps.CALDAV_CALENDAR_TIMEZONE)) {
+
 			// processCalDAVCalendarHomeSet();
+
 			processCalDAVCalendarTimeZone();
 			props.remove(CalDAVProps.CALDAV_CALENDAR_TIMEZONE);
 		}
@@ -149,6 +151,7 @@ public abstract class BasePropsProcessor implements PropsProcessor {
 			processDAVOwner();
 			props.remove(CalDAVProps.DAV_ISREADONLY);
 		}
+
 		if (props.contains(CalDAVProps.DAV_PRINCIPAL_COLLECTION_SET)) {
 			processDAVPrincipalCollectionSet();
 			props.remove(CalDAVProps.DAV_PRINCIPAL_COLLECTION_SET);
@@ -265,7 +268,9 @@ public abstract class BasePropsProcessor implements PropsProcessor {
 				webDAVRequest.getUserId());
 		}
 		catch (Exception e) {
-			_log.warn(e);
+			if (_log.isWarnEnabled()) {
+				_log.warn(e);
+			}
 		}
 
 		if (resource != null) {
@@ -360,7 +365,8 @@ public abstract class BasePropsProcessor implements PropsProcessor {
 
 		DocUtil.add(
 			successPropElement, CalDAVProps.DAV_DISPLAYNAME,
-			resource.getDisplayName().replaceAll(StringPool.SPACE, StringPool.BLANK));
+			resource.getDisplayName().replaceAll(
+				StringPool.SPACE, StringPool.BLANK));
 	}
 
 	protected void processDAVGetContentLength() {
@@ -407,13 +413,14 @@ public abstract class BasePropsProcessor implements PropsProcessor {
 				webDAVRequest.getUserId());
 		}
 		catch (Exception e) {
-			_log.warn(e);
+			if (_log.isWarnEnabled()) {
+				_log.warn(e);
+			}
 		}
 
 		if (resource != null) {
 			Element calendarHomeSetElement = DocUtil.add(
-				successPropElement,
-				CalDAVProps.DAV_PRINCIPAL_COLLECTION_SET);
+				successPropElement, CalDAVProps.DAV_PRINCIPAL_COLLECTION_SET);
 
 			DocUtil.add(
 				calendarHomeSetElement, CalDAVProps.createQName("href"),
@@ -421,8 +428,7 @@ public abstract class BasePropsProcessor implements PropsProcessor {
 		}
 		else {
 			DocUtil.add(
-				failurePropElement,
-				CalDAVProps.DAV_PRINCIPAL_COLLECTION_SET);
+				failurePropElement, CalDAVProps.DAV_PRINCIPAL_COLLECTION_SET);
 		}
 	}
 
@@ -450,12 +456,10 @@ public abstract class BasePropsProcessor implements PropsProcessor {
 		Element supportedResportSetElement = DocUtil.add(
 			successPropElement, CalDAVProps.DAV_SUPPORTED_REPORT_SET);
 
-
 		for (String reportSet : CalDAVMethod.SUPPORTED_CALDAV_REPORT_SET) {
 			DocUtil.add(
 				supportedResportSetElement,
 				CalDAVProps.createCalendarQName("supported-report"), reportSet);
-
 		}
 	}
 

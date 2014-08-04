@@ -330,7 +330,6 @@ public class LiferayCalDAVStorageImpl extends BaseWebDAVStorageImpl {
 		List<Calendar> calendars;
 
 		if (CalDAVUtil.isIOS(webDAVRequest)) {
-
 			calendars = CalendarUtil.getAllCalendars(
 				webDAVRequest.getPermissionChecker());
 		}

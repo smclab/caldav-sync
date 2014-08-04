@@ -14,15 +14,6 @@
 
 package it.smc.calendar.sync.caldav.methods;
 
-import it.smc.calendar.sync.caldav.PropsProcessor;
-import it.smc.calendar.sync.caldav.util.CalDAVProps;
-import it.smc.calendar.sync.caldav.util.CalDAVPropsProcessorFactory;
-
-import java.util.List;
-import java.util.Set;
-
-import javax.servlet.http.HttpServletResponse;
-
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.servlet.ServletResponseUtil;
@@ -37,6 +28,15 @@ import com.liferay.portal.kernel.xml.Document;
 import com.liferay.portal.kernel.xml.Element;
 import com.liferay.portal.kernel.xml.QName;
 import com.liferay.portal.kernel.xml.SAXReaderUtil;
+
+import it.smc.calendar.sync.caldav.PropsProcessor;
+import it.smc.calendar.sync.caldav.util.CalDAVProps;
+import it.smc.calendar.sync.caldav.util.CalDAVPropsProcessorFactory;
+
+import java.util.List;
+import java.util.Set;
+
+import javax.servlet.http.HttpServletResponse;
 public abstract class BasePropMethodImpl implements Method {
 
 	protected void addResponse(
