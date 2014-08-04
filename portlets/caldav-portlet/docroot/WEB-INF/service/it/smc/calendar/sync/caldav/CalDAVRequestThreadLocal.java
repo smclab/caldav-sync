@@ -17,6 +17,7 @@ package it.smc.calendar.sync.caldav;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.util.AutoResetThreadLocal;
+import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.kernel.xml.Document;
 import com.liferay.portal.kernel.xml.DocumentException;
 import com.liferay.portal.kernel.xml.SAXReaderUtil;
@@ -34,9 +35,11 @@ public class CalDAVRequestThreadLocal {
 
 		if (_document.get() == null) {
 			String content = _content.get();
-			if(content == null){
+
+			if (Validator.isNull(content)) {
 				return null;
 			}
+
 			try {
 				setRequestDocument(SAXReaderUtil.read(content));
 			}
