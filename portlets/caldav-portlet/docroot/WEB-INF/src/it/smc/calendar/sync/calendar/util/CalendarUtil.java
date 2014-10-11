@@ -85,9 +85,10 @@ public class CalendarUtil {
 		dynamicQuery.add(
 			RestrictionsFactoryUtil.eq("calendarId", calendar.getCalendarId()));
 
+		Integer[] status = {WorkflowConstants.STATUS_APPROVED, WorkflowConstants.STATUS_PENDING, 9 /* CalendarBookingWorkflowConstants.STATUS_MAYBE */ };
 		dynamicQuery.add(
-			RestrictionsFactoryUtil.eq(
-				"status", WorkflowConstants.STATUS_APPROVED));
+			RestrictionsFactoryUtil.in(
+				"status", status));
 
 		if (startDate != null) {
 			dynamicQuery.add(
