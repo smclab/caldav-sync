@@ -85,9 +85,13 @@ public class CalendarUtil {
 		dynamicQuery.add(
 			RestrictionsFactoryUtil.eq("calendarId", calendar.getCalendarId()));
 
+		List<Integer> calendarStatus = new ArrayList<Integer>();
+		calendarStatus.add(WorkflowConstants.STATUS_APPROVED);
+		calendarStatus.add(WorkflowConstants.STATUS_PENDING);
+		calendarStatus.add(WorkflowConstants.STATUS_DRAFT_FROM_APPROVED);
+
 		dynamicQuery.add(
-			RestrictionsFactoryUtil.eq(
-				"status", WorkflowConstants.STATUS_APPROVED));
+			RestrictionsFactoryUtil.in("status", calendarStatus));
 
 		if (startDate != null) {
 			dynamicQuery.add(

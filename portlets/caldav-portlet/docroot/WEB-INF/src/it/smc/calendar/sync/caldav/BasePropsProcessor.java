@@ -147,9 +147,9 @@ public abstract class BasePropsProcessor implements PropsProcessor {
 			props.remove(CalDAVProps.DAV_ISREADONLY);
 		}
 
-		if (props.contains(CalDAVProps.DAV_ISREADONLY)) {
+		if (props.contains(CalDAVProps.DAV_OWNER)) {
 			processDAVOwner();
-			props.remove(CalDAVProps.DAV_ISREADONLY);
+			props.remove(CalDAVProps.DAV_OWNER);
 		}
 
 		if (props.contains(CalDAVProps.DAV_PRINCIPAL_COLLECTION_SET)) {
@@ -457,9 +457,13 @@ public abstract class BasePropsProcessor implements PropsProcessor {
 			successPropElement, CalDAVProps.DAV_SUPPORTED_REPORT_SET);
 
 		for (String reportSet : CalDAVMethod.SUPPORTED_CALDAV_REPORT_SET) {
-			DocUtil.add(
+			Element supportedResportElement = DocUtil.add(
 				supportedResportSetElement,
-				CalDAVProps.createCalendarQName("supported-report"), reportSet);
+				CalDAVProps.createCalendarQName("supported-report"));
+
+			DocUtil.add(
+				supportedResportElement,
+				CalDAVProps.createCalendarQName("report"), reportSet);
 		}
 	}
 
