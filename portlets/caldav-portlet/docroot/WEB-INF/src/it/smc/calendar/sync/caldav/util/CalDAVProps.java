@@ -73,7 +73,7 @@ public class CalDAVProps {
 
 	//public static final QName DAV_COMP = SAXReaderUtil.createQName("comp");
 
-	public static final QName DAV_COMP = createQName("comp");
+	public static final QName DAV_COMP = createCalendarQName("comp");
 
 	public static final QName DAV_CREATIONDATE = createQName("creationdate");
 

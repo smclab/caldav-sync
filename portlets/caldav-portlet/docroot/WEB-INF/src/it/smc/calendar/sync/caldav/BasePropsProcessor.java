@@ -73,9 +73,6 @@ public abstract class BasePropsProcessor implements PropsProcessor {
 		}
 
 		if (props.contains(CalDAVProps.CALDAV_CALENDAR_TIMEZONE)) {
-
-			// processCalDAVCalendarHomeSet();
-
 			processCalDAVCalendarTimeZone();
 			props.remove(CalDAVProps.CALDAV_CALENDAR_TIMEZONE);
 		}
@@ -258,8 +255,6 @@ public abstract class BasePropsProcessor implements PropsProcessor {
 
 	protected void processCalDAVCalendarUserAddressSet() {
 
-		// TODO: check for iCal
-
 		CalendarResource resource = null;
 
 		try {
@@ -344,7 +339,7 @@ public abstract class BasePropsProcessor implements PropsProcessor {
 			return;
 		}
 
-		// TODO: check
+		// TODO: review from specifications
 
 		Element principalUrlElement = DocUtil.add(
 			successPropElement, CalDAVProps.DAV_CURRENT_USER_PRINCIPAL);
@@ -360,8 +355,6 @@ public abstract class BasePropsProcessor implements PropsProcessor {
 	}
 
 	protected void processDAVDisplayName() {
-
-		// TODO: remove replaceAll if not necessary for iCal
 
 		DocUtil.add(
 			successPropElement, CalDAVProps.DAV_DISPLAYNAME,
@@ -402,8 +395,6 @@ public abstract class BasePropsProcessor implements PropsProcessor {
 	}
 
 	protected void processDAVPrincipalCollectionSet() {
-
-		// TODO: check for iCal
 
 		CalendarResource resource = null;
 
@@ -459,11 +450,11 @@ public abstract class BasePropsProcessor implements PropsProcessor {
 		for (String reportSet : CalDAVMethod.SUPPORTED_CALDAV_REPORT_SET) {
 			Element supportedResportElement = DocUtil.add(
 				supportedResportSetElement,
-				CalDAVProps.createCalendarQName("supported-report"));
+				CalDAVProps.createQName("supported-report"));
 
 			DocUtil.add(
 				supportedResportElement,
-				CalDAVProps.createCalendarQName("report"), reportSet);
+				CalDAVProps.createQName("report"), reportSet);
 		}
 	}
 

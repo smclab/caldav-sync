@@ -56,16 +56,14 @@ public class CalendarPropsProcessor extends BasePropsProcessor {
 
 	@Override
 	protected void processCalDAVCalendarColor() {
-		DocUtil.add(
-			successPropElement, CalDAVProps.CALDAV_CALENDAR_COLOR,
-			CalDAVUtil.getCalendarColor(_calendar));
-	}
+		String color = CalDAVUtil.getCalendarColor(_calendar);
 
-	@Override
-	protected void processCalDAVCalendarDescription() {
+		if (CalDAVUtil.isMacOSX(webDAVRequest)) {
+			color = color.concat("FF");
+		}
+
 		DocUtil.add(
-			successPropElement, CalDAVProps.CALDAV_CALENDAR_DESCRIPTION,
-			_calendar.getDescription(locale));
+			successPropElement, CalDAVProps.CALDAV_CALENDAR_COLOR, color);
 	}
 
 	@Override
@@ -155,23 +153,16 @@ public class CalendarPropsProcessor extends BasePropsProcessor {
 			successPropElement,
 			CalDAVProps.CALDAV_SUPPORTED_CALENDAR_COMPONENT_SET);
 
-		if (CalDAVUtil.isMacOSX(webDAVRequest)) {
-			DocUtil.add(
-				supportedCalendarComponentSet, CalDAVProps.DAV_COMP, "VTODO");
-			DocUtil.add(
-				supportedCalendarComponentSet, CalDAVProps.DAV_COMP,
-				WebKeys.VEVENT);
-			DocUtil.add(
-				supportedCalendarComponentSet, CalDAVProps.DAV_COMP,
-				"VJOURNAL");
-		}
-		else if (!resource.isCollection()) {
-			DocUtil.add(
-				supportedCalendarComponentSet, CalDAVProps.DAV_COMP,
-				WebKeys.VCALENDAR);
-			DocUtil.add(
-				supportedCalendarComponentSet, CalDAVProps.DAV_COMP,
-				WebKeys.VEVENT);
+		if (!resource.isCollection() || CalDAVUtil.isMacOSX(webDAVRequest)) {
+			Element el = DocUtil.add(
+				supportedCalendarComponentSet, CalDAVProps.DAV_COMP);
+
+			el.addAttribute("name", WebKeys.VCALENDAR);
+
+			el = DocUtil.add(
+				supportedCalendarComponentSet, CalDAVProps.DAV_COMP);
+
+			el.addAttribute("name", WebKeys.VEVENT);
 		}
 	}
 
