@@ -62,6 +62,10 @@ public class CalDAVUtil {
 	public static final Namespace NS_CALENDAR_SERVER_URI =
 		SAXReaderUtil.createNamespace("CS", "http://calendarserver.org/ns/");
 
+	public static String buildETag(String primaryKey, Date modifiedDate) {
+		return primaryKey + StringPool.UNDERLINE + modifiedDate.getTime();
+	}
+
 	public static CalendarBooking getCalendarBookingFromURL(String URL)
 		throws PortalException, SystemException {
 
@@ -111,7 +115,7 @@ public class CalDAVUtil {
 
 		sb.append(PortalUtil.getPathContext());
 		sb.append("/webdav/");
-		sb.append(calendarResource.getUuid());
+		sb.append(calendarResource.getCalendarResourceId());
 		sb.append(StringPool.SLASH);
 		sb.append(WebKeys.CALDAV_TOKEN);
 		sb.append(StringPool.SLASH);
@@ -133,7 +137,7 @@ public class CalDAVUtil {
 		}
 
 		sb.append(baseURL);
-		sb.append(calendar.getUuid());
+		sb.append(calendar.getCalendarId());
 		sb.append(StringPool.SLASH);
 
 		return sb.toString();
@@ -245,8 +249,8 @@ public class CalDAVUtil {
 			}
 		}
 
-		return String.valueOf(resource.getPrimaryKey()) + StringPool.UNDERLINE +
-			modifiedDate.getTime();
+		return buildETag(
+			String.valueOf(resource.getPrimaryKey()), modifiedDate);
 	}
 
 	public static boolean isAndroid(WebDAVRequest webDAVRequest) {
