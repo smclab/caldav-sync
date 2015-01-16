@@ -14,11 +14,6 @@
 
 package it.smc.calendar.sync.caldav;
 
-import it.smc.calendar.sync.caldav.util.CalDAVProps;
-import it.smc.calendar.sync.caldav.util.CalDAVUtil;
-
-import java.util.List;
-
 import com.liferay.calendar.model.CalendarResource;
 import com.liferay.calendar.service.CalendarResourceLocalServiceUtil;
 import com.liferay.calendar.service.permission.CalendarResourcePermission;
@@ -32,6 +27,11 @@ import com.liferay.portal.model.User;
 import com.liferay.portal.security.permission.ActionKeys;
 import com.liferay.portal.util.PortalUtil;
 import com.liferay.util.xml.DocUtil;
+
+import it.smc.calendar.sync.caldav.util.CalDAVProps;
+import it.smc.calendar.sync.caldav.util.CalDAVUtil;
+
+import java.util.List;
 
 /**
  * @author Fabio Pezzutto

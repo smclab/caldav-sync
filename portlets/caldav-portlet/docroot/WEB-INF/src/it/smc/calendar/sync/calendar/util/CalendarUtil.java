@@ -22,6 +22,7 @@ import com.liferay.calendar.service.CalendarLocalServiceUtil;
 import com.liferay.calendar.service.CalendarServiceUtil;
 import com.liferay.calendar.service.permission.CalendarPermission;
 import com.liferay.calendar.util.comparator.CalendarNameComparator;
+import com.liferay.compat.portal.kernel.util.ArrayUtil;
 import com.liferay.portal.kernel.dao.orm.DynamicQuery;
 import com.liferay.portal.kernel.dao.orm.DynamicQueryFactoryUtil;
 import com.liferay.portal.kernel.dao.orm.OrderFactoryUtil;
@@ -31,18 +32,23 @@ import com.liferay.portal.kernel.dao.orm.RestrictionsFactoryUtil;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.exception.SystemException;
 import com.liferay.portal.kernel.util.ClassLoaderPool;
+import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.ListUtil;
 import com.liferay.portal.kernel.util.StringPool;
+import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.workflow.WorkflowConstants;
+import com.liferay.portal.model.User;
 import com.liferay.portal.security.permission.ActionKeys;
 import com.liferay.portal.security.permission.PermissionChecker;
+import com.liferay.portal.util.SessionClicks;
+import com.liferay.portlet.PortletPreferencesFactoryUtil;
 
 import java.sql.Timestamp;
-
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
+
 public class CalendarUtil {
 
 	public static final String ACTION_VIEW_BOOKING_DETAILS =
@@ -50,7 +56,7 @@ public class CalendarUtil {
 
 	public static List<Calendar> getAllCalendars(
 			PermissionChecker permissionChecker)
-		throws SystemException {
+		throws SystemException, PortalException {
 
 		List<Calendar> calendars = new ArrayList<Calendar>();
 
@@ -60,9 +66,27 @@ public class CalendarUtil {
 
 		calendars = new ArrayList<Calendar>();
 
+		long[] calendarIds = GetterUtil.getLongValues(
+			StringUtil.split(
+				PortletPreferencesFactoryUtil.getPortalPreferences(
+					permissionChecker.getUserId(), true).getValue(
+						SessionClicks.class.getName(),
+						"otherCalendars")));
+
 		for (Calendar calendar : allCalendars) {
 			if (CalendarPermission.contains(
 					permissionChecker, calendar, ActionKeys.VIEW)) {
+
+				if (PortletPropsValues.
+						PROPFIND_PROVIDE_SESSIONCLICKS_CALENDARS) {
+
+					if (!ArrayUtil.contains(
+							calendarIds, calendar.getCalendarId()) &&
+						!isCurrentUserCalendar(permissionChecker.getUserId(),
+							calendar)) {
+						continue;
+					}
+				}
 
 				calendars.add(calendar);
 			}
@@ -90,8 +114,7 @@ public class CalendarUtil {
 		calendarStatus.add(WorkflowConstants.STATUS_PENDING);
 		calendarStatus.add(WorkflowConstants.STATUS_DRAFT_FROM_APPROVED);
 
-		dynamicQuery.add(
-			RestrictionsFactoryUtil.in("status", calendarStatus));
+		dynamicQuery.add(RestrictionsFactoryUtil.in("status", calendarStatus));
 
 		if (startDate != null) {
 			dynamicQuery.add(
@@ -122,6 +145,22 @@ public class CalendarUtil {
 			new long[] {calendarResource.getCalendarResourceId()}, null,
 			false, QueryUtil.ALL_POS, QueryUtil.ALL_POS,
 			new CalendarNameComparator(true));
+	}
+
+	protected static boolean isCurrentUserCalendar(
+			long userId, Calendar calendar)
+		throws PortalException, SystemException {
+
+		CalendarResource calendarResource = calendar.getCalendarResource();
+
+		if (calendarResource.getClassName().equals(User.class.getName()) &&
+			(calendarResource.getClassPK() == userId) ) {
+
+			return true;
+		}
+		else {
+			return false;
+		}
 	}
 
 	public static Date getLastCalendarModifiedDate(long calendarId)

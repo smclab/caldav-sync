@@ -453,8 +453,8 @@ public abstract class BasePropsProcessor implements PropsProcessor {
 				CalDAVProps.createQName("supported-report"));
 
 			DocUtil.add(
-				supportedResportElement,
-				CalDAVProps.createQName("report"), reportSet);
+				supportedResportElement, CalDAVProps.createQName("report"),
+				reportSet);
 		}
 	}
 

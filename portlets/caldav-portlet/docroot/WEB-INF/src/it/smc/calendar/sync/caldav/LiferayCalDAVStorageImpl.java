@@ -139,8 +139,7 @@ public class LiferayCalDAVStorageImpl extends BaseWebDAVStorageImpl {
 				calendarResource =
 					CalendarResourceLocalServiceUtil.
 						fetchCalendarResourceByUuidAndCompanyId(
-							calendarResourceId,
-							webDAVRequest.getCompanyId());
+							calendarResourceId, webDAVRequest.getCompanyId());
 			}
 
 			if (calendarResource == null) {

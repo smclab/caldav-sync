@@ -90,11 +90,12 @@ public class CalDAVUtil {
 		StringBuilder sb = new StringBuilder(11);
 		sb.append(PortalUtil.getPathContext());
 		sb.append("/webdav/");
-		sb.append(calendarBooking.getCalendarResource().getUuid());
+		sb.append(
+			calendarBooking.getCalendarResource().getCalendarResourceId());
 		sb.append(StringPool.SLASH);
 		sb.append(WebKeys.CALDAV_TOKEN);
 		sb.append(StringPool.SLASH);
-		sb.append(calendarBooking.getCalendar().getUuid());
+		sb.append(calendarBooking.getCalendar().getCalendarId());
 		sb.append(StringPool.SLASH);
 		sb.append(calendarBooking.getCalendarBookingId());
 		sb.append(StringPool.PERIOD);

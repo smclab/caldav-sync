@@ -32,7 +32,6 @@ import com.liferay.portal.kernel.xml.SAXReaderUtil;
 import it.smc.calendar.sync.caldav.PropsProcessor;
 import it.smc.calendar.sync.caldav.util.CalDAVProps;
 import it.smc.calendar.sync.caldav.util.CalDAVPropsProcessorFactory;
-import it.smc.calendar.sync.caldav.util.CalDAVUtil;
 
 import java.util.List;
 import java.util.Set;
