@@ -44,11 +44,11 @@ import com.liferay.portal.util.SessionClicks;
 import com.liferay.portlet.PortletPreferencesFactoryUtil;
 
 import java.sql.Timestamp;
+
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
-
 public class CalendarUtil {
 
 	public static final String ACTION_VIEW_BOOKING_DETAILS =
@@ -56,7 +56,7 @@ public class CalendarUtil {
 
 	public static List<Calendar> getAllCalendars(
 			PermissionChecker permissionChecker)
-		throws SystemException, PortalException {
+		throws PortalException, SystemException {
 
 		List<Calendar> calendars = new ArrayList<Calendar>();
 
@@ -70,8 +70,7 @@ public class CalendarUtil {
 			StringUtil.split(
 				PortletPreferencesFactoryUtil.getPortalPreferences(
 					permissionChecker.getUserId(), true).getValue(
-						SessionClicks.class.getName(),
-						"otherCalendars")));
+						SessionClicks.class.getName(), "otherCalendars")));
 
 		for (Calendar calendar : allCalendars) {
 			if (CalendarPermission.contains(
@@ -82,8 +81,9 @@ public class CalendarUtil {
 
 					if (!ArrayUtil.contains(
 							calendarIds, calendar.getCalendarId()) &&
-						!isCurrentUserCalendar(permissionChecker.getUserId(),
-							calendar)) {
+						!isCurrentUserCalendar(
+							permissionChecker.getUserId(), calendar)) {
+
 						continue;
 					}
 				}
@@ -145,22 +145,6 @@ public class CalendarUtil {
 			new long[] {calendarResource.getCalendarResourceId()}, null,
 			false, QueryUtil.ALL_POS, QueryUtil.ALL_POS,
 			new CalendarNameComparator(true));
-	}
-
-	protected static boolean isCurrentUserCalendar(
-			long userId, Calendar calendar)
-		throws PortalException, SystemException {
-
-		CalendarResource calendarResource = calendar.getCalendarResource();
-
-		if (calendarResource.getClassName().equals(User.class.getName()) &&
-			(calendarResource.getClassPK() == userId) ) {
-
-			return true;
-		}
-		else {
-			return false;
-		}
 	}
 
 	public static Date getLastCalendarModifiedDate(long calendarId)
@@ -238,6 +222,22 @@ public class CalendarUtil {
 		}
 
 		return calendarBookings;
+	}
+
+	protected static boolean isCurrentUserCalendar(
+			long userId, Calendar calendar)
+		throws PortalException, SystemException {
+
+		CalendarResource calendarResource = calendar.getCalendarResource();
+
+		if (calendarResource.getClassName().equals(User.class.getName()) &&
+			(calendarResource.getClassPK() == userId) ) {
+
+			return true;
+		}
+		else {
+			return false;
+		}
 	}
 
 }

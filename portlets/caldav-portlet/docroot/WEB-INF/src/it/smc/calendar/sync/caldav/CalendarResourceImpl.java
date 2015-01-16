@@ -28,6 +28,7 @@ import com.liferay.portal.kernel.webdav.WebDAVException;
 import it.smc.calendar.sync.caldav.util.CalDAVUtil;
 
 import java.io.InputStream;
+
 import java.util.Locale;
 
 /**
