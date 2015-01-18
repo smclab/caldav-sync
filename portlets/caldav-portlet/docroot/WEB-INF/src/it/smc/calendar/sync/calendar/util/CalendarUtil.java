@@ -70,7 +70,18 @@ public class CalendarUtil {
 			StringUtil.split(
 				PortletPreferencesFactoryUtil.getPortalPreferences(
 					permissionChecker.getUserId(), true).getValue(
-						SessionClicks.class.getName(), "otherCalendars")));
+						SessionClicks.class.getName(),
+						"calendar-portlet-other-calendars")));
+
+		// Backward compatibility with older version of calendar
+
+		if (calendarIds.length == 0) {
+			calendarIds = GetterUtil.getLongValues(
+				StringUtil.split(
+					PortletPreferencesFactoryUtil.getPortalPreferences(
+						permissionChecker.getUserId(), true).getValue(
+							SessionClicks.class.getName(), "otherCalendars")));
+		}
 
 		for (Calendar calendar : allCalendars) {
 			if (CalendarPermission.contains(
