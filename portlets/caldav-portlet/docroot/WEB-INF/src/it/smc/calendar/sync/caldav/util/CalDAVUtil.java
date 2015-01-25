@@ -318,7 +318,8 @@ public class CalDAVUtil {
 			return false;
 		}
 		else {
-			return userAgent.contains("OS X") || userAgent.contains("Core");
+			return userAgent.contains("OS X") || userAgent.contains("Core") ||
+				userAgent.contains("OS_X");
 		}
 	}
 

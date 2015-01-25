@@ -79,7 +79,7 @@ public class ICSSanitizer {
 	protected String toString(net.fortuna.ical4j.model.Calendar iCalCalendar)
 		throws Exception {
 
-		CalendarOutputter calendarOutputter = new CalendarOutputter();
+		CalendarOutputter calendarOutputter = new CalendarOutputter(false);
 
 		ComponentList componentList = iCalCalendar.getComponents();
 

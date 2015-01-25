@@ -67,6 +67,13 @@ public class CalendarPropsProcessor extends BasePropsProcessor {
 	}
 
 	@Override
+	protected void processCalDAVCalendarDescription() {
+		DocUtil.add(
+			successPropElement, CalDAVProps.CALDAV_CALENDAR_DESCRIPTION,
+			_calendar.getDescription(locale	));
+	}
+
+	@Override
 	protected void processCalDAVCalendarHomeSet() {
 		CalendarResource calendarResource;
 

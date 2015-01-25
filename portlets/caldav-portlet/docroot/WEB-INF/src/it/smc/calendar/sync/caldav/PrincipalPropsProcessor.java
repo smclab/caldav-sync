@@ -88,7 +88,7 @@ public class PrincipalPropsProcessor extends BasePropsProcessor {
 	@Override
 	protected void processDAVOwner() {
 		DocUtil.add(
-			successPropElement, CalDAVProps.DAV_ISREADONLY,
+			successPropElement, CalDAVProps.DAV_OWNER,
 			CalDAVUtil.getPrincipalURL(webDAVRequest.getUserId()));
 	}
 
