@@ -24,7 +24,6 @@ import com.liferay.calendar.service.CalendarLocalServiceUtil;
 import com.liferay.calendar.service.CalendarResourceLocalServiceUtil;
 import com.liferay.calendar.service.CalendarServiceUtil;
 import com.liferay.calendar.service.permission.CalendarPermission;
-import com.liferay.calendar.service.permission.CalendarResourcePermission;
 import com.liferay.calendar.util.CalendarDataFormat;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.exception.SystemException;
@@ -150,9 +149,9 @@ public class LiferayCalDAVStorageImpl extends BaseWebDAVStorageImpl {
 						calendarResourceId);
 			}
 
-			CalendarResourcePermission.check(
-				webDAVRequest.getPermissionChecker(), calendarResource,
-				ActionKeys.VIEW);
+			//CalendarResourcePermission.check(
+			//	webDAVRequest.getPermissionChecker(), calendarResource,
+			//	ActionKeys.VIEW);
 
 			if (CalDAVUtil.isCalendarBookingRequest(webDAVRequest) &&
 				!method.equals(CalDAVHttpMethods.PUT)) {
@@ -178,10 +177,11 @@ public class LiferayCalDAVStorageImpl extends BaseWebDAVStorageImpl {
 								calendarBookingId);
 					}
 					else {
-						calendarBooking = CalendarBookingLocalServiceUtil.
-							fetchCalendarBookingByUuidAndCompanyId(
-								resourceShortName,
-								calendarResource.getCompanyId());
+						calendarBooking =
+							CalendarBookingLocalServiceUtil.
+								fetchCalendarBookingByUuidAndCompanyId(
+									resourceShortName,
+									calendarResource.getCompanyId());
 					}
 
 					if (calendarBooking == null) {
@@ -292,9 +292,10 @@ public class LiferayCalDAVStorageImpl extends BaseWebDAVStorageImpl {
 				throw new WebDAVException("No calendar resource were found");
 			}
 
-			CalendarResourcePermission.check(
-				webDAVRequest.getPermissionChecker(), calendarResource,
-				ActionKeys.VIEW);
+			// CalendarResourcePermission.check(
+
+			//	webDAVRequest.getPermissionChecker(), calendarResource,
+			//	ActionKeys.VIEW);
 
 			if (CalDAVUtil.isCalendarRequest(webDAVRequest)) {
 				return toCalendarBookingResources(webDAVRequest);

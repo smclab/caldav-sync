@@ -65,9 +65,12 @@ String userCalDAVURL = portalURL + CalDAVUtil.getPrincipalURL(themeDisplay.getUs
 				calendarTitleSb.append(LanguageUtil.get(locale, "read-only"));
 				calendarTitleSb.append(StringPool.CLOSE_PARENTHESIS);
 			}
+
+			String color = StringPool.POUND.concat(String.format("%06X", (0xFFFFFF & calendar.getColor())));
 			%>
 
 			<p class="calendar-url-entry">
+				<span class="calendar-list-item-color" style="background-color: <%= color %>; border-color: <%= color %>"></span>
 				<span class="entry-title"><%= calendarTitleSb.toString() %></span>
 				<span class="entry-url"><%= calDAVURL %></span>
 			</p>

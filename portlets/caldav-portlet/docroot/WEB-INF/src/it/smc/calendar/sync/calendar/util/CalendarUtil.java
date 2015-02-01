@@ -19,10 +19,11 @@ import com.liferay.calendar.model.CalendarBooking;
 import com.liferay.calendar.model.CalendarResource;
 import com.liferay.calendar.service.CalendarBookingLocalServiceUtil;
 import com.liferay.calendar.service.CalendarLocalServiceUtil;
+import com.liferay.calendar.service.CalendarResourceServiceUtil;
 import com.liferay.calendar.service.CalendarServiceUtil;
 import com.liferay.calendar.service.permission.CalendarPermission;
 import com.liferay.calendar.util.comparator.CalendarNameComparator;
-import com.liferay.compat.portal.kernel.util.ArrayUtil;
+import com.liferay.compat.portal.util.PortalUtil;
 import com.liferay.portal.kernel.dao.orm.DynamicQuery;
 import com.liferay.portal.kernel.dao.orm.DynamicQueryFactoryUtil;
 import com.liferay.portal.kernel.dao.orm.OrderFactoryUtil;
@@ -31,17 +32,23 @@ import com.liferay.portal.kernel.dao.orm.QueryUtil;
 import com.liferay.portal.kernel.dao.orm.RestrictionsFactoryUtil;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.exception.SystemException;
+import com.liferay.portal.kernel.plugin.Version;
 import com.liferay.portal.kernel.util.ClassLoaderPool;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.ListUtil;
 import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.workflow.WorkflowConstants;
+import com.liferay.portal.model.Group;
+import com.liferay.portal.model.Portlet;
 import com.liferay.portal.model.User;
 import com.liferay.portal.security.permission.ActionKeys;
 import com.liferay.portal.security.permission.PermissionChecker;
+import com.liferay.portal.service.PortletLocalServiceUtil;
 import com.liferay.portal.util.SessionClicks;
 import com.liferay.portlet.PortletPreferencesFactoryUtil;
+
+import it.smc.calendar.sync.caldav.util.PortletKeys;
 
 import java.sql.Timestamp;
 
@@ -60,46 +67,26 @@ public class CalendarUtil {
 
 		List<Calendar> calendars = new ArrayList<Calendar>();
 
-		List<Calendar> allCalendars =
-			CalendarLocalServiceUtil.getCalendars(
-				QueryUtil.ALL_POS, QueryUtil.ALL_POS);
-
 		calendars = new ArrayList<Calendar>();
 
-		long[] calendarIds = GetterUtil.getLongValues(
-			StringUtil.split(
-				PortletPreferencesFactoryUtil.getPortalPreferences(
-					permissionChecker.getUserId(), true).getValue(
-						SessionClicks.class.getName(),
-						"calendar-portlet-other-calendars")));
+		if (PortletPropsValues.PROPFIND_PROVIDE_SESSIONCLICKS_CALENDARS) {
+			calendars.addAll(getUserCalendars(permissionChecker.getUserId()));
 
-		// Backward compatibility with older version of calendar
+			calendars.addAll(getUserGroupCalendars(permissionChecker));
 
-		if (calendarIds.length == 0) {
-			calendarIds = GetterUtil.getLongValues(
-				StringUtil.split(
-					PortletPreferencesFactoryUtil.getPortalPreferences(
-						permissionChecker.getUserId(), true).getValue(
-							SessionClicks.class.getName(), "otherCalendars")));
+			calendars.addAll(
+				getSelectedCalendars(permissionChecker.getUserId()));
 		}
+		else {
+			List<Calendar> allCalendars = CalendarLocalServiceUtil.getCalendars(
+				QueryUtil.ALL_POS, QueryUtil.ALL_POS);
 
-		for (Calendar calendar : allCalendars) {
-			if (CalendarPermission.contains(
-					permissionChecker, calendar, ActionKeys.VIEW)) {
+			for (Calendar calendar : allCalendars) {
+				if (CalendarPermission.contains(
+						permissionChecker, calendar, ActionKeys.VIEW)) {
 
-				if (PortletPropsValues.
-						PROPFIND_PROVIDE_SESSIONCLICKS_CALENDARS) {
-
-					if (!ArrayUtil.contains(
-							calendarIds, calendar.getCalendarId()) &&
-						!isCurrentUserCalendar(
-							permissionChecker.getUserId(), calendar)) {
-
-						continue;
-					}
+					calendars.add(calendar);
 				}
-
-				calendars.add(calendar);
 			}
 		}
 
@@ -187,6 +174,83 @@ public class CalendarUtil {
 		return new Date();
 	}
 
+	public static List<Calendar> getSelectedCalendars(long userId)
+		throws PortalException, SystemException {
+
+		ArrayList<Calendar> calendars = new ArrayList<Calendar>();
+
+		String otherCalendarPreferences = "calendar-portlet-other-calendars";
+
+		if (_calendarVersion == 0) {
+			Portlet calendarPortlet = PortletLocalServiceUtil.getPortletById(
+				PortletKeys.CALENDAR);
+
+			String calendarVersionStr =
+				calendarPortlet.getPluginPackage().getVersion();
+
+			Version calendarVersion = Version.getInstance(calendarVersionStr);
+
+			_calendarVersion = GetterUtil.getInteger(
+				calendarVersion.getBuildNumber(), 1);
+		}
+
+		if (_calendarVersion < 10) {
+			otherCalendarPreferences = "otherCalendars";
+		}
+
+		long[] calendarIds = GetterUtil.getLongValues(
+			StringUtil.split(
+				PortletPreferencesFactoryUtil.getPortalPreferences(
+					userId, true).getValue(
+						SessionClicks.class.getName(),
+						otherCalendarPreferences)));
+
+		for (long calendarId : calendarIds) {
+			calendars.add(CalendarServiceUtil.getCalendar(calendarId));
+		}
+
+		return calendars;
+	}
+
+	public static List<Calendar> getUserCalendars(long userId)
+		throws PortalException, SystemException {
+
+		long classNameId = PortalUtil.getClassNameId(User.class.getName());
+
+		CalendarResource calendarResource =
+			CalendarResourceServiceUtil.fetchCalendarResource(
+				classNameId, userId);
+
+		return calendarResource.getCalendars();
+	}
+
+	public static List<Calendar> getUserGroupCalendars(
+			PermissionChecker permissionChecker)
+		throws PortalException, SystemException {
+
+		List<Calendar> calendars = new ArrayList<Calendar>();
+
+		long classNameId = PortalUtil.getClassNameId(Group.class.getName());
+
+		List<CalendarResource> calendarResources =
+			CalendarResourceServiceUtil.search(
+				permissionChecker.getCompanyId(), new long[] { },
+				new long[] { classNameId }, null, true, true, QueryUtil.ALL_POS,
+				QueryUtil.ALL_POS, null);
+
+		for (CalendarResource calendarResource : calendarResources) {
+			for (Calendar calendar : calendarResource.getCalendars()) {
+				if (CalendarPermission.contains(
+						permissionChecker, calendar, ActionKeys.VIEW)) {
+
+					calendars.add(calendar);
+				}
+			}
+		}
+
+		return calendars;
+	}
+
 	protected static CalendarBooking filterCalendarBooking(
 			CalendarBooking calendarBooking,
 			PermissionChecker permissionChecker)
@@ -250,5 +314,7 @@ public class CalendarUtil {
 			return false;
 		}
 	}
+
+	private static int _calendarVersion;
 
 }

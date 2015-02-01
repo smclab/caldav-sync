@@ -70,7 +70,7 @@ public class CalendarPropsProcessor extends BasePropsProcessor {
 	protected void processCalDAVCalendarDescription() {
 		DocUtil.add(
 			successPropElement, CalDAVProps.CALDAV_CALENDAR_DESCRIPTION,
-			_calendar.getDescription(locale	));
+			_calendar.getDescription(locale ));
 	}
 
 	@Override
