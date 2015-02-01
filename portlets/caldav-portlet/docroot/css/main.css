@@ -23,5 +23,20 @@
 			font-family: monospace;
 			padding: 4px 2px;
 		}
+
+		.calendar-list-item-color {
+			border: 1px solid #dcdcdc;
+			-webkit-border-radius: 3px;
+			-moz-border-radius: 3px;
+			-ms-border-radius: 3px;
+			-o-border-radius: 3px;
+			border-radius: 3px;
+			display: inline-block;
+			height: 11px;
+			margin-right: 4px;
+			position: relative;
+			top: 2px;
+			width: 11px;
+		}
 	}
 }

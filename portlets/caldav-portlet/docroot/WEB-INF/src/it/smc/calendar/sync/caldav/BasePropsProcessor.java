@@ -14,9 +14,13 @@
 
 package it.smc.calendar.sync.caldav;
 
+import com.liferay.calendar.model.CalendarResource;
+import com.liferay.calendar.service.CalendarResourceLocalServiceUtil;
+import com.liferay.compat.portal.util.PortalUtil;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
+import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.kernel.webdav.Resource;
 import com.liferay.portal.kernel.webdav.WebDAVRequest;
 import com.liferay.portal.kernel.xml.Element;
@@ -53,6 +57,11 @@ public abstract class BasePropsProcessor implements PropsProcessor {
 
 		Set<QName> props = new HashSet<QName>(properties);
 
+		if (props.contains(CalDAVProps.CALDAV_CALENDAR_COLOR)) {
+			processCalDAVCalendarColor();
+			props.remove(CalDAVProps.CALDAV_CALENDAR_COLOR);
+		}
+
 		if (props.contains(CalDAVProps.CALDAV_CALENDAR_DESCRIPTION)) {
 			processCalDAVCalendarDescription();
 			props.remove(CalDAVProps.CALDAV_CALENDAR_DESCRIPTION);
@@ -64,8 +73,13 @@ public abstract class BasePropsProcessor implements PropsProcessor {
 		}
 
 		if (props.contains(CalDAVProps.CALDAV_CALENDAR_TIMEZONE)) {
-			processCalDAVCalendarHomeSet();
 			processCalDAVCalendarTimeZone();
+			props.remove(CalDAVProps.CALDAV_CALENDAR_TIMEZONE);
+		}
+
+		if (props.contains(CalDAVProps.CALDAV_CALENDAR_USER_ADDRESS_SET)) {
+			processCalDAVCalendarUserAddressSet();
+			props.remove(CalDAVProps.CALDAV_CALENDAR_USER_ADDRESS_SET);
 		}
 
 		if (props.contains(CalDAVProps.CALDAV_GETCTAG)) {
@@ -83,11 +97,6 @@ public abstract class BasePropsProcessor implements PropsProcessor {
 		if (props.contains(CalDAVProps.CALDAV_SUPPORTED_CALENDAR_DATA)) {
 			processCalDAVSupportedCalendarData();
 			props.remove(CalDAVProps.CALDAV_SUPPORTED_CALENDAR_DATA);
-		}
-
-		if (props.contains(CalDAVProps.CALDAV_CALENDAR_COLOR)) {
-			processCalDAVCalendarColor();
-			props.remove(CalDAVProps.CALDAV_CALENDAR_COLOR);
 		}
 
 		if (props.contains(CalDAVProps.DAV_CREATIONDATE)) {
@@ -135,6 +144,11 @@ public abstract class BasePropsProcessor implements PropsProcessor {
 			props.remove(CalDAVProps.DAV_ISREADONLY);
 		}
 
+		if (props.contains(CalDAVProps.DAV_OWNER)) {
+			processDAVOwner();
+			props.remove(CalDAVProps.DAV_OWNER);
+		}
+
 		if (props.contains(CalDAVProps.DAV_PRINCIPAL_COLLECTION_SET)) {
 			processDAVPrincipalCollectionSet();
 			props.remove(CalDAVProps.DAV_PRINCIPAL_COLLECTION_SET);
@@ -153,6 +167,11 @@ public abstract class BasePropsProcessor implements PropsProcessor {
 		if (props.contains(CalDAVProps.DAV_SOURCE)) {
 			processDAVSource();
 			props.remove(CalDAVProps.DAV_SOURCE);
+		}
+
+		if (props.contains(CalDAVProps.DAV_SUPPORTED_REPORT_SET)) {
+			processDAVSupportedReportSet();
+			props.remove(CalDAVProps.DAV_SUPPORTED_REPORT_SET);
 		}
 
 		// Check remaining properties against custom properties
@@ -234,6 +253,37 @@ public abstract class BasePropsProcessor implements PropsProcessor {
 		DocUtil.add(failurePropElement, CalDAVProps.CALDAV_CALENDAR_TIMEZONE);
 	}
 
+	protected void processCalDAVCalendarUserAddressSet() {
+
+		CalendarResource resource = null;
+
+		try {
+			resource = CalendarResourceLocalServiceUtil.fetchCalendarResource(
+				PortalUtil.getClassNameId(User.class),
+				webDAVRequest.getUserId());
+		}
+		catch (Exception e) {
+			if (_log.isWarnEnabled()) {
+				_log.warn(e);
+			}
+		}
+
+		if (resource != null) {
+			Element calendarHomeSetElement = DocUtil.add(
+				successPropElement,
+				CalDAVProps.CALDAV_CALENDAR_USER_ADDRESS_SET);
+
+			DocUtil.add(
+				calendarHomeSetElement, CalDAVProps.createQName("href"),
+				CalDAVUtil.getCalendarResourceURL(resource));
+		}
+		else {
+			DocUtil.add(
+				failurePropElement,
+				CalDAVProps.CALDAV_CALENDAR_USER_ADDRESS_SET);
+		}
+	}
+
 	protected void processCalDAVGetCTag() {
 		DocUtil.add(failurePropElement, CalDAVProps.CALDAV_GETCTAG);
 	}
@@ -282,6 +332,15 @@ public abstract class BasePropsProcessor implements PropsProcessor {
 	}
 
 	protected void processDAVCurrentUserPrincipal() {
+
+		if (CalDAVUtil.isIOS(webDAVRequest)) {
+			DocUtil.add(
+				failurePropElement, CalDAVProps.DAV_CURRENT_USER_PRINCIPAL);
+			return;
+		}
+
+		// TODO: review from specifications
+
 		Element principalUrlElement = DocUtil.add(
 			successPropElement, CalDAVProps.DAV_CURRENT_USER_PRINCIPAL);
 
@@ -296,9 +355,11 @@ public abstract class BasePropsProcessor implements PropsProcessor {
 	}
 
 	protected void processDAVDisplayName() {
+
 		DocUtil.add(
 			successPropElement, CalDAVProps.DAV_DISPLAYNAME,
-			resource.getDisplayName());
+			resource.getDisplayName().replaceAll(
+				StringPool.SPACE, StringPool.BLANK));
 	}
 
 	protected void processDAVGetContentLength() {
@@ -329,9 +390,37 @@ public abstract class BasePropsProcessor implements PropsProcessor {
 			resource.isLocked());
 	}
 
+	protected void processDAVOwner() {
+		DocUtil.add(failurePropElement, CalDAVProps.DAV_OWNER);
+	}
+
 	protected void processDAVPrincipalCollectionSet() {
-		DocUtil.add(
-			failurePropElement, CalDAVProps.DAV_PRINCIPAL_COLLECTION_SET);
+
+		CalendarResource resource = null;
+
+		try {
+			resource = CalendarResourceLocalServiceUtil.fetchCalendarResource(
+				PortalUtil.getClassNameId(User.class),
+				webDAVRequest.getUserId());
+		}
+		catch (Exception e) {
+			if (_log.isWarnEnabled()) {
+				_log.warn(e);
+			}
+		}
+
+		if (resource != null) {
+			Element calendarHomeSetElement = DocUtil.add(
+				successPropElement, CalDAVProps.DAV_PRINCIPAL_COLLECTION_SET);
+
+			DocUtil.add(
+				calendarHomeSetElement, CalDAVProps.createQName("href"),
+				CalDAVUtil.getCalendarResourceURL(resource));
+		}
+		else {
+			DocUtil.add(
+				failurePropElement, CalDAVProps.DAV_PRINCIPAL_COLLECTION_SET);
+		}
 	}
 
 	protected void processDAVPrincipalURL() {
@@ -352,6 +441,21 @@ public abstract class BasePropsProcessor implements PropsProcessor {
 
 	protected void processDAVSource() {
 		DocUtil.add(successPropElement, CalDAVProps.DAV_SOURCE);
+	}
+
+	protected void processDAVSupportedReportSet() {
+		Element supportedResportSetElement = DocUtil.add(
+			successPropElement, CalDAVProps.DAV_SUPPORTED_REPORT_SET);
+
+		for (String reportSet : CalDAVMethod.SUPPORTED_CALDAV_REPORT_SET) {
+			Element supportedResportElement = DocUtil.add(
+				supportedResportSetElement,
+				CalDAVProps.createQName("supported-report"));
+
+			DocUtil.add(
+				supportedResportElement, CalDAVProps.createQName("report"),
+				reportSet);
+		}
 	}
 
 	protected User currentPrincipal;

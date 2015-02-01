@@ -56,16 +56,21 @@ public class CalendarPropsProcessor extends BasePropsProcessor {
 
 	@Override
 	protected void processCalDAVCalendarColor() {
+		String color = CalDAVUtil.getCalendarColor(_calendar);
+
+		if (CalDAVUtil.isMacOSX(webDAVRequest)) {
+			color = color.concat("FF");
+		}
+
 		DocUtil.add(
-			successPropElement, CalDAVProps.CALDAV_CALENDAR_COLOR,
-			CalDAVUtil.getCalendarColor(_calendar));
+			successPropElement, CalDAVProps.CALDAV_CALENDAR_COLOR, color);
 	}
 
 	@Override
 	protected void processCalDAVCalendarDescription() {
 		DocUtil.add(
 			successPropElement, CalDAVProps.CALDAV_CALENDAR_DESCRIPTION,
-			_calendar.getDescription(locale));
+			_calendar.getDescription(locale ));
 	}
 
 	@Override
@@ -123,6 +128,26 @@ public class CalendarPropsProcessor extends BasePropsProcessor {
 	}
 
 	@Override
+	protected void processCalDAVCalendarUserAddressSet() {
+		CalendarResource calendarResource;
+
+		try {
+			calendarResource = _calendar.getCalendarResource();
+		}
+		catch (Exception e) {
+			_log.error(e);
+			return;
+		}
+
+		Element calendarHomeSetElement = DocUtil.add(
+			successPropElement, CalDAVProps.CALDAV_CALENDAR_USER_ADDRESS_SET);
+
+		DocUtil.add(
+			calendarHomeSetElement, CalDAVProps.createQName("href"),
+			CalDAVUtil.getCalendarResourceURL(calendarResource));
+	}
+
+	@Override
 	protected void processCalDAVGetCTag() {
 		DocUtil.add(
 			successPropElement, CalDAVProps.CALDAV_GETCTAG,
@@ -135,13 +160,16 @@ public class CalendarPropsProcessor extends BasePropsProcessor {
 			successPropElement,
 			CalDAVProps.CALDAV_SUPPORTED_CALENDAR_COMPONENT_SET);
 
-		if (!resource.isCollection()) {
-			DocUtil.add(
-				supportedCalendarComponentSet, CalDAVProps.DAV_COMP,
-				WebKeys.VCALENDAR);
-			DocUtil.add(
-				supportedCalendarComponentSet, CalDAVProps.DAV_COMP,
-				WebKeys.VEVENT);
+		if (!resource.isCollection() || CalDAVUtil.isMacOSX(webDAVRequest)) {
+			Element el = DocUtil.add(
+				supportedCalendarComponentSet, CalDAVProps.DAV_COMP);
+
+			el.addAttribute("name", WebKeys.VCALENDAR);
+
+			el = DocUtil.add(
+				supportedCalendarComponentSet, CalDAVProps.DAV_COMP);
+
+			el.addAttribute("name", WebKeys.VEVENT);
 		}
 	}
 
@@ -187,6 +215,13 @@ public class CalendarPropsProcessor extends BasePropsProcessor {
 		DocUtil.add(
 			successPropElement, CalDAVProps.DAV_GETCONTENTLENGTH,
 			resource.getSize());
+	}
+
+	@Override
+	protected void processDAVOwner() {
+		DocUtil.add(
+			successPropElement, CalDAVProps.DAV_OWNER,
+			CalDAVUtil.getPrincipalURL(_calendar.getUserId()));
 	}
 
 	@Override

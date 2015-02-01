@@ -24,9 +24,8 @@ import com.liferay.portal.kernel.util.ContentTypes;
 import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.kernel.webdav.BaseResourceImpl;
 import com.liferay.portal.kernel.webdav.WebDAVException;
-import com.liferay.portal.util.PortalUtil;
 
-import it.smc.calendar.sync.caldav.util.WebKeys;
+import it.smc.calendar.sync.caldav.util.CalDAVUtil;
 
 import java.io.InputStream;
 
@@ -49,17 +48,7 @@ public class CalendarResourceImpl extends BaseResourceImpl {
 		setPrimaryKey(calendar.getPrimaryKey());
 
 		try {
-			StringBuilder sb = new StringBuilder();
-
-			sb.append(PortalUtil.getPathContext());
-			sb.append("/webdav/");
-			sb.append(calendar.getCalendarResource().getUuid());
-			sb.append(StringPool.SLASH);
-			sb.append(WebKeys.CALDAV_TOKEN);
-			sb.append(StringPool.SLASH);
-			sb.append(calendar.getUuid());
-
-			_href = sb.toString();
+			_href = CalDAVUtil.getCalendarURL(calendar);
 		}
 		catch (Exception e) {
 			_href = parentPath;

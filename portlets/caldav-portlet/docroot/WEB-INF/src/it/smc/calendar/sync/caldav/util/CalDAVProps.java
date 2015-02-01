@@ -40,6 +40,9 @@ public class CalDAVProps {
 	public static final QName CALDAV_CALENDAR_TIMEZONE = createCalendarQName(
 		"calendar-timezone");
 
+	public static final QName CALDAV_CALENDAR_USER_ADDRESS_SET =
+		createCalendarQName("calendar-user-address-set");
+
 	public static final QName CALDAV_GETCTAG = createCalendarServerQName(
 		"getctag");
 
@@ -68,7 +71,9 @@ public class CalDAVProps {
 
 	public static final QName DAV_ALLPROP = createQName("allprop");
 
-	public static final QName DAV_COMP = SAXReaderUtil.createQName("comp");
+	//public static final QName DAV_COMP = SAXReaderUtil.createQName("comp");
+
+	public static final QName DAV_COMP = createCalendarQName("comp");
 
 	public static final QName DAV_CREATIONDATE = createQName("creationdate");
 
@@ -95,6 +100,8 @@ public class CalDAVProps {
 
 	public static final QName DAV_LOCKDISCOVERY = createQName("lockdiscovery");
 
+	public static final QName DAV_OWNER = createQName("owner");
+
 	public static final QName DAV_PRINCIPAL_COLLECTION_SET = createQName(
 		"principal-collection-set");
 
@@ -109,6 +116,9 @@ public class CalDAVProps {
 
 	public static final QName DAV_SUPPORTED_PRIVILEGE_SET = createQName(
 		"supported-privilege-set");
+
+	public static final QName DAV_SUPPORTED_REPORT_SET = createQName(
+		"supported-report-set");
 
 	public static QName createAppleQName(String name) {
 		return SAXReaderUtil.createQName(name, CalDAVUtil.NS_APPLE_URI);

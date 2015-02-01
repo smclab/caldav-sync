@@ -49,6 +49,16 @@ public class CalendarResourcePropsProcessor extends BasePropsProcessor {
 	}
 
 	@Override
+	protected void processCalDAVCalendarUserAddressSet() {
+		Element calendarHomeSetElement = DocUtil.add(
+			successPropElement, CalDAVProps.CALDAV_CALENDAR_USER_ADDRESS_SET);
+
+		DocUtil.add(
+			calendarHomeSetElement, CalDAVProps.createQName("href"),
+			CalDAVUtil.getCalendarResourceURL(_calendarResource));
+	}
+
+	@Override
 	protected void processDAVCurrentUserPrivilegeSet() {
 		Element currentUserPrivilegeSetElement = DocUtil.add(
 			successPropElement, CalDAVProps.DAV_CURRENT_USER_PRIVILEGE_SET);
@@ -68,6 +78,13 @@ public class CalendarResourcePropsProcessor extends BasePropsProcessor {
 			DocUtil.add(
 				readPrivilegeElement, CalDAVProps.createQName("write-content"));
 		}
+	}
+
+	@Override
+	protected void processDAVOwner() {
+		DocUtil.add(
+			successPropElement, CalDAVProps.DAV_OWNER,
+			CalDAVUtil.getPrincipalURL(_calendarResource.getUserId()));
 	}
 
 	private CalendarResource _calendarResource;

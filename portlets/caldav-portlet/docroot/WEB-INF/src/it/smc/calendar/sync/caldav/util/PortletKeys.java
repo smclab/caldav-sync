@@ -21,4 +21,6 @@ public class PortletKeys extends com.liferay.portal.util.PortletKeys {
 
 	public static final String CALDAV = "1_WAR_caldavportlet";
 
+	public static final String CALENDAR = "1_WAR_calendarportlet";
+
 }

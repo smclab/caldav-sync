@@ -51,9 +51,7 @@ public class PrincipalPropsProcessor extends BasePropsProcessor {
 			successPropElement, CalDAVProps.CALDAV_CALENDAR_HOME_SET);
 
 		try {
-			if (CalDAVUtil.isIOS(webDAVRequest) ||
-				CalDAVUtil.isMacOSX(webDAVRequest)) {
-
+			if (CalDAVUtil.isIOS(webDAVRequest)) {
 				CalendarResource calendarResource =
 					CalendarResourceLocalServiceUtil.fetchCalendarResource(
 						PortalUtil.getClassNameId(User.class),
@@ -85,6 +83,13 @@ public class PrincipalPropsProcessor extends BasePropsProcessor {
 			_log.error(e);
 			return;
 		}
+	}
+
+	@Override
+	protected void processDAVOwner() {
+		DocUtil.add(
+			successPropElement, CalDAVProps.DAV_OWNER,
+			CalDAVUtil.getPrincipalURL(webDAVRequest.getUserId()));
 	}
 
 	@Override

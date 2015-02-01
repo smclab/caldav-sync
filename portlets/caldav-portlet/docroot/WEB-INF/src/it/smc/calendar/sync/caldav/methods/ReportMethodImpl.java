@@ -60,9 +60,13 @@ public class ReportMethodImpl extends PropfindMethodImpl {
 		Element propElement = DocUtil.add(
 			propStatElement, CalDAVProps.createQName("prop"));
 
-		DocUtil.add(
-			propElement, CalDAVProps.createQName("getetag"),
-			CalDAVUtil.getResourceETag(resource));
+		// TODO: check
+
+		String getetag = CalDAVUtil.buildETag(
+			String.valueOf(calendarBooking.getPrimaryKey()),
+			calendarBooking.getModifiedDate());
+
+		DocUtil.add(propElement, CalDAVProps.createQName("getetag"), getetag);
 
 		Element calendarDataEl = DocUtil.add(
 			propElement, CalDAVProps.createCalendarQName("calendar-data"));

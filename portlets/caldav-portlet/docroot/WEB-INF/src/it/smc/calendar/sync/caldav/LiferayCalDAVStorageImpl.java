@@ -18,11 +18,12 @@ import com.liferay.calendar.NoSuchCalendarException;
 import com.liferay.calendar.model.Calendar;
 import com.liferay.calendar.model.CalendarBooking;
 import com.liferay.calendar.model.CalendarResource;
+import com.liferay.calendar.service.CalendarBookingLocalServiceUtil;
 import com.liferay.calendar.service.CalendarBookingServiceUtil;
 import com.liferay.calendar.service.CalendarLocalServiceUtil;
 import com.liferay.calendar.service.CalendarResourceLocalServiceUtil;
 import com.liferay.calendar.service.CalendarServiceUtil;
-import com.liferay.calendar.service.permission.CalendarResourcePermission;
+import com.liferay.calendar.service.permission.CalendarPermission;
 import com.liferay.calendar.util.CalendarDataFormat;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.exception.SystemException;
@@ -127,16 +128,25 @@ public class LiferayCalDAVStorageImpl extends BaseWebDAVStorageImpl {
 
 			// calendar resource collection request
 
-			String calendarResourceGUID = pathArray[0];
-			CalendarResource calendarResource =
-				CalendarResourceLocalServiceUtil.
-					fetchCalendarResourceByUuidAndCompanyId(
-						calendarResourceGUID, webDAVRequest.getCompanyId());
+			String calendarResourceId = pathArray[0];
+			CalendarResource calendarResource = null;
+
+			if (calendarResourceId.length() < 16) {
+				calendarResource =
+					CalendarResourceLocalServiceUtil.getCalendarResource(
+						GetterUtil.getLong(calendarResourceId));
+			}
+			else {
+				calendarResource =
+					CalendarResourceLocalServiceUtil.
+						fetchCalendarResourceByUuidAndCompanyId(
+							calendarResourceId, webDAVRequest.getCompanyId());
+			}
 
 			if (calendarResource == null) {
 				throw new ResourceNotFoundException (
-					"No calendar resource were found for GUID " +
-					calendarResourceGUID);
+					"No calendar resource were found for GUID/ID " +
+						calendarResourceId);
 			}
 
 			//CalendarResourcePermission.check(
@@ -155,18 +165,34 @@ public class LiferayCalDAVStorageImpl extends BaseWebDAVStorageImpl {
 				if (resourceName.endsWith(resourceExtension)) {
 					String resourceShortName = StringUtil.replace(
 						resourceName, resourceExtension, StringPool.BLANK);
+
 					long calendarBookingId = GetterUtil.getLong(
 						resourceShortName);
 
-					CalendarBooking calendarBooking =
-						CalendarBookingServiceUtil.fetchCalendarBooking(
-							calendarBookingId);
+					CalendarBooking calendarBooking = null;
+
+					if (calendarBookingId > 0) {
+						calendarBooking =
+							CalendarBookingServiceUtil.fetchCalendarBooking(
+								calendarBookingId);
+					}
+					else {
+						calendarBooking =
+							CalendarBookingLocalServiceUtil.
+								fetchCalendarBookingByUuidAndCompanyId(
+									resourceShortName,
+									calendarResource.getCompanyId());
+					}
 
 					if (calendarBooking == null) {
 						throw new ResourceNotFoundException(
 							"Calendar booking not found with id: " +
 							calendarBookingId);
 					}
+
+					CalendarPermission.check(
+						webDAVRequest.getPermissionChecker(),
+						calendarBooking.getCalendar(), ActionKeys.VIEW);
 
 					return toResource(webDAVRequest, calendarBooking);
 				}
@@ -176,20 +202,29 @@ public class LiferayCalDAVStorageImpl extends BaseWebDAVStorageImpl {
 
 				// calendar request
 
-				String calendarGUID = pathArray[2];
+				String calendarId = pathArray[2];
 
-				Calendar calendar =
-					CalendarLocalServiceUtil.fetchCalendarByUuidAndCompanyId(
-						calendarGUID, webDAVRequest.getCompanyId());
+				Calendar calendar = null;
+
+				if (calendarId.length() < 16) {
+					calendar = CalendarLocalServiceUtil.getCalendar(
+						GetterUtil.getLong(calendarId));
+				}
+				else {
+					calendar =
+						CalendarLocalServiceUtil.
+							fetchCalendarByUuidAndCompanyId(
+								calendarId, webDAVRequest.getCompanyId());
+				}
 
 				if (calendar == null) {
 					throw new ResourceNotFoundException (
-						"No calendar were found for GUID " + calendarGUID);
+						"No calendar were found for GUID/ID " + calendarId);
 				}
 
-				//CalendarPermission.check(
-				//	webDAVRequest.getPermissionChecker(), calendar,
-				//	ActionKeys.VIEW);
+				CalendarPermission.check(
+					webDAVRequest.getPermissionChecker(), calendar,
+					ActionKeys.VIEW);
 
 				return toResource(webDAVRequest, calendar);
 			}
@@ -237,21 +272,30 @@ public class LiferayCalDAVStorageImpl extends BaseWebDAVStorageImpl {
 						user.getPrimaryKey());
 			}
 			else {
-				String calendarResourceGUID = pathArray[0];
+				String calendarResourceId = pathArray[0];
 
-				calendarResource =
-					CalendarResourceLocalServiceUtil.
-						fetchCalendarResourceByUuidAndCompanyId(
-							calendarResourceGUID, webDAVRequest.getCompanyId());
+				if (calendarResourceId.length() < 16) {
+					calendarResource =
+						CalendarResourceLocalServiceUtil.getCalendarResource(
+							GetterUtil.getLong(calendarResourceId));
+				}
+				else {
+					calendarResource =
+						CalendarResourceLocalServiceUtil.
+							fetchCalendarResourceByUuidAndCompanyId(
+								calendarResourceId,
+								webDAVRequest.getCompanyId());
+				}
 			}
 
 			if (calendarResource == null) {
 				throw new WebDAVException("No calendar resource were found");
 			}
 
-			CalendarResourcePermission.check(
-				webDAVRequest.getPermissionChecker(), calendarResource,
-				ActionKeys.VIEW);
+			// CalendarResourcePermission.check(
+
+			//	webDAVRequest.getPermissionChecker(), calendarResource,
+			//	ActionKeys.VIEW);
 
 			if (CalDAVUtil.isCalendarRequest(webDAVRequest)) {
 				return toCalendarBookingResources(webDAVRequest);
