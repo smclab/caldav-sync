@@ -1,0 +1,3 @@
+Bundle-Name: Caldav Helper Service
+Bundle-SymbolicName: it.smc.calendar.caldav.helper.service
+Bundle-Version: 1.0.0

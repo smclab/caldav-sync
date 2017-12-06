@@ -1,0 +1,37 @@
+Bundle-Copyright: SMC Treviso
+Bundle-DocURL: http://www.smc.it
+Bundle-License: Commercial
+
+Bundle-Name: CalDAV Sync Web
+Bundle-SymbolicName: it.smc.calendar.caldav
+Bundle-Version: 1.0.0
+
+Bundle-Activator: it.smc.calendar.caldav.sync.listener.Activator
+
+DynamicImport-Package: *
+
+Bundle-ClassPath:\
+	.,\
+	lib/ical4j.jar,\
+	lib/backport-util-concurrent.jar,\
+		
+Import-Package:\
+	!com.swabunga.spell.*,\
+	\
+	!groovy.*,\
+	\
+	!net.fortuna.*,\
+	\
+	!org.apache.*,\
+	\
+	!org.codehaus.groovy.*,\
+	\
+	! com.liferay.util.xml,\
+	*
+-includeresource:@com.liferay.util.java-[0-9]*.jar,\
+	lib/backport-util-concurrent.jar=backport-util-concurrent-[0-9]*.jar,\
+	lib/ical4j.jar=ical4j-1.0-rc3.jar
+	
+Export-Package: \
+	it.smc.calendar.caldav.sync.util,\
+	it.smc.calendar.caldav.util

@@ -1,2 +1,1 @@
-caldav-sync
-===========
+Application that let Liferay to act as a CalDAV Server
