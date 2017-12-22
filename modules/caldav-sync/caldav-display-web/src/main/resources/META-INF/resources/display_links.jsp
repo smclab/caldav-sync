@@ -8,8 +8,6 @@ List<Calendar> calendars =
 	CalendarUtil.getAllCalendars(permissionChecker);
 
 String userCalDAVURL = portalURL + CalDAVUtil.getPrincipalURL(themeDisplay.getUserId());
-
-if(!calendars.isEmpty()) { 
 %>
 
 <div class="container-fluid-1280 ">
@@ -25,6 +23,9 @@ if(!calendars.isEmpty()) {
 	</aui:fieldset>
 </div>
 
+<%
+if(!calendars.isEmpty()){
+%>
 <div class="container-fluid-1280 ">
 	<h2>
 		<liferay-ui:message key="caldav-url-without-collection" />
