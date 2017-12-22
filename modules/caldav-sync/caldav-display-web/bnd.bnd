@@ -2,11 +2,6 @@ Bundle-Copyright: SMC Treviso
 Bundle-DocURL: http://www.smc.it
 Bundle-License: Commercial
 
-Bundle-Name: CalDAV Display Web 
+Bundle-Name: CalDAV Display Web
 Bundle-SymbolicName: it.smc.calendar.caldav.display
-Bundle-Version: 1.0.0
-Export-Package: it.smc.calendar.caldav.display.portlet.constants
-Import-Package: \
-	it.smc.calendar.caldav.sync.util,\
-	it.smc.calendar.caldav.util,\
-	*
+Bundle-Version: 1.0.1
