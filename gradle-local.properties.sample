@@ -7,6 +7,6 @@
 #liferay.workspace.themes.dir=themes
 #liferay.workspace.wars.dir=wars
 
-# Indica dove si trova il tuo bundle Liferay dove farai i test degli sviluppi
+# Set your liferay bundle location (the bundle used in development) 
 #
-liferay.workspace.home.dir=/w3/java/liferay/clienti/liferaymp7/apps/liferay-ce-portal-7.0-ga3
+liferay.workspace.home.dir=/path-to-liferay-bundle/liferay-ce-portal-7.0-ga...
