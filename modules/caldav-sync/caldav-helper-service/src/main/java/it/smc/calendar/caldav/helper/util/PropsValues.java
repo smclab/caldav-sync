@@ -16,11 +16,13 @@ package it.smc.calendar.caldav.helper.util;
 
 import com.liferay.portal.kernel.util.GetterUtil;
 
+/**
+ * @author Fabio Pezzutto
+ */
 public class PropsValues {
 
-	public static final boolean HIDE_PERSONAL_CALENDAR =
-		GetterUtil.getBoolean(
-			ConfigurationUtil.get(PropsKeys.HIDE_PERSONAL_CALENDAR));
+	public static final boolean HIDE_PERSONAL_CALENDAR = GetterUtil.getBoolean(
+		ConfigurationUtil.get(PropsKeys.HIDE_PERSONAL_CALENDAR));
 
 	public static final boolean PROPFIND_PROVIDE_SESSIONCLICKS_CALENDARS =
 		GetterUtil.getBoolean(

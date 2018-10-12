@@ -21,18 +21,19 @@ import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.io.unsync.UnsyncStringWriter;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
+import com.liferay.portal.kernel.security.permission.ActionKeys;
 import com.liferay.portal.kernel.util.ReleaseInfo;
 import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.kernel.webdav.Resource;
 import com.liferay.portal.kernel.webdav.WebDAVRequest;
 import com.liferay.portal.kernel.xml.Element;
-import com.liferay.portal.kernel.security.permission.ActionKeys;
 import com.liferay.util.xml.DocUtil;
 
 import it.smc.calendar.caldav.sync.util.CalDAVProps;
 import it.smc.calendar.caldav.sync.util.CalDAVUtil;
 import it.smc.calendar.caldav.sync.util.WebKeys;
 import it.smc.calendar.caldav.util.PropsValues;
+
 import net.fortuna.ical4j.data.CalendarOutputter;
 import net.fortuna.ical4j.model.ComponentList;
 import net.fortuna.ical4j.model.PropertyList;
@@ -72,39 +73,7 @@ public class CalendarPropsProcessor extends BasePropsProcessor {
 	protected void processCalDAVCalendarDescription() {
 		DocUtil.add(
 			successPropElement, CalDAVProps.CALDAV_CALENDAR_DESCRIPTION,
-			_calendar.getDescription(locale ));
-	}
-	
-	@Override
-	protected void processDAVDisplayName() {
-		if (PropsValues.EXTENDED_DISPLAY_NAME) {
-			StringBuilder sb = new StringBuilder();
-			try {
-				CalendarResource calendarResource =
-					_calendar.getCalendarResource();
-				
-				if (calendarResource != null) {
-					sb.append(calendarResource.getName(locale));
-					sb.append(" - ");
-				}
-			}
-			catch (PortalException e) {
-				if (_log.isWarnEnabled()) {
-					_log.warn(e.getMessage());
-				}
-			}
-			sb.append(_calendar.getName(locale));
-			
-			DocUtil.add(
-				successPropElement, CalDAVProps.DAV_DISPLAYNAME, sb.toString());
-		}
-		else {
-			DocUtil.add(
-				successPropElement, CalDAVProps.DAV_DISPLAYNAME,
-				_calendar.getName(locale).replaceAll(
-					StringPool.SPACE, StringPool.BLANK));
-			
-		}
+			_calendar.getDescription(locale));
 	}
 
 	@Override
@@ -143,7 +112,7 @@ public class CalendarPropsProcessor extends BasePropsProcessor {
 
 		ProdId prodId = new ProdId(
 			"-//Liferay Inc//Liferay Portal " + ReleaseInfo.getVersion() +
-			"//EN");
+				"//EN");
 
 		propertiesList.add(prodId);
 		propertiesList.add(Version.VERSION_2_0);
@@ -241,6 +210,39 @@ public class CalendarPropsProcessor extends BasePropsProcessor {
 
 			DocUtil.add(
 				readPrivilegeElement, CalDAVProps.createQName("write-content"));
+		}
+	}
+
+	@Override
+	protected void processDAVDisplayName() {
+		if (PropsValues.EXTENDED_DISPLAY_NAME) {
+			StringBuilder sb = new StringBuilder();
+
+			try {
+				CalendarResource calendarResource =
+					_calendar.getCalendarResource();
+
+				if (calendarResource != null) {
+					sb.append(calendarResource.getName(locale));
+					sb.append(" - ");
+				}
+			}
+			catch (PortalException pe) {
+				if (_log.isWarnEnabled()) {
+					_log.warn(pe.getMessage());
+				}
+			}
+
+			sb.append(_calendar.getName(locale));
+
+			DocUtil.add(
+				successPropElement, CalDAVProps.DAV_DISPLAYNAME, sb.toString());
+		}
+		else {
+			DocUtil.add(
+				successPropElement, CalDAVProps.DAV_DISPLAYNAME,
+				_calendar.getName(locale).replaceAll(
+					StringPool.SPACE, StringPool.BLANK));
 		}
 	}
 

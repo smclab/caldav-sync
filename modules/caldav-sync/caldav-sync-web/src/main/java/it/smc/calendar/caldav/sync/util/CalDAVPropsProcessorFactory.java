@@ -25,12 +25,14 @@ import it.smc.calendar.caldav.sync.CalendarResourcePropsProcessor;
 import it.smc.calendar.caldav.sync.CalendarResourceResourceImpl;
 import it.smc.calendar.caldav.sync.PrincipalPropsProcessor;
 import it.smc.calendar.caldav.sync.UserResourceImpl;
-import it.smc.calendar.caldav.sync.util.PropsProcessor;
+
+/**
+ * @author Fabio Pezzutto
+ */
 public class CalDAVPropsProcessorFactory {
 
 	public static PropsProcessor create(
-			WebDAVRequest webDAVRequest, Resource resource,
-			Element rootElement) {
+		WebDAVRequest webDAVRequest, Resource resource, Element rootElement) {
 
 		if (resource instanceof CalendarResourceResourceImpl) {
 			return new CalendarResourcePropsProcessor(

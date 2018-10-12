@@ -39,13 +39,13 @@ public interface CalDAVMethod extends Method {
 	public static final String[] SUPPORTED_CALDAV_METHODS_ARRAY =
 		{ OPTIONS, PROPFIND, PROPPATCH, GET, REPORT, PUT, DELETE, POST };
 
-	public static final String TRACE = "TRACE";
-
 	public static String SUPPORTED_CALDAV_METHODS_NAMES = StringUtil.merge(
 		SUPPORTED_CALDAV_METHODS_ARRAY);
 
 	public static String[] SUPPORTED_CALDAV_REPORT_SET = {
 		REPORT_EXPAND_PROPERTY, REPORT_PRINCIPAL_PROPERTY_SEARCH,
 		REPORT_PRINCIPAL_SEARCH_PROPERTY_SET, REPORT_SYNC_COLLECTION };
+
+	public static final String TRACE = "TRACE";
 
 }

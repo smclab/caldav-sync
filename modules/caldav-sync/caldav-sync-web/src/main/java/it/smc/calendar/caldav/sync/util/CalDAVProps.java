@@ -45,10 +45,10 @@ public class CalDAVProps {
 
 	public static final QName CALDAV_GETCTAG = createCalendarServerQName(
 		"getctag");
-	
+
 	public static final QName CALDAV_GETETAG = createCalendarServerQName(
-			"getetag");
-	
+		"getetag");
+
 	public static final QName CALDAV_MAX_ATTENDEES_PER_INSTANCE =
 		createCalendarQName("max-attendees-per-instance");
 
@@ -149,8 +149,8 @@ public class CalDAVProps {
 	}
 
 	private CalDAVProps() {
-		_allProps = new HashSet<QName>();
-		_allCollectionProps = new HashSet<QName>();
+		_allProps = new HashSet<>();
+		_allCollectionProps = new HashSet<>();
 
 		_allCollectionProps.add(DAV_CREATIONDATE);
 		_allCollectionProps.add(DAV_DISPLAYNAME);

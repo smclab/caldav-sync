@@ -36,10 +36,15 @@ import it.smc.calendar.caldav.util.CalendarUtil;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Set;
+
+/**
+ * @author Fabio Pezzutto
+ */
 public class ReportMethodImpl extends PropfindMethodImpl {
 
 	protected void addCalendarBookingData(
@@ -99,7 +104,7 @@ public class ReportMethodImpl extends PropfindMethodImpl {
 		if ((hrefNodes.size() > 0) &&
 			CalDAVUtil.isCalendarBookingRequest(webDAVRequest)) {
 
-			calendarBookings = new ArrayList<CalendarBooking>();
+			calendarBookings = new ArrayList<>();
 
 			CalendarBooking calendarBooking;
 
@@ -127,7 +132,6 @@ public class ReportMethodImpl extends PropfindMethodImpl {
 					"start").getValue();
 
 				startDate = isoDateTimeUTCFormat.parse(startDateStr);
-
 			}
 
 			if ((timeRangeElement != null) &&
@@ -136,14 +140,12 @@ public class ReportMethodImpl extends PropfindMethodImpl {
 				String endDateStr = timeRangeElement.attribute(
 					"end").getValue();
 
-				endDate =isoDateTimeUTCFormat.parse(endDateStr);
-
+				endDate = isoDateTimeUTCFormat.parse(endDateStr);
 			}
 
-			calendarBookings =
-				CalendarUtil.getCalendarBookings(
-					webDAVRequest.getPermissionChecker(), calendar, startDate,
-					endDate);
+			calendarBookings = CalendarUtil.getCalendarBookings(
+				webDAVRequest.getPermissionChecker(), calendar, startDate,
+				endDate);
 		}
 
 		for (CalendarBooking calendarBooking : calendarBookings) {
@@ -161,6 +163,8 @@ public class ReportMethodImpl extends PropfindMethodImpl {
 	}
 
 	private static Log _log = LogFactoryUtil.getLog(ReportMethodImpl.class);
-	private static final DateFormat isoDateTimeUTCFormat =
-					new SimpleDateFormat("yyyyMMdd'T'HHmmss'Z'");
+
+	private static final DateFormat isoDateTimeUTCFormat = new SimpleDateFormat(
+		"yyyyMMdd'T'HHmmss'Z'");
+
 }

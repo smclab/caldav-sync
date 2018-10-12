@@ -25,11 +25,11 @@ import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.kernel.webdav.BaseResourceImpl;
 import com.liferay.portal.kernel.webdav.WebDAVException;
 
+import it.smc.calendar.caldav.sync.util.CalDAVUtil;
+
 import java.io.InputStream;
 
 import java.util.Locale;
-
-import it.smc.calendar.caldav.sync.util.CalDAVUtil;
 
 /**
  * @author Fabio Pezzutto
@@ -37,7 +37,7 @@ import it.smc.calendar.caldav.sync.util.CalDAVUtil;
 public class CalendarResourceImpl extends BaseResourceImpl {
 
 	public CalendarResourceImpl(
-			Calendar calendar, String parentPath, Locale locale) {
+		Calendar calendar, String parentPath, Locale locale) {
 
 		super(
 			parentPath, StringPool.BLANK, calendar.getName(locale),
@@ -84,7 +84,6 @@ public class CalendarResourceImpl extends BaseResourceImpl {
 
 	@Override
 	public long getSize() {
-
 		String data = StringPool.BLANK;
 
 		try {
@@ -95,7 +94,7 @@ public class CalendarResourceImpl extends BaseResourceImpl {
 			if (_log.isWarnEnabled()) {
 				_log.warn(
 					"Unable to export calendar to ics for calendar " +
-					_calendar.getCalendarId());
+						_calendar.getCalendarId());
 			}
 		}
 

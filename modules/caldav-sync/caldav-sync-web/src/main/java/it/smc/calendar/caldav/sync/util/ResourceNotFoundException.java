@@ -23,7 +23,6 @@ import com.liferay.portal.kernel.webdav.WebDAVException;
 public class ResourceNotFoundException extends WebDAVException {
 
 	public ResourceNotFoundException() {
-		super();
 	}
 
 	public ResourceNotFoundException(String message) {

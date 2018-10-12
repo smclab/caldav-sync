@@ -16,18 +16,22 @@ package it.smc.calendar.caldav.sync.methods;
 
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
+import com.liferay.portal.kernel.security.auth.PrincipalException;
 import com.liferay.portal.kernel.webdav.WebDAVException;
 import com.liferay.portal.kernel.webdav.WebDAVRequest;
 import com.liferay.portal.kernel.xml.QName;
-import com.liferay.portal.kernel.security.auth.PrincipalException;
+
+import it.smc.calendar.caldav.sync.util.CalDAVUtil;
+import it.smc.calendar.caldav.sync.util.InvalidRequestException;
+import it.smc.calendar.caldav.sync.util.ResourceNotFoundException;
 
 import java.util.Set;
 
 import javax.servlet.http.HttpServletResponse;
 
-import it.smc.calendar.caldav.sync.util.CalDAVUtil;
-import it.smc.calendar.caldav.sync.util.InvalidRequestException;
-import it.smc.calendar.caldav.sync.util.ResourceNotFoundException;
+/**
+ * @author Fabio Pezzutto
+ */
 public class PropfindMethodImpl extends BasePropMethodImpl {
 
 	@Override
@@ -47,15 +51,15 @@ public class PropfindMethodImpl extends BasePropMethodImpl {
 		catch (ResourceNotFoundException rnfe) {
 			return HttpServletResponse.SC_NOT_FOUND;
 		}
-		catch (WebDAVException pe) {
-			if (pe.getCause() instanceof PrincipalException) {
+		catch (WebDAVException wdave) {
+			if (wdave.getCause() instanceof PrincipalException) {
 				return HttpServletResponse.SC_UNAUTHORIZED;
 			}
-			else if (pe.getCause() instanceof ResourceNotFoundException) {
+			else if (wdave.getCause() instanceof ResourceNotFoundException) {
 				return HttpServletResponse.SC_NOT_FOUND;
 			}
 
-			throw pe;
+			throw wdave;
 		}
 		catch (Exception e) {
 			throw new WebDAVException(e);

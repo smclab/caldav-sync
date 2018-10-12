@@ -16,30 +16,30 @@ package it.smc.calendar.caldav.sync;
 
 import com.liferay.calendar.model.CalendarResource;
 import com.liferay.calendar.service.CalendarResourceLocalServiceUtil;
-import com.liferay.portal.kernel.util.PortalUtil;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
+import com.liferay.portal.kernel.model.User;
+import com.liferay.portal.kernel.model.WebDAVProps;
+import com.liferay.portal.kernel.service.UserServiceUtil;
+import com.liferay.portal.kernel.service.WebDAVPropsLocalServiceUtil;
+import com.liferay.portal.kernel.util.PortalUtil;
 import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.kernel.webdav.Resource;
 import com.liferay.portal.kernel.webdav.WebDAVRequest;
 import com.liferay.portal.kernel.xml.Element;
 import com.liferay.portal.kernel.xml.Namespace;
 import com.liferay.portal.kernel.xml.QName;
-import com.liferay.portal.kernel.model.User;
-import com.liferay.portal.kernel.model.WebDAVProps;
-import com.liferay.portal.kernel.service.UserServiceUtil;
-import com.liferay.portal.kernel.service.WebDAVPropsLocalServiceUtil;
 import com.liferay.util.xml.DocUtil;
-
-import java.util.HashSet;
-import java.util.Locale;
-import java.util.Set;
 
 import it.smc.calendar.caldav.sync.util.CalDAVMethod;
 import it.smc.calendar.caldav.sync.util.CalDAVProps;
 import it.smc.calendar.caldav.sync.util.CalDAVUtil;
 import it.smc.calendar.caldav.sync.util.PropsProcessor;
+
+import java.util.HashSet;
+import java.util.Locale;
+import java.util.Set;
 
 /**
  * @author Fabio Pezzutto
@@ -47,8 +47,7 @@ import it.smc.calendar.caldav.sync.util.PropsProcessor;
 public abstract class BasePropsProcessor implements PropsProcessor {
 
 	public BasePropsProcessor(
-			WebDAVRequest webDAVRequest, Resource resource,
-			Element rootElement) {
+		WebDAVRequest webDAVRequest, Resource resource, Element rootElement) {
 
 		init(webDAVRequest, resource, rootElement);
 	}
@@ -57,7 +56,7 @@ public abstract class BasePropsProcessor implements PropsProcessor {
 	public void processProperties(Set<QName> properties)
 		throws PortalException {
 
-		Set<QName> props = new HashSet<QName>(properties);
+		Set<QName> props = new HashSet<>(properties);
 
 		if (props.contains(CalDAVProps.CALDAV_CALENDAR_COLOR)) {
 			processCalDAVCalendarColor();
@@ -202,8 +201,7 @@ public abstract class BasePropsProcessor implements PropsProcessor {
 	}
 
 	protected void init(
-			WebDAVRequest webDAVRequest, Resource resource,
-			Element rootElement) {
+		WebDAVRequest webDAVRequest, Resource resource, Element rootElement) {
 
 		this.resource = resource;
 		this.webDAVRequest = webDAVRequest;
@@ -261,7 +259,6 @@ public abstract class BasePropsProcessor implements PropsProcessor {
 	}
 
 	protected void processCalDAVCalendarUserAddressSet() {
-
 		CalendarResource resource = null;
 
 		try {
@@ -298,6 +295,7 @@ public abstract class BasePropsProcessor implements PropsProcessor {
 	protected void processCalDAVGetETag() {
 		DocUtil.add(failurePropElement, CalDAVProps.CALDAV_GETETAG);
 	}
+
 	protected void processCalDAVSupportedCalendarComponentSet() {
 		DocUtil.add(
 			failurePropElement,
@@ -310,7 +308,6 @@ public abstract class BasePropsProcessor implements PropsProcessor {
 	}
 
 	protected void processCustomProperties(Set<QName> props) throws Exception {
-
 		WebDAVProps webDavProps = WebDAVPropsLocalServiceUtil.getWebDAVProps(
 			webDAVRequest.getCompanyId(), resource.getClassName(),
 			resource.getPrimaryKey());
@@ -342,8 +339,9 @@ public abstract class BasePropsProcessor implements PropsProcessor {
 	}
 
 	protected void processDAVCurrentUserPrincipal() {
+		if (CalDAVUtil.isIOS(webDAVRequest) ||
+			CalDAVUtil.isICal(webDAVRequest)) {
 
-		if (CalDAVUtil.isIOS(webDAVRequest) || CalDAVUtil.isICal(webDAVRequest)) {
 			DocUtil.add(
 				failurePropElement, CalDAVProps.DAV_CURRENT_USER_PRINCIPAL);
 			return;
@@ -356,8 +354,7 @@ public abstract class BasePropsProcessor implements PropsProcessor {
 
 		DocUtil.add(
 			principalUrlElement, CalDAVProps.createQName("href"),
-			CalDAVUtil.getPrincipalURL(
-				CalDAVUtil.getUserId(webDAVRequest)));
+			CalDAVUtil.getPrincipalURL(CalDAVUtil.getUserId(webDAVRequest)));
 	}
 
 	protected void processDAVCurrentUserPrivilegeSet() {
@@ -366,7 +363,6 @@ public abstract class BasePropsProcessor implements PropsProcessor {
 	}
 
 	protected void processDAVDisplayName() {
-
 		DocUtil.add(
 			successPropElement, CalDAVProps.DAV_DISPLAYNAME,
 			resource.getDisplayName().replaceAll(
@@ -406,7 +402,6 @@ public abstract class BasePropsProcessor implements PropsProcessor {
 	}
 
 	protected void processDAVPrincipalCollectionSet() {
-
 		CalendarResource resource = null;
 
 		try {
@@ -440,8 +435,7 @@ public abstract class BasePropsProcessor implements PropsProcessor {
 
 		DocUtil.add(
 			principalUrlElement, CalDAVProps.createQName("href"),
-			CalDAVUtil.getPrincipalURL(
-				CalDAVUtil.getUserId(webDAVRequest)));
+			CalDAVUtil.getPrincipalURL(CalDAVUtil.getUserId(webDAVRequest)));
 	}
 
 	protected void processDAVResourceType() {

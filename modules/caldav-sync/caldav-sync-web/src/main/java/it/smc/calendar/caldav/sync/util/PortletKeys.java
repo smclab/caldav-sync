@@ -24,8 +24,8 @@ import it.smc.calendar.caldav.sync.constants.CaldavSyncPortletKeys;
  */
 public class PortletKeys extends com.liferay.portal.kernel.util.PortletKeys {
 
-	
 	public static final String CALDAV = CaldavSyncPortletKeys.CaldavSync;
 
 	public static final String CALENDAR = CalendarPortletKeys.CALENDAR;
+
 }

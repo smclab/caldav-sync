@@ -25,11 +25,11 @@ import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.kernel.webdav.BaseResourceImpl;
 import com.liferay.portal.kernel.webdav.WebDAVException;
 
+import it.smc.calendar.caldav.sync.util.CalDAVUtil;
+
 import java.io.InputStream;
 
 import java.util.Locale;
-
-import it.smc.calendar.caldav.sync.util.CalDAVUtil;
 
 /**
  * @author Fabio Pezzutto
@@ -37,7 +37,7 @@ import it.smc.calendar.caldav.sync.util.CalDAVUtil;
 public class CalendarBookingResourceImpl extends BaseResourceImpl {
 
 	public CalendarBookingResourceImpl(
-			CalendarBooking calendarBooking, String parentPath, Locale locale) {
+		CalendarBooking calendarBooking, String parentPath, Locale locale) {
 
 		super(
 			parentPath, StringPool.BLANK, calendarBooking.getTitle(locale),

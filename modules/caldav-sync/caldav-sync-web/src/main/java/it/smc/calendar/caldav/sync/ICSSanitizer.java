@@ -14,14 +14,6 @@
 
 package it.smc.calendar.caldav.sync;
 
-import java.io.IOException;
-import java.net.URI;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-
-import javax.servlet.http.HttpServletRequest;
-
 import com.liferay.calendar.model.Calendar;
 import com.liferay.calendar.model.CalendarResource;
 import com.liferay.calendar.service.permission.CalendarPermission;
@@ -38,8 +30,20 @@ import com.liferay.portal.kernel.security.permission.PermissionThreadLocal;
 import com.liferay.portal.kernel.service.RoleLocalServiceUtil;
 import com.liferay.portal.kernel.service.ServiceContextThreadLocal;
 import com.liferay.portal.kernel.service.UserLocalServiceUtil;
+import com.liferay.portal.kernel.util.StringUtil;
 
 import it.smc.calendar.caldav.sync.util.CalDAVUtil;
+
+import java.io.IOException;
+
+import java.net.URI;
+
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+
+import javax.servlet.http.HttpServletRequest;
+
 import net.fortuna.ical4j.data.CalendarBuilder;
 import net.fortuna.ical4j.data.CalendarOutputter;
 import net.fortuna.ical4j.data.ParserException;
@@ -53,37 +57,10 @@ import net.fortuna.ical4j.model.property.Action;
 import net.fortuna.ical4j.model.property.Attendee;
 import net.fortuna.ical4j.model.property.Summary;
 
+/**
+ * @author Fabio Pezzutto
+ */
 public class ICSSanitizer {
-
-	public static String sanitizeUploadedICS(String ics, Calendar calendar)
-		throws SanitizerException {
-
-		try {
-			//TODO: find a better way to do it
-			ics = ics.replaceAll(";EMAIL=\"(.*)\"", "");
-			ics = ics.replaceAll("EMAIL=\"(.*);\"", "");
-			ics = ics.replaceAll("EMAIL=\"(.*):\"", ":");
-
-			net.fortuna.ical4j.model.Calendar iCalCalendar = getICalendar(ics);
-
-			ComponentList components =
-				iCalCalendar.getComponents(Component.VEVENT);
-
-			for (Object component : components) {
-				if (component instanceof VEvent) {
-					VEvent vEvent  = (VEvent) component;
-					if (vEvent.getAlarms().size() > 0) {
-						updateAlarmAttendeers(vEvent, calendar);
-					}
-				}
-			}
-
-			return iCalCalendar.toString();
-		}
-		catch (Exception e) {
-			throw new SanitizerException(e);
-		}
-	}
 
 	public static String sanitizeDownloadICS(String ics)
 		throws SanitizerException {
@@ -101,14 +78,46 @@ public class ICSSanitizer {
 
 			net.fortuna.ical4j.model.Calendar iCalCalendar = getICalendar(ics);
 
-			ComponentList components =
-				iCalCalendar.getComponents(Component.VEVENT);
+			ComponentList components = iCalCalendar.getComponents(
+				Component.VEVENT);
 
 			for (Object component : components) {
 				if (component instanceof VEvent) {
-					VEvent vEvent  = (VEvent) component;
+					VEvent vEvent = (VEvent)component;
+
 					if (vEvent.getAlarms().size() > 0) {
 						updateAlarmActions(vEvent, userId);
+					}
+				}
+			}
+
+			return iCalCalendar.toString();
+		}
+		catch (Exception e) {
+			throw new SanitizerException(e);
+		}
+	}
+
+	public static String sanitizeUploadedICS(String ics, Calendar calendar)
+		throws SanitizerException {
+
+		try {
+			//TODO: find a better way to do it
+			ics = ics.replaceAll(";EMAIL=\"(.*)\"", "");
+			ics = ics.replaceAll("EMAIL=\"(.*);\"", "");
+			ics = ics.replaceAll("EMAIL=\"(.*):\"", ":");
+
+			net.fortuna.ical4j.model.Calendar iCalCalendar = getICalendar(ics);
+
+			ComponentList components = iCalCalendar.getComponents(
+				Component.VEVENT);
+
+			for (Object component : components) {
+				if (component instanceof VEvent) {
+					VEvent vEvent = (VEvent)component;
+
+					if (vEvent.getAlarms().size() > 0) {
+						updateAlarmAttendeers(vEvent, calendar);
 					}
 				}
 			}
@@ -127,8 +136,8 @@ public class ICSSanitizer {
 
 		UnsyncStringReader unsyncStringReader = new UnsyncStringReader(ics);
 
-		net.fortuna.ical4j.model.Calendar iCalCalendar =
-			calendarBuilder.build(unsyncStringReader);
+		net.fortuna.ical4j.model.Calendar iCalCalendar = calendarBuilder.build(
+			unsyncStringReader);
 
 		return iCalCalendar;
 	}
@@ -158,7 +167,9 @@ public class ICSSanitizer {
 		throws Exception {
 
 		User user = UserLocalServiceUtil.getUser(userId);
-		String currentUserEmail = user.getEmailAddress().toLowerCase();
+
+		String currentUserEmail = StringUtil.toLowerCase(
+			user.getEmailAddress());
 
 		ComponentList vAlarms = (ComponentList)vEvent.getAlarms();
 
@@ -180,7 +191,9 @@ public class ICSSanitizer {
 			while (alarmAttendeesIterator.hasNext()) {
 				Attendee attendee = alarmAttendeesIterator.next();
 
-				String attendeeData = attendee.getValue().toLowerCase();
+				String attendeeData = StringUtil.toLowerCase(
+					attendee.getValue());
+
 				if (attendeeData.contains(currentUserEmail)) {
 					currentUserIdAttendee = true;
 					break;
@@ -194,7 +207,7 @@ public class ICSSanitizer {
 				propertyList.remove(propertyList.getProperty(Action.ACTION));
 			}
 			else if (vAlarm.getAction().equals(Action.EMAIL) &&
-				!CalDAVUtil.isThunderbird(request)) {
+					 !CalDAVUtil.isThunderbird(request)) {
 
 				propertyList.remove(propertyList.getProperty(Action.ACTION));
 				propertyList.add(Action.DISPLAY);
@@ -249,7 +262,7 @@ public class ICSSanitizer {
 			calendar.getResourceBlockId(), Calendar.class.getName(),
 			"MANAGE_BOOKINGS");
 
-		List<String> notificationRecipients = new ArrayList<String>();
+		List<String> notificationRecipients = new ArrayList<>();
 
 		for (Role role : roles) {
 			String name = role.getName();

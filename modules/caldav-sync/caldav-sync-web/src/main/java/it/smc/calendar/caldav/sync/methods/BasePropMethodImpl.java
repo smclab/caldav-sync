@@ -29,14 +29,18 @@ import com.liferay.portal.kernel.xml.Element;
 import com.liferay.portal.kernel.xml.QName;
 import com.liferay.portal.kernel.xml.SAXReaderUtil;
 
+import it.smc.calendar.caldav.sync.util.CalDAVProps;
+import it.smc.calendar.caldav.sync.util.CalDAVPropsProcessorFactory;
+import it.smc.calendar.caldav.sync.util.PropsProcessor;
+
 import java.util.List;
 import java.util.Set;
 
 import javax.servlet.http.HttpServletResponse;
 
-import it.smc.calendar.caldav.sync.util.CalDAVProps;
-import it.smc.calendar.caldav.sync.util.CalDAVPropsProcessorFactory;
-import it.smc.calendar.caldav.sync.util.PropsProcessor;
+/**
+ * @author Fabio Pezzutto
+ */
 public abstract class BasePropMethodImpl implements Method {
 
 	protected void addResponse(

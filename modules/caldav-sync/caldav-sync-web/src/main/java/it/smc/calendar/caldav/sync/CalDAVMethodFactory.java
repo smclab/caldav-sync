@@ -16,7 +16,9 @@ package it.smc.calendar.caldav.sync;
 
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
+import com.liferay.portal.kernel.security.auth.PrincipalThreadLocal;
 import com.liferay.portal.kernel.util.FileUtil;
+import com.liferay.portal.kernel.util.PortalUtil;
 import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.Validator;
@@ -24,8 +26,6 @@ import com.liferay.portal.kernel.webdav.WebDAVException;
 import com.liferay.portal.kernel.webdav.methods.Method;
 import com.liferay.portal.kernel.webdav.methods.MethodFactory;
 import com.liferay.portal.kernel.xml.Document;
-import com.liferay.portal.kernel.security.auth.PrincipalThreadLocal;
-import com.liferay.portal.kernel.util.PortalUtil;
 
 import it.smc.calendar.caldav.sync.methods.DeleteMethodImpl;
 import it.smc.calendar.caldav.sync.methods.GetMethodImpl;
@@ -51,7 +51,7 @@ import javax.servlet.http.HttpServletRequest;
 public class CalDAVMethodFactory implements MethodFactory {
 
 	public CalDAVMethodFactory() {
-		_methods = new HashMap<String, Object>();
+		_methods = new HashMap<>();
 
 		_methods.put(CalDAVHttpMethods.DELETE, new DeleteMethodImpl());
 		_methods.put(CalDAVHttpMethods.GET, new GetMethodImpl());
@@ -113,6 +113,7 @@ public class CalDAVMethodFactory implements MethodFactory {
 					if (CalDAVUtil.isRequestContentXML(request)) {
 						Document document =
 							CalDAVRequestThreadLocal.getRequestDocument();
+
 						formattedContent = document.formattedString(
 							StringPool.FOUR_SPACES);
 					}
@@ -129,7 +130,6 @@ public class CalDAVMethodFactory implements MethodFactory {
 	}
 
 	public String getType() {
-
 		return WebKeys.CALDAV_TOKEN;
 	}
 

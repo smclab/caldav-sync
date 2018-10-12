@@ -18,9 +18,9 @@ import com.liferay.portal.kernel.servlet.HttpHeaders;
 import com.liferay.portal.kernel.webdav.WebDAVException;
 import com.liferay.portal.kernel.webdav.WebDAVRequest;
 
-import javax.servlet.http.HttpServletResponse;
-
 import it.smc.calendar.caldav.sync.util.CalDAVMethod;
+
+import javax.servlet.http.HttpServletResponse;
 
 /**
  * @author Fabio Pezzutto

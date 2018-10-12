@@ -167,10 +167,6 @@ public class LiferayCalDAVStorageImpl extends BaseWebDAVStorageImpl {
 						calendarResourceId);
 			}
 
-			//CalendarResourcePermission.check(
-			//	webDAVRequest.getPermissionChecker(), calendarResource,
-			//	ActionKeys.VIEW);
-
 			if (CalDAVUtil.isCalendarBookingRequest(webDAVRequest) &&
 				!method.equals(CalDAVHttpMethods.PUT)) {
 
@@ -295,21 +291,16 @@ public class LiferayCalDAVStorageImpl extends BaseWebDAVStorageImpl {
 							GetterUtil.getLong(calendarResourceId));
 				}
 				else {
-					calendarResource =
-						CalendarResourceLocalServiceUtil.
+					calendarResource = CalendarResourceLocalServiceUtil.
 						fetchCalendarResourceByUuidAndGroupId(
-								calendarResourceId,
-								webDAVRequest.getGroupId());
+							calendarResourceId,
+							webDAVRequest.getGroupId());
 				}
 			}
 
 			if (calendarResource == null) {
 				throw new WebDAVException("No calendar resource were found");
 			}
-
-			// CalendarResourcePermission.check(
-			//	webDAVRequest.getPermissionChecker(), calendarResource,
-			//	ActionKeys.VIEW);
 
 			if (CalDAVUtil.isCalendarRequest(webDAVRequest)) {
 				return toCalendarBookingResources(webDAVRequest);

@@ -19,14 +19,17 @@ import com.liferay.calendar.model.Calendar;
 import com.liferay.calendar.model.CalendarBooking;
 import com.liferay.calendar.model.CalendarResource;
 import com.liferay.calendar.service.CalendarBookingServiceUtil;
-import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.exception.PortalException;
-import com.liferay.portal.kernel.exception.SystemException;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
+import com.liferay.portal.kernel.model.StagedModel;
+import com.liferay.portal.kernel.security.auth.PrincipalThreadLocal;
+import com.liferay.portal.kernel.security.permission.PermissionThreadLocal;
 import com.liferay.portal.kernel.servlet.HttpHeaders;
 import com.liferay.portal.kernel.util.GetterUtil;
+import com.liferay.portal.kernel.util.PortalUtil;
 import com.liferay.portal.kernel.util.StringPool;
+import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.kernel.webdav.Resource;
 import com.liferay.portal.kernel.webdav.WebDAVRequest;
@@ -38,13 +41,7 @@ import com.liferay.portal.kernel.xml.Node;
 import com.liferay.portal.kernel.xml.QName;
 import com.liferay.portal.kernel.xml.SAXReaderUtil;
 import com.liferay.portal.kernel.xml.XPath;
-import com.liferay.portal.kernel.model.StagedModel;
-import com.liferay.portal.kernel.security.auth.PrincipalThreadLocal;
-import com.liferay.portal.kernel.security.permission.PermissionThreadLocal;
-import com.liferay.portal.kernel.util.PortalUtil;
 
-import it.smc.calendar.caldav.sync.util.CalDAVRequestThreadLocal;
-import it.smc.calendar.caldav.sync.util.InvalidRequestException;
 import it.smc.calendar.caldav.util.CalendarUtil;
 
 import java.util.Date;
@@ -53,6 +50,10 @@ import java.util.List;
 import java.util.Set;
 
 import javax.servlet.http.HttpServletRequest;
+
+/**
+ * @author Fabio Pezzutto
+ */
 public class CalDAVUtil {
 
 	public static final Namespace NS_APPLE_URI = SAXReaderUtil.createNamespace(
@@ -69,7 +70,7 @@ public class CalDAVUtil {
 	}
 
 	public static CalendarBooking getCalendarBookingFromURL(String URL)
-		throws PortalException, SystemException {
+		throws PortalException {
 
 		if (!URL.endsWith(CalendarDataFormat.ICAL.getValue())) {
 			return null;
@@ -87,9 +88,10 @@ public class CalDAVUtil {
 	}
 
 	public static String getCalendarBookingURL(CalendarBooking calendarBooking)
-		throws PortalException, SystemException {
+		throws PortalException {
 
 		StringBuilder sb = new StringBuilder(11);
+
 		sb.append(PortalUtil.getPathContext());
 		sb.append("/webdav/");
 		sb.append(
@@ -112,7 +114,7 @@ public class CalDAVUtil {
 	}
 
 	public static String getCalendarResourceURL(
-			CalendarResource calendarResource) {
+		CalendarResource calendarResource) {
 
 		StringBuilder sb = new StringBuilder(6);
 
@@ -127,7 +129,6 @@ public class CalDAVUtil {
 	}
 
 	public static String getCalendarURL(Calendar calendar) {
-
 		StringBuilder sb = new StringBuilder(3);
 
 		String baseURL = StringPool.BLANK;
@@ -187,7 +188,7 @@ public class CalDAVUtil {
 		throws InvalidRequestException {
 
 		try {
-			Set<QName> props = new HashSet<QName>();
+			Set<QName> props = new HashSet<>();
 
 			Resource resource = webDAVRequest.getWebDAVStorage().getResource(
 				webDAVRequest);
@@ -308,8 +309,13 @@ public class CalDAVUtil {
 	}
 
 	public static boolean isCalendarRequest(WebDAVRequest webDAVRequest) {
-		return !isPrincipalRequest(webDAVRequest) &&
-				(webDAVRequest.getPathArray().length > 2);
+		if (!isPrincipalRequest(webDAVRequest) &&
+			(webDAVRequest.getPathArray().length > 2)) {
+
+			return true;
+		}
+
+		return false;
 	}
 
 	public static boolean isICal(WebDAVRequest webDAVRequest) {
@@ -320,31 +326,6 @@ public class CalDAVUtil {
 		}
 		else {
 			return userAgent.contains("iCal");
-		}
-	}
-
-	public static boolean isMacOSX(WebDAVRequest webDAVRequest) {
-		String userAgent = getUserAgent(webDAVRequest);
-
-		if (Validator.isNull(userAgent)) {
-			return false;
-		}
-		else {
-			return
-				userAgent.contains("OS+X") || userAgent.contains("Mac+OS") ||
-				userAgent.contains("OS X") || userAgent.contains("Core") ||
-				userAgent.contains("OS_X");
-		}
-	}
-
-	public static boolean isOpenSync(WebDAVRequest webDAVRequest) {
-		String userAgent = getUserAgent(webDAVRequest);
-
-		if (Validator.isNull(userAgent)) {
-			return false;
-		}
-		else {
-			return userAgent.contains("OpenSync");
 		}
 	}
 
@@ -359,8 +340,36 @@ public class CalDAVUtil {
 		}
 	}
 
-	public static boolean isPrincipalRequest(WebDAVRequest webDAVRequest) {
+	public static boolean isMacOSX(WebDAVRequest webDAVRequest) {
+		String userAgent = getUserAgent(webDAVRequest);
 
+		if (Validator.isNull(userAgent)) {
+			return false;
+		}
+		else {
+			if (userAgent.contains("OS+X") || userAgent.contains("Mac+OS") ||
+				userAgent.contains("OS X") || userAgent.contains("Core") ||
+				userAgent.contains("OS_X")) {
+
+				return true;
+			}
+
+			return false;
+		}
+	}
+
+	public static boolean isOpenSync(WebDAVRequest webDAVRequest) {
+		String userAgent = getUserAgent(webDAVRequest);
+
+		if (Validator.isNull(userAgent)) {
+			return false;
+		}
+		else {
+			return userAgent.contains("OpenSync");
+		}
+	}
+
+	public static boolean isPrincipalRequest(WebDAVRequest webDAVRequest) {
 		String[] path = webDAVRequest.getPathArray();
 
 		if ((path.length == 3) && path[0].equals("user")) {
@@ -384,22 +393,20 @@ public class CalDAVUtil {
 		}
 	}
 
-	public static boolean isThunderbird(WebDAVRequest webDAVRequest) {
-		String userAgent = getUserAgent(webDAVRequest);
-
-		return isThunderbird(userAgent);
-	}
-
 	public static boolean isThunderbird(HttpServletRequest request) {
 		String userAgent = getUserAgent(request);
 
 		return isThunderbird(userAgent);
 	}
 
-	private static String getUserAgent(HttpServletRequest request) {
+	public static boolean isThunderbird(WebDAVRequest webDAVRequest) {
+		String userAgent = getUserAgent(webDAVRequest);
 
-		String userAgent = request.getHeader(
-			HttpHeaders.USER_AGENT);
+		return isThunderbird(userAgent);
+	}
+
+	private static String getUserAgent(HttpServletRequest request) {
+		String userAgent = request.getHeader(HttpHeaders.USER_AGENT);
 
 		if (_log.isDebugEnabled()) {
 			_log.debug("webDAV userAgent:" + userAgent);
@@ -409,7 +416,6 @@ public class CalDAVUtil {
 	}
 
 	private static String getUserAgent(WebDAVRequest webDAVRequest) {
-
 		return getUserAgent(webDAVRequest.getHttpServletRequest());
 	}
 
@@ -418,8 +424,13 @@ public class CalDAVUtil {
 			return false;
 		}
 		else {
-			return userAgent.contains("Thunderbird") ||
-				userAgent.contains("Lightning");
+			if (userAgent.contains("Thunderbird") ||
+				userAgent.contains("Lightning")) {
+
+				return true;
+			}
+
+			return false;
 		}
 	}
 

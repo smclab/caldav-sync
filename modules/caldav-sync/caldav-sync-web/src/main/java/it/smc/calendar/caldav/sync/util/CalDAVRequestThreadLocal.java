@@ -32,7 +32,6 @@ public class CalDAVRequestThreadLocal {
 	}
 
 	public static Document getRequestDocument() {
-
 		if (_document.get() == null) {
 			String content = _content.get();
 
@@ -43,8 +42,8 @@ public class CalDAVRequestThreadLocal {
 			try {
 				setRequestDocument(SAXReaderUtil.read(content));
 			}
-			catch (DocumentException e) {
-				_log.error(e);
+			catch (DocumentException de) {
+				_log.error(de);
 			}
 		}
 
@@ -62,11 +61,9 @@ public class CalDAVRequestThreadLocal {
 	private static Log _log = LogFactoryUtil.getLog(
 		CalDAVRequestThreadLocal.class);
 
-	private static ThreadLocal<String> _content =
-		new AutoResetThreadLocal<String>(
-			CalDAVRequestThreadLocal.class + "._content");
-	private static ThreadLocal<Document> _document =
-		new AutoResetThreadLocal<Document>(
-			CalDAVRequestThreadLocal.class + "._document");
+	private static ThreadLocal<String> _content = new AutoResetThreadLocal<>(
+		CalDAVRequestThreadLocal.class + "._content");
+	private static ThreadLocal<Document> _document = new AutoResetThreadLocal<>(
+		CalDAVRequestThreadLocal.class + "._document");
 
 }

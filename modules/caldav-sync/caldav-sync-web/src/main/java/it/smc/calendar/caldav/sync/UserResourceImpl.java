@@ -14,11 +14,15 @@
 
 package it.smc.calendar.caldav.sync;
 
+import com.liferay.portal.kernel.model.User;
 import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.kernel.webdav.BaseResourceImpl;
-import com.liferay.portal.kernel.model.User;
 
 import java.util.Locale;
+
+/**
+ * @author Fabio Pezzutto
+ */
 public class UserResourceImpl extends BaseResourceImpl {
 
 	public UserResourceImpl(User user, String parentPath, Locale locale) {

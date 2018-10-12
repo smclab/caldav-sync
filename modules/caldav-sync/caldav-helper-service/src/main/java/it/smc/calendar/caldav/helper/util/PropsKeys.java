@@ -14,11 +14,15 @@
 
 package it.smc.calendar.caldav.helper.util;
 
+/**
+ * @author Fabio Pezzutto
+ */
 public class PropsKeys {
 
-	public static final String HIDE_PERSONAL_CALENDAR = 
-					"hide.personal.calendar";
+	public static final String HIDE_PERSONAL_CALENDAR =
+		"hide.personal.calendar";
 
 	public static final String PROPFIND_PROVIDE_SESSIONCLICKS_CALENDARS =
 		"propfind.provide.sessionclicks.calendars";
+
 }

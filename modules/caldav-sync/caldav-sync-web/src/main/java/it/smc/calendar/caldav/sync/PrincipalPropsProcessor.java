@@ -20,18 +20,18 @@ import com.liferay.calendar.service.permission.CalendarResourcePermission;
 import com.liferay.portal.kernel.dao.orm.QueryUtil;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
-import com.liferay.portal.kernel.webdav.Resource;
-import com.liferay.portal.kernel.webdav.WebDAVRequest;
-import com.liferay.portal.kernel.xml.Element;
 import com.liferay.portal.kernel.model.User;
 import com.liferay.portal.kernel.security.permission.ActionKeys;
 import com.liferay.portal.kernel.util.PortalUtil;
+import com.liferay.portal.kernel.webdav.Resource;
+import com.liferay.portal.kernel.webdav.WebDAVRequest;
+import com.liferay.portal.kernel.xml.Element;
 import com.liferay.util.xml.DocUtil;
-
-import java.util.List;
 
 import it.smc.calendar.caldav.sync.util.CalDAVProps;
 import it.smc.calendar.caldav.sync.util.CalDAVUtil;
+
+import java.util.List;
 
 /**
  * @author Fabio Pezzutto
@@ -39,8 +39,7 @@ import it.smc.calendar.caldav.sync.util.CalDAVUtil;
 public class PrincipalPropsProcessor extends BasePropsProcessor {
 
 	public PrincipalPropsProcessor(
-			WebDAVRequest webDAVRequest, Resource resource,
-			Element rootElement) {
+		WebDAVRequest webDAVRequest, Resource resource, Element rootElement) {
 
 		super(webDAVRequest, resource, rootElement);
 	}
@@ -51,7 +50,9 @@ public class PrincipalPropsProcessor extends BasePropsProcessor {
 			successPropElement, CalDAVProps.CALDAV_CALENDAR_HOME_SET);
 
 		try {
-			if (CalDAVUtil.isIOS(webDAVRequest) || CalDAVUtil.isICal(webDAVRequest)) {
+			if (CalDAVUtil.isIOS(webDAVRequest) ||
+				CalDAVUtil.isICal(webDAVRequest)) {
+
 				CalendarResource calendarResource =
 					CalendarResourceLocalServiceUtil.fetchCalendarResource(
 						PortalUtil.getClassNameId(User.class),
@@ -60,14 +61,14 @@ public class PrincipalPropsProcessor extends BasePropsProcessor {
 				if ((calendarResource == null) && _log.isWarnEnabled()) {
 					_log.warn(
 						"No calendar resource found for userId " +
-						CalDAVUtil.getUserId(webDAVRequest));
+							CalDAVUtil.getUserId(webDAVRequest));
 				}
-				
-				if (calendarResource != null){
+
+				if (calendarResource != null) {
 					DocUtil.add(
 						calendarHomeSetElement, CalDAVProps.createQName("href"),
 						CalDAVUtil.getCalendarResourceURL(calendarResource));
-					
+
 					return;
 				}
 			}
@@ -97,8 +98,7 @@ public class PrincipalPropsProcessor extends BasePropsProcessor {
 	protected void processDAVOwner() {
 		DocUtil.add(
 			successPropElement, CalDAVProps.DAV_OWNER,
-			CalDAVUtil.getPrincipalURL(
-				CalDAVUtil.getUserId(webDAVRequest)));
+			CalDAVUtil.getPrincipalURL(CalDAVUtil.getUserId(webDAVRequest)));
 	}
 
 	@Override

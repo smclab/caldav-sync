@@ -16,10 +16,12 @@ package it.smc.calendar.caldav.util;
 
 import com.liferay.portal.kernel.util.GetterUtil;
 
+/**
+ * @author Fabio Pezzutto
+ */
 public class PropsValues {
 
-	public static final boolean EXTENDED_DISPLAY_NAME =
-		GetterUtil.getBoolean(
-			ConfigurationUtil.get(PropsKeys.EXTENDED_DISPLAY_NAME), true);
+	public static final boolean EXTENDED_DISPLAY_NAME = GetterUtil.getBoolean(
+		ConfigurationUtil.get(PropsKeys.EXTENDED_DISPLAY_NAME), true);
 
 }

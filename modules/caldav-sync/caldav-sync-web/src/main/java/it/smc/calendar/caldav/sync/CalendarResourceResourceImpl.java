@@ -27,8 +27,7 @@ import java.util.Locale;
 public class CalendarResourceResourceImpl extends BaseResourceImpl {
 
 	public CalendarResourceResourceImpl(
-			CalendarResource calendarResource, String parentPath,
-			Locale locale) {
+		CalendarResource calendarResource, String parentPath, Locale locale) {
 
 		super(
 			parentPath, StringPool.BLANK, calendarResource.getName(locale),

@@ -14,16 +14,6 @@
 
 package it.smc.calendar.caldav.util;
 
-import java.sql.Timestamp;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.Iterator;
-import java.util.List;
-
-import org.osgi.service.component.annotations.Component;
-import org.osgi.service.component.annotations.Reference;
-import org.osgi.service.component.annotations.ReferencePolicyOption;
-
 import com.liferay.calendar.model.Calendar;
 import com.liferay.calendar.model.CalendarBooking;
 import com.liferay.calendar.model.CalendarResource;
@@ -37,7 +27,6 @@ import com.liferay.portal.kernel.dao.orm.ProjectionFactoryUtil;
 import com.liferay.portal.kernel.dao.orm.QueryUtil;
 import com.liferay.portal.kernel.dao.orm.RestrictionsFactoryUtil;
 import com.liferay.portal.kernel.exception.PortalException;
-import com.liferay.portal.kernel.exception.SystemException;
 import com.liferay.portal.kernel.model.User;
 import com.liferay.portal.kernel.security.permission.ActionKeys;
 import com.liferay.portal.kernel.security.permission.PermissionChecker;
@@ -47,9 +36,21 @@ import com.liferay.portal.kernel.workflow.WorkflowConstants;
 
 import it.smc.calendar.caldav.helper.api.CalendarListService;
 
-@Component(
-	immediate=true,
-	service=CalendarUtil.class)
+import java.sql.Timestamp;
+
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.Iterator;
+import java.util.List;
+
+import org.osgi.service.component.annotations.Component;
+import org.osgi.service.component.annotations.Reference;
+import org.osgi.service.component.annotations.ReferencePolicyOption;
+
+/**
+ * @author Fabio Pezzutto
+ */
+@Component(immediate = true, service=CalendarUtil.class)
 public class CalendarUtil {
 
 	public static final String ACTION_VIEW_BOOKING_DETAILS =
@@ -57,23 +58,23 @@ public class CalendarUtil {
 
 	public static List<Calendar> getAllCalendars(
 			PermissionChecker permissionChecker)
-		throws PortalException, SystemException {
+		throws PortalException {
 
-		return _calendarListService.getAllCalendars(
-			permissionChecker);
-		
+		return _calendarListService.getAllCalendars(permissionChecker);
 	}
 
 	public static List<CalendarBooking> getCalendarBookings(
 			PermissionChecker permissionChecker, Calendar calendar,
 			Date startDate, Date endDate)
-		throws PortalException, SystemException {
+		throws PortalException {
 
-		DynamicQuery dynamicQuery = CalendarBookingLocalServiceUtil.dynamicQuery();
+		DynamicQuery dynamicQuery =
+			CalendarBookingLocalServiceUtil.dynamicQuery();
+
 		dynamicQuery.add(
 			RestrictionsFactoryUtil.eq("calendarId", calendar.getCalendarId()));
 
-		List<Integer> calendarStatus = new ArrayList<Integer>();
+		List<Integer> calendarStatus = new ArrayList<>();
 		calendarStatus.add(WorkflowConstants.STATUS_APPROVED);
 		calendarStatus.add(WorkflowConstants.STATUS_PENDING);
 		//calendarStatus.add(WorkflowConstants.STATUS_SCHEDULED);
@@ -83,13 +84,13 @@ public class CalendarUtil {
 		if (startDate != null) {
 			dynamicQuery.add(
 				RestrictionsFactoryUtil.ge(
-					"startTime", new Long(startDate.getTime())));
+					"startTime", Long.valueOf(startDate.getTime())));
 		}
 
 		if (endDate != null) {
 			dynamicQuery.add(
 				RestrictionsFactoryUtil.le(
-					"endTime", new Long(endDate.getTime())));
+					"endTime", Long.valueOf(endDate.getTime())));
 		}
 
 		List<CalendarBooking> allCalendarBookings =
@@ -101,21 +102,21 @@ public class CalendarUtil {
 
 	public static List<Calendar> getCalendarResourceCalendars(
 			CalendarResource calendarResource)
-		throws PortalException, SystemException {
+		throws PortalException {
 
 		return CalendarServiceUtil.search(
 			calendarResource.getCompanyId(),
 			new long[] {calendarResource.getGroupId()},
-			new long[] {calendarResource.getCalendarResourceId()}, null,
-			false, QueryUtil.ALL_POS, QueryUtil.ALL_POS,
+			new long[] {calendarResource.getCalendarResourceId()}, null, false,
+			QueryUtil.ALL_POS, QueryUtil.ALL_POS,
 			new CalendarNameComparator(true));
 	}
 
 	public static Date getLastCalendarModifiedDate(long calendarId)
-		throws PortalException, SystemException {
+		throws PortalException {
 
-
-		DynamicQuery dynamicQuery = CalendarBookingLocalServiceUtil.dynamicQuery();
+		DynamicQuery dynamicQuery =
+			CalendarBookingLocalServiceUtil.dynamicQuery();
 
 		dynamicQuery.add(RestrictionsFactoryUtil.eq("calendarId", calendarId));
 
@@ -131,6 +132,7 @@ public class CalendarUtil {
 
 		if ((lastModifiedDate != null) && !lastModifiedDate.isEmpty()) {
 			Timestamp ts = (Timestamp)lastModifiedDate.get(0);
+
 			return new Date(ts.getTime());
 		}
 
@@ -140,7 +142,7 @@ public class CalendarUtil {
 	protected static CalendarBooking filterCalendarBooking(
 			CalendarBooking calendarBooking,
 			PermissionChecker permissionChecker)
-		throws PortalException, SystemException {
+		throws PortalException {
 
 		if (!CalendarPermission.contains(
 				permissionChecker, calendarBooking.getCalendarId(),
@@ -157,7 +159,7 @@ public class CalendarUtil {
 	protected static List<CalendarBooking> filterCalendarBookings(
 			List<CalendarBooking> calendarBookings,
 			PermissionChecker permissionChecker, String actionId)
-		throws PortalException, SystemException {
+		throws PortalException {
 
 		calendarBookings = ListUtil.copy(calendarBookings);
 
@@ -187,12 +189,12 @@ public class CalendarUtil {
 
 	protected static boolean isCurrentUserCalendar(
 			long userId, Calendar calendar)
-		throws PortalException, SystemException {
+		throws PortalException {
 
 		CalendarResource calendarResource = calendar.getCalendarResource();
 
 		if (calendarResource.getClassName().equals(User.class.getName()) &&
-			(calendarResource.getClassPK() == userId) ) {
+			(calendarResource.getClassPK() == userId)) {
 
 			return true;
 		}
@@ -201,13 +203,13 @@ public class CalendarUtil {
 		}
 	}
 
-	@Reference(unbind="-", policyOption=ReferencePolicyOption.GREEDY)
+	@Reference(unbind ="-", policyOption= ReferencePolicyOption.GREEDY)
 	protected void setCalendarListService(
 		CalendarListService calendarListService) {
 
 		_calendarListService = calendarListService;
 	}
-	
+
 	private static CalendarListService _calendarListService;
 
 }

@@ -14,9 +14,11 @@
 
 package it.smc.calendar.caldav.util;
 
+/**
+ * @author Fabio Pezzutto
+ */
 public class PropsKeys {
 
-	public static final String EXTENDED_DISPLAY_NAME = 
-					"extended.display.name";
-	
+	public static final String EXTENDED_DISPLAY_NAME = "extended.display.name";
+
 }

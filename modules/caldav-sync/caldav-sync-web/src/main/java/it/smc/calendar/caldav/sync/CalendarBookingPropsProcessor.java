@@ -45,5 +45,4 @@ public class CalendarBookingPropsProcessor extends BasePropsProcessor {
 		DocUtil.add(successPropElement, CalDAVProps.DAV_RESOURCETYPE);
 	}
 
-
 }

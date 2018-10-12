@@ -16,10 +16,10 @@ package it.smc.calendar.caldav.sync;
 
 import com.liferay.calendar.model.CalendarResource;
 import com.liferay.calendar.service.permission.CalendarResourcePermission;
+import com.liferay.portal.kernel.security.permission.ActionKeys;
 import com.liferay.portal.kernel.webdav.Resource;
 import com.liferay.portal.kernel.webdav.WebDAVRequest;
 import com.liferay.portal.kernel.xml.Element;
-import com.liferay.portal.kernel.security.permission.ActionKeys;
 import com.liferay.util.xml.DocUtil;
 
 import it.smc.calendar.caldav.sync.util.CalDAVProps;

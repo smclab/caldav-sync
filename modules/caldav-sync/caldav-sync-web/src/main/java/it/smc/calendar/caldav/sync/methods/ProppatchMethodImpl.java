@@ -15,11 +15,12 @@
 package it.smc.calendar.caldav.sync.methods;
 
 import com.liferay.portal.kernel.exception.PortalException;
-import com.liferay.portal.kernel.exception.SystemException;
 import com.liferay.portal.kernel.lock.Lock;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.model.WebDAVProps;
+import com.liferay.portal.kernel.security.auth.PrincipalException;
+import com.liferay.portal.kernel.service.WebDAVPropsLocalServiceUtil;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.kernel.webdav.Resource;
 import com.liferay.portal.kernel.webdav.WebDAVException;
@@ -31,8 +32,11 @@ import com.liferay.portal.kernel.xml.Element;
 import com.liferay.portal.kernel.xml.Namespace;
 import com.liferay.portal.kernel.xml.QName;
 import com.liferay.portal.kernel.xml.SAXReaderUtil;
-import com.liferay.portal.kernel.security.auth.PrincipalException;
-import com.liferay.portal.kernel.service.WebDAVPropsLocalServiceUtil;
+
+import it.smc.calendar.caldav.sync.util.CalDAVRequestThreadLocal;
+import it.smc.calendar.caldav.sync.util.InvalidRequestException;
+import it.smc.calendar.caldav.sync.util.LockException;
+import it.smc.calendar.caldav.sync.util.ResourceNotFoundException;
 
 import java.util.HashSet;
 import java.util.List;
@@ -40,10 +44,9 @@ import java.util.Set;
 
 import javax.servlet.http.HttpServletResponse;
 
-import it.smc.calendar.caldav.sync.util.CalDAVRequestThreadLocal;
-import it.smc.calendar.caldav.sync.util.InvalidRequestException;
-import it.smc.calendar.caldav.sync.util.LockException;
-import it.smc.calendar.caldav.sync.util.ResourceNotFoundException;
+/**
+ * @author Fabio Pezzutto
+ */
 public class ProppatchMethodImpl extends BasePropMethodImpl {
 
 	@Override
@@ -63,15 +66,15 @@ public class ProppatchMethodImpl extends BasePropMethodImpl {
 		catch (ResourceNotFoundException rnfe) {
 			return HttpServletResponse.SC_NOT_FOUND;
 		}
-		catch (WebDAVException pe) {
-			if (pe.getCause() instanceof PrincipalException) {
+		catch (WebDAVException wdave) {
+			if (wdave.getCause() instanceof PrincipalException) {
 				return HttpServletResponse.SC_UNAUTHORIZED;
 			}
-			else if (pe.getCause() instanceof ResourceNotFoundException) {
+			else if (wdave.getCause() instanceof ResourceNotFoundException) {
 				return HttpServletResponse.SC_NOT_FOUND;
 			}
 
-			throw pe;
+			throw wdave;
 		}
 		catch (LockException le) {
 			return WebDAVUtil.SC_LOCKED;
@@ -82,7 +85,7 @@ public class ProppatchMethodImpl extends BasePropMethodImpl {
 	}
 
 	protected WebDAVProps getStoredProperties(WebDAVRequest webDAVRequest)
-		throws PortalException, SystemException {
+		throws PortalException {
 
 		WebDAVStorage storage = webDAVRequest.getWebDAVStorage();
 
@@ -118,7 +121,7 @@ public class ProppatchMethodImpl extends BasePropMethodImpl {
 		throws InvalidRequestException, LockException {
 
 		try {
-			Set<QName> newProps = new HashSet<QName>();
+			Set<QName> newProps = new HashSet<>();
 
 			WebDAVProps webDavProps = getStoredProperties(webDAVRequest);
 

@@ -16,20 +16,24 @@ package it.smc.calendar.caldav.sync.methods;
 
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
+import com.liferay.portal.kernel.security.auth.PrincipalException;
 import com.liferay.portal.kernel.servlet.ServletResponseUtil;
 import com.liferay.portal.kernel.webdav.Resource;
 import com.liferay.portal.kernel.webdav.WebDAVException;
 import com.liferay.portal.kernel.webdav.WebDAVRequest;
 import com.liferay.portal.kernel.webdav.WebDAVStorage;
 import com.liferay.portal.kernel.webdav.methods.Method;
-import com.liferay.portal.kernel.security.auth.PrincipalException;
+
+import it.smc.calendar.caldav.sync.util.ResourceNotFoundException;
 
 import java.io.InputStream;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import it.smc.calendar.caldav.sync.util.ResourceNotFoundException;
+/**
+ * @author Fabio Pezzutto
+ */
 public class GetMethodImpl implements Method {
 
 	@Override
@@ -52,9 +56,7 @@ public class GetMethodImpl implements Method {
 				is = resource.getContentAsStream();
 			}
 			catch (Exception e) {
-				if (_log.isErrorEnabled()) {
-					_log.error(e.getMessage());
-				}
+				_log.error(e.getMessage());
 			}
 
 			if (is != null) {
@@ -77,15 +79,15 @@ public class GetMethodImpl implements Method {
 		catch (ResourceNotFoundException rnfe) {
 			return HttpServletResponse.SC_NOT_FOUND;
 		}
-		catch (WebDAVException pe) {
-			if (pe.getCause() instanceof PrincipalException) {
+		catch (WebDAVException wdave) {
+			if (wdave.getCause() instanceof PrincipalException) {
 				return HttpServletResponse.SC_UNAUTHORIZED;
 			}
-			else if (pe.getCause() instanceof ResourceNotFoundException) {
+			else if (wdave.getCause() instanceof ResourceNotFoundException) {
 				return HttpServletResponse.SC_NOT_FOUND;
 			}
 
-			throw pe;
+			throw wdave;
 		}
 		catch (Exception e) {
 			throw new WebDAVException(e);
