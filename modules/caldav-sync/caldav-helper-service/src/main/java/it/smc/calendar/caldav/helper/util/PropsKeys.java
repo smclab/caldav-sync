@@ -25,4 +25,7 @@ public class PropsKeys {
 	public static final String PROPFIND_PROVIDE_SESSIONCLICKS_CALENDARS =
 		"propfind.provide.sessionclicks.calendars";
 
+	public static final String PROPFIND_PROVIDE_USER_GROUPS =
+		"propfind.provide.user.groups";
+
 }

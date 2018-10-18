@@ -29,4 +29,8 @@ public class PropsValues {
 			ConfigurationUtil.get(
 				PropsKeys.PROPFIND_PROVIDE_SESSIONCLICKS_CALENDARS));
 
+	public static final boolean PROPFIND_PROVIDE_USER_GROUPS =
+		GetterUtil.getBoolean(
+			ConfigurationUtil.get(PropsKeys.PROPFIND_PROVIDE_USER_GROUPS));
+
 }

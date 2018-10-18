@@ -118,10 +118,12 @@ public class CalendarListServiceImpl implements CalendarListService {
 				}
 			}
 
-			List<Calendar> userGroupCalendars =
-				getUserGroupCalendars(permissionChecker);
-			if(Validator.isNotNull(userGroupCalendars)){
-				calendars.addAll(userGroupCalendars);
+			if (PropsValues.PROPFIND_PROVIDE_USER_GROUPS) {
+				List<Calendar> userGroupCalendars =
+					getUserGroupCalendars(permissionChecker);
+				if (Validator.isNotNull(userGroupCalendars)) {
+					calendars.addAll(userGroupCalendars);
+				}
 			}
 
 			List<Calendar> selectedCalendars =
