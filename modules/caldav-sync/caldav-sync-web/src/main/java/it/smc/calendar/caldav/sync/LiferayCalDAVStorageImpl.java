@@ -14,14 +14,6 @@
 
 package it.smc.calendar.caldav.sync;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Locale;
-
-import javax.servlet.http.HttpServletResponse;
-
-import org.osgi.service.component.annotations.Component;
-
 import com.liferay.calendar.constants.CalendarPortletKeys;
 import com.liferay.calendar.exception.NoSuchCalendarException;
 import com.liferay.calendar.exporter.CalendarDataFormat;
@@ -54,13 +46,17 @@ import com.liferay.portal.kernel.webdav.WebDAVRequest;
 import com.liferay.portal.kernel.webdav.WebDAVStorage;
 import com.liferay.portal.kernel.webdav.methods.MethodFactory;
 import com.liferay.portal.kernel.webdav.methods.MethodFactoryRegistryUtil;
-
 import it.smc.calendar.caldav.sync.util.CalDAVHttpMethods;
 import it.smc.calendar.caldav.sync.util.CalDAVRequestThreadLocal;
 import it.smc.calendar.caldav.sync.util.CalDAVUtil;
 import it.smc.calendar.caldav.sync.util.ResourceNotFoundException;
 import it.smc.calendar.caldav.util.CalendarUtil;
-import it.smc.calendar.caldav.util.PropsValues;
+import org.osgi.service.component.annotations.Component;
+
+import javax.servlet.http.HttpServletResponse;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Locale;
 
 /**
  * @author Fabio Pezzutto

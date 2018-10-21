@@ -1,5 +1,4 @@
 dependencies {
-	//compile files ("./src/main/resources/META-INF/libs/ical4j-1.0-rc3.jar")
 
 	compile files ("./src/main/resources/META-INF/libs/backport-util-concurrent-2.2_1.jar")
 	compile files ("./src/main/resources/META-INF/libs/net.fortuna.ical4j-1.0.jar")
