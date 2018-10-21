@@ -17,7 +17,7 @@ Bundle-Version: 1.0.1
 DynamicImport-Package: *
 Export-Package:\
 	it.smc.calendar.caldav.sync.util,\
-	it.smc.calendar.caldav.uti
+	it.smc.calendar.caldav.util
 Import-Package:\
 	! com.liferay.util.xml,\
 	\
@@ -34,4 +34,4 @@ Import-Package:\
 
 -includeresource:@com.liferay.util.java-[0-9]*.jar,\
 	lib/backport-util-concurrent.jar=backport-util-concurrent-[0-9]*.jar,\
-	lib/ical4j.jar=ical4j-1.0-rc3.jarl
+	lib/ical4j.jar=ical4j-1.0-rc3.jar
