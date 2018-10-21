@@ -22,6 +22,8 @@ import com.liferay.calendar.service.CalendarServiceUtil;
 import com.liferay.calendar.service.permission.CalendarPermission;
 import com.liferay.portal.kernel.dao.orm.QueryUtil;
 import com.liferay.portal.kernel.exception.PortalException;
+import com.liferay.portal.kernel.log.Log;
+import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.model.Group;
 import com.liferay.portal.kernel.model.User;
 import com.liferay.portal.kernel.portlet.PortalPreferences;
@@ -111,34 +113,77 @@ public class CalendarListServiceImpl implements CalendarListService {
 
 		if (useSessionClicksCalendars) {
 			if (!hidePersonalCalendar) {
+				if (_log.isDebugEnabled()) {
+					_log.debug("Get user personal calendars");
+				}
+
 				List<Calendar> userCalendars =
 					getUserCalendars(permissionChecker.getUserId());
 				if (Validator.isNotNull(userCalendars)) {
+					if (_log.isDebugEnabled()) {
+						for (Calendar calendar : userCalendars) {
+							_log.debug(" - " + calendar.getName());
+						}
+					}
+
 					calendars.addAll(userCalendars);
 				}
 			}
 
 			if (PropsValues.PROPFIND_PROVIDE_USER_GROUPS) {
+				if (_log.isDebugEnabled()) {
+					_log.debug(
+						"Get also group calendars the the user belong to");
+				}
+
 				List<Calendar> userGroupCalendars =
 					getUserGroupCalendars(permissionChecker);
 				if (Validator.isNotNull(userGroupCalendars)) {
+					if (_log.isDebugEnabled()) {
+						for (Calendar calendar : userGroupCalendars) {
+							_log.debug(" - " + calendar.getName());
+						}
+					}
+
 					calendars.addAll(userGroupCalendars);
 				}
+			}
+			else if (_log.isDebugEnabled()) {
+				_log.debug("Don't get group calendars");
+			}
+
+			if (_log.isDebugEnabled()) {
+				_log.debug("Get session click selected calendars");
 			}
 
 			List<Calendar> selectedCalendars =
 				getSelectedCalendars(permissionChecker.getUserId());
+
 			if(Validator.isNotNull(selectedCalendars)){
+				if (_log.isDebugEnabled()) {
+					for (Calendar calendar : selectedCalendars) {
+						_log.debug(" - " + calendar.getName());
+					}
+				}
+
 				calendars.addAll(selectedCalendars);
 			}
 		}
 		else {
+			if (_log.isDebugEnabled()) {
+				_log.debug("Get all user's visible calendars");
+			}
+
 			List<Calendar> allCalendars = CalendarLocalServiceUtil.getCalendars(
 				QueryUtil.ALL_POS, QueryUtil.ALL_POS);
 
 			for (Calendar calendar : allCalendars) {
 				if (CalendarPermission.contains(
 						permissionChecker, calendar, ActionKeys.VIEW)) {
+
+					if (_log.isDebugEnabled()) {
+						_log.debug(" - " + calendar.getName());
+					}
 
 					calendars.add(calendar);
 				}
@@ -161,9 +206,12 @@ public class CalendarListServiceImpl implements CalendarListService {
 			}
 		}
 		catch (PortalException pe) {
-			// TODO Auto-generated catch block
+			_log.error(pe, pe);
 		}
 		return calendarResource.getCalendars();
 	}
+
+	private static Log _log = LogFactoryUtil.getLog(
+		CalendarListServiceImpl.class);
 
 }
