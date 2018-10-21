@@ -14,6 +14,7 @@
 
 package it.smc.calendar.caldav.sync;
 
+import com.liferay.calendar.model.Calendar;
 import com.liferay.calendar.model.CalendarResource;
 import com.liferay.calendar.service.CalendarResourceLocalServiceUtil;
 import com.liferay.calendar.service.permission.CalendarResourcePermission;
@@ -30,6 +31,7 @@ import com.liferay.util.xml.DocUtil;
 
 import it.smc.calendar.caldav.sync.util.CalDAVProps;
 import it.smc.calendar.caldav.sync.util.CalDAVUtil;
+import it.smc.calendar.caldav.util.CalendarUtil;
 
 import java.util.List;
 
@@ -73,12 +75,19 @@ public class PrincipalPropsProcessor extends BasePropsProcessor {
 				}
 			}
 
-			List<CalendarResource> allCalendarResources =
-				CalendarResourceLocalServiceUtil.getCalendarResources(
-					QueryUtil.ALL_POS, QueryUtil.ALL_POS);
+			List<Calendar> allCalendars = CalendarUtil.getAllCalendars(
+				webDAVRequest.getPermissionChecker());
 
-			for (CalendarResource calendarResource : allCalendarResources) {
-				if (CalendarResourcePermission.contains(
+			long[] calendarResourceIds = allCalendars.stream().mapToLong(
+				cal -> cal.getCalendarResourceId()).distinct().toArray();
+
+			for (long calendarResourceId : calendarResourceIds) {
+				CalendarResource calendarResource =
+					CalendarResourceLocalServiceUtil.fetchCalendarResource(
+						calendarResourceId);
+
+				if ((calendarResource != null) &&
+					CalendarResourcePermission.contains(
 						webDAVRequest.getPermissionChecker(), calendarResource,
 						ActionKeys.VIEW)) {
 
