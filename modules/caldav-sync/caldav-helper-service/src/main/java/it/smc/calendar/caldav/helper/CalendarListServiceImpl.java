@@ -50,10 +50,13 @@ import org.osgi.service.component.annotations.Component;
 @Component(immediate = true, service = CalendarListService.class)
 public class CalendarListServiceImpl implements CalendarListService {
 
-	public static List<Calendar> getSelectedCalendars(long userId)
+	public static List<Calendar> getSelectedCalendars(
+			PermissionChecker permissionChecker)
 		throws PortalException {
 
 		ArrayList<Calendar> calendars = new ArrayList<>();
+
+		long userId = permissionChecker.getUserId();
 
 		String otherCalendarPreferences =
 			"com.liferay.calendar.web_otherCalendars";
@@ -68,7 +71,18 @@ public class CalendarListServiceImpl implements CalendarListService {
 			StringUtil.split(calendarIdsPref));
 
 		for (long calendarId : calendarIds) {
-			calendars.add(CalendarServiceUtil.getCalendar(calendarId));
+			Calendar calendar = CalendarLocalServiceUtil.fetchCalendar(
+				calendarId);
+
+			if (calendar == null) {
+				continue;
+			}
+
+			if (CalendarPermission.contains(
+					permissionChecker, calendarId, ActionKeys.VIEW)) {
+
+				calendars.add(calendar);
+			}
 		}
 
 		return calendars;
@@ -157,7 +171,7 @@ public class CalendarListServiceImpl implements CalendarListService {
 			}
 
 			List<Calendar> selectedCalendars =
-				getSelectedCalendars(permissionChecker.getUserId());
+				getSelectedCalendars(permissionChecker);
 
 			if(Validator.isNotNull(selectedCalendars)){
 				if (_log.isDebugEnabled()) {
