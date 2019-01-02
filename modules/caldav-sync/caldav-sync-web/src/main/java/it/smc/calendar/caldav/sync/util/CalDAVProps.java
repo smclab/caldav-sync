@@ -64,6 +64,9 @@ public class CalDAVProps {
 	public static final QName CALDAV_MIN_DATE_TIME = createCalendarQName(
 		"min-date-time");
 
+	public static final QName CALDAV_SOURCE = createCalendarServerQName(
+		"source");
+
 	public static final QName CALDAV_SUPPORTED_CALENDAR_COMPONENT_SET =
 		createCalendarQName("supported-calendar-component-set");
 

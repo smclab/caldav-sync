@@ -170,9 +170,12 @@ public abstract class BasePropsProcessor implements PropsProcessor {
 			props.remove(CalDAVProps.DAV_RESOURCETYPE);
 		}
 
-		if (props.contains(CalDAVProps.DAV_SOURCE)) {
+		if (props.contains(CalDAVProps.DAV_SOURCE) ||
+			props.contains(CalDAVProps.CALDAV_SOURCE)) {
+
 			processDAVSource();
 			props.remove(CalDAVProps.DAV_SOURCE);
+			props.remove(CalDAVProps.CALDAV_SOURCE);
 		}
 
 		if (props.contains(CalDAVProps.DAV_SUPPORTED_REPORT_SET)) {
