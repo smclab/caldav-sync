@@ -19,6 +19,7 @@ import com.liferay.calendar.service.CalendarResourceLocalServiceUtil;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
+import com.liferay.portal.kernel.model.Group;
 import com.liferay.portal.kernel.model.User;
 import com.liferay.portal.kernel.model.WebDAVProps;
 import com.liferay.portal.kernel.service.UserServiceUtil;
@@ -31,7 +32,6 @@ import com.liferay.portal.kernel.xml.Element;
 import com.liferay.portal.kernel.xml.Namespace;
 import com.liferay.portal.kernel.xml.QName;
 import com.liferay.util.xml.DocUtil;
-
 import it.smc.calendar.caldav.sync.util.CalDAVMethod;
 import it.smc.calendar.caldav.sync.util.CalDAVProps;
 import it.smc.calendar.caldav.sync.util.CalDAVUtil;
@@ -81,6 +81,11 @@ public abstract class BasePropsProcessor implements PropsProcessor {
 		if (props.contains(CalDAVProps.CALDAV_CALENDAR_USER_ADDRESS_SET)) {
 			processCalDAVCalendarUserAddressSet();
 			props.remove(CalDAVProps.CALDAV_CALENDAR_USER_ADDRESS_SET);
+		}
+
+		if (props.contains(CalDAVProps.CALDAV_CALENDAR_USER_TYPE)) {
+			processCalDAVCalendarUserType();
+			props.remove(CalDAVProps.CALDAV_CALENDAR_USER_TYPE);
 		}
 
 		if (props.contains(CalDAVProps.CALDAV_GETCTAG)) {
@@ -291,6 +296,45 @@ public abstract class BasePropsProcessor implements PropsProcessor {
 		}
 	}
 
+	protected void processCalDAVCalendarUserType() {
+		CalendarResource calendarResource;
+
+		try {
+			calendarResource =
+				CalendarResourceLocalServiceUtil.fetchCalendarResource(
+					PortalUtil.getClassNameId(User.class),
+					CalDAVUtil.getUserId(webDAVRequest));
+		}
+		catch (Exception e) {
+			_log.error(e);
+			return;
+		}
+
+		if (calendarResource == null) {
+			DocUtil.add(
+				failurePropElement,
+				CalDAVProps.CALDAV_CALENDAR_USER_TYPE);
+		}
+
+		String className = calendarResource.getClassName();
+		String cutypeparam = "UNKNOWN";
+
+		if (className.equals(CalendarResource.class.getName())) {
+			cutypeparam = "INDIVIDUAL";
+		}
+		else if (className.equals(CalendarResource.class.getName())) {
+			cutypeparam = "RESOURCE";
+		}
+		else if (className.equals(Group.class.getName())) {
+			cutypeparam = "GROUP";
+		}
+
+
+		DocUtil.add(
+			successPropElement, CalDAVProps.CALDAV_CALENDAR_USER_TYPE,
+			cutypeparam);
+	}
+
 	protected void processCalDAVGetCTag() {
 		DocUtil.add(failurePropElement, CalDAVProps.CALDAV_GETCTAG);
 	}
@@ -450,6 +494,10 @@ public abstract class BasePropsProcessor implements PropsProcessor {
 
 	protected void processDAVSource() {
 		DocUtil.add(successPropElement, CalDAVProps.DAV_SOURCE);
+	}
+
+	protected void processDAVResourceId() {
+		DocUtil.add(failurePropElement, CalDAVProps.DAV_RESOURCE_ID);
 	}
 
 	protected void processDAVSupportedReportSet() {

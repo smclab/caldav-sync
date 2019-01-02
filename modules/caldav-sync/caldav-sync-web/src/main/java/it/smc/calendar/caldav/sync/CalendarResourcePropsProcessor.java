@@ -21,7 +21,6 @@ import com.liferay.portal.kernel.webdav.Resource;
 import com.liferay.portal.kernel.webdav.WebDAVRequest;
 import com.liferay.portal.kernel.xml.Element;
 import com.liferay.util.xml.DocUtil;
-
 import it.smc.calendar.caldav.sync.util.CalDAVProps;
 import it.smc.calendar.caldav.sync.util.CalDAVUtil;
 
@@ -85,6 +84,15 @@ public class CalendarResourcePropsProcessor extends BasePropsProcessor {
 		DocUtil.add(
 			successPropElement, CalDAVProps.DAV_OWNER,
 			CalDAVUtil.getPrincipalURL(_calendarResource.getUserId()));
+	}
+
+	protected void processDAVResourceId() {
+		Element resourceIdElement = DocUtil.add(
+			successPropElement, CalDAVProps.DAV_RESOURCE_ID);
+
+		DocUtil.add(
+			resourceIdElement, CalDAVProps.createQName("href"),
+			"urn:uuid:".concat(_calendarResource.getUuid()));
 	}
 
 	private CalendarResource _calendarResource;

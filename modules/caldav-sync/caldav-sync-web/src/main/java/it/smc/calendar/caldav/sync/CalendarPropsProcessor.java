@@ -28,12 +28,10 @@ import com.liferay.portal.kernel.webdav.Resource;
 import com.liferay.portal.kernel.webdav.WebDAVRequest;
 import com.liferay.portal.kernel.xml.Element;
 import com.liferay.util.xml.DocUtil;
-
 import it.smc.calendar.caldav.sync.util.CalDAVProps;
 import it.smc.calendar.caldav.sync.util.CalDAVUtil;
 import it.smc.calendar.caldav.sync.util.WebKeys;
 import it.smc.calendar.caldav.util.PropsValues;
-
 import net.fortuna.ical4j.data.CalendarOutputter;
 import net.fortuna.ical4j.model.ComponentList;
 import net.fortuna.ical4j.model.PropertyList;
@@ -142,11 +140,11 @@ public class CalendarPropsProcessor extends BasePropsProcessor {
 			return;
 		}
 
-		Element calendarHomeSetElement = DocUtil.add(
+		Element calendarUserAddressSetElement = DocUtil.add(
 			successPropElement, CalDAVProps.CALDAV_CALENDAR_USER_ADDRESS_SET);
 
 		DocUtil.add(
-			calendarHomeSetElement, CalDAVProps.createQName("href"),
+			calendarUserAddressSetElement, CalDAVProps.createQName("href"),
 			CalDAVUtil.getCalendarResourceURL(calendarResource));
 	}
 
@@ -163,17 +161,15 @@ public class CalendarPropsProcessor extends BasePropsProcessor {
 			successPropElement,
 			CalDAVProps.CALDAV_SUPPORTED_CALENDAR_COMPONENT_SET);
 
-		if (!resource.isCollection() || CalDAVUtil.isMacOSX(webDAVRequest)) {
-			Element el = DocUtil.add(
-				supportedCalendarComponentSet, CalDAVProps.DAV_COMP);
+		Element el = DocUtil.add(
+			supportedCalendarComponentSet, CalDAVProps.DAV_COMP);
 
-			el.addAttribute("name", WebKeys.VCALENDAR);
+		el.addAttribute("name", WebKeys.VCALENDAR);
 
-			el = DocUtil.add(
-				supportedCalendarComponentSet, CalDAVProps.DAV_COMP);
+		el = DocUtil.add(
+			supportedCalendarComponentSet, CalDAVProps.DAV_COMP);
 
-			el.addAttribute("name", WebKeys.VEVENT);
-		}
+		el.addAttribute("name", WebKeys.VEVENT);
 	}
 
 	@Override
@@ -258,6 +254,16 @@ public class CalendarPropsProcessor extends BasePropsProcessor {
 		DocUtil.add(
 			successPropElement, CalDAVProps.DAV_OWNER,
 			CalDAVUtil.getPrincipalURL(_calendar.getUserId()));
+	}
+
+	@Override
+	protected void processDAVResourceId() {
+		Element resourceIdElement = DocUtil.add(
+			successPropElement, CalDAVProps.DAV_RESOURCE_ID);
+
+		DocUtil.add(
+			resourceIdElement, CalDAVProps.createQName("href"),
+			"urn:uuid:".concat(_calendar.getUuid()));
 	}
 
 	@Override
