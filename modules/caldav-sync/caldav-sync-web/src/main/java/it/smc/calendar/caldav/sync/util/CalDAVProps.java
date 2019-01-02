@@ -31,17 +31,25 @@ public class CalDAVProps {
 	public static final QName CALDAV_CALENDAR_COLOR = createAppleQName(
 		"calendar-color");
 
+	// https://tools.ietf.org/html/rfc4791#section-5.2.1
 	public static final QName CALDAV_CALENDAR_DESCRIPTION = createCalendarQName(
 		"calendar-description");
 
+	// https://tools.ietf.org/html/rfc4791#section-6.2.1
 	public static final QName CALDAV_CALENDAR_HOME_SET = createCalendarQName(
 		"calendar-home-set");
 
+	// https://tools.ietf.org/html/rfc4791#section-5.2.2
 	public static final QName CALDAV_CALENDAR_TIMEZONE = createCalendarQName(
 		"calendar-timezone");
 
+	// https://tools.ietf.org/html/rfc6638#section-2.4.1
 	public static final QName CALDAV_CALENDAR_USER_ADDRESS_SET =
 		createCalendarQName("calendar-user-address-set");
+
+	// https://tools.ietf.org/html/rfc6638#section-2.4.2
+	public static final QName CALDAV_CALENDAR_USER_TYPE =
+		createCalendarQName("calendar-user-type");
 
 	public static final QName CALDAV_GETCTAG = createCalendarServerQName(
 		"getctag");
@@ -49,27 +57,34 @@ public class CalDAVProps {
 	public static final QName CALDAV_GETETAG = createCalendarServerQName(
 		"getetag");
 
+	// https://tools.ietf.org/html/rfc4791#section-5.2.9
 	public static final QName CALDAV_MAX_ATTENDEES_PER_INSTANCE =
 		createCalendarQName("max-attendees-per-instance");
 
+	// https://tools.ietf.org/html/rfc4791#section-5.2.7
 	public static final QName CALDAV_MAX_DATE_TIME = createCalendarQName(
 		"max-date-time");
 
+	// https://tools.ietf.org/html/rfc4791#section-5.2.8
 	public static final QName CALDAV_MAX_INSTANCES = createCalendarQName(
 		"max-instances");
 
+	// https://tools.ietf.org/html/rfc4791#section-5.2.5
 	public static final QName CALDAV_MAX_RESOURCE_SIZE = createCalendarQName(
 		"max-resource-size");
 
+	// https://tools.ietf.org/html/rfc4791#section-5.2.6
 	public static final QName CALDAV_MIN_DATE_TIME = createCalendarQName(
 		"min-date-time");
 
 	public static final QName CALDAV_SOURCE = createCalendarServerQName(
 		"source");
 
+	// https://tools.ietf.org/html/rfc4791#section-5.2.3
 	public static final QName CALDAV_SUPPORTED_CALENDAR_COMPONENT_SET =
 		createCalendarQName("supported-calendar-component-set");
 
+	// https://tools.ietf.org/html/rfc4791#section-5.2.4
 	public static final QName CALDAV_SUPPORTED_CALENDAR_DATA =
 		createCalendarQName("supported-calendar-data");
 
@@ -115,6 +130,9 @@ public class CalDAVProps {
 
 	public static final QName DAV_PRINCIPAL_URL_ERR = createQName(
 		"Principal-URL");
+
+	// https://tools.ietf.org/html/rfc5842#section-3.1
+	public static final QName DAV_RESOURCE_ID = createQName("resource-id");
 
 	public static final QName DAV_RESOURCETYPE = createQName("resourcetype");
 
