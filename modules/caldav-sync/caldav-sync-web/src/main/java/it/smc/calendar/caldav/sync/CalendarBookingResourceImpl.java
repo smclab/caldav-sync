@@ -57,7 +57,7 @@ public class CalendarBookingResourceImpl extends BaseResourceImpl {
 				_calendarBooking.getCalendarBookingId(),
 				CalendarDataFormat.ICAL.getValue());
 
-			data = ICSSanitizer.sanitizeDownloadICS(data);
+			data = ICSSanitizer.sanitizeDownloadICS(data, _calendarBooking);
 
 			return new UnsyncByteArrayInputStream(
 				data.getBytes(StringPool.UTF8));

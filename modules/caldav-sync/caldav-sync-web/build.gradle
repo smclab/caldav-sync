@@ -4,6 +4,7 @@ dependencies {
 	compile files ("./src/main/resources/META-INF/libs/net.fortuna.ical4j-1.0.jar")
 	compile group: 'net.fortuna.ical4j', name: 'ical4j', version: '1.0-rc3'
 	compile project(":modules:caldav-sync:caldav-helper-api")
+	compile project(":modules:caldav-sync:caldav-helper-service")
 
 	compileOnly group: "com.liferay", name: "com.liferay.application.list.api", version: "2.0.0"
 	compileOnly group: "com.liferay.portal", name: "com.liferay.portal.kernel", version: "2.0.0"

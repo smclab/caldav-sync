@@ -56,7 +56,7 @@ public class ReportMethodImpl extends PropfindMethodImpl {
 			calendarBooking.getCalendarBookingId(),
 			CalendarDataFormat.ICAL.getValue());
 
-		data = ICSSanitizer.sanitizeDownloadICS(data);
+		data = ICSSanitizer.sanitizeDownloadICS(data, calendarBooking);
 
 		Element responseElement = DocUtil.add(
 			multistatusElement, CalDAVProps.createQName("response"));

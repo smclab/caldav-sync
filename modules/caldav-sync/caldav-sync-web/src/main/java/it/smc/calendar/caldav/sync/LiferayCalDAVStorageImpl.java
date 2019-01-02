@@ -328,6 +328,8 @@ public class LiferayCalDAVStorageImpl extends BaseWebDAVStorageImpl {
 				calendar.getCalendarId(), data,
 				CalendarDataFormat.ICAL.getValue());
 
+			ICSSanitizer.updateBookingExternalAttendees(data, calendar);
+
 			return HttpServletResponse.SC_CREATED;
 		}
 		catch (PrincipalException pe) {

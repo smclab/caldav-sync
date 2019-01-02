@@ -21,6 +21,14 @@ import com.liferay.portal.kernel.util.GetterUtil;
  */
 public class PropsValues {
 
+	public static final String INVITED_USERS_CUSTOM_FIELD_NAME =
+		GetterUtil.getString(
+			ConfigurationUtil.get(PropsKeys.INVITED_USERS_CUSTOM_FIELD_NAME));
+
+	public static final String INVITED_USERS_LABEL_CUSTOM_FIELD_NAME =
+		GetterUtil.getString(ConfigurationUtil.get(
+			PropsKeys.INVITED_USERS_LABEL_CUSTOM_FIELD_NAME));
+
 	public static final boolean HIDE_PERSONAL_CALENDAR = GetterUtil.getBoolean(
 		ConfigurationUtil.get(PropsKeys.HIDE_PERSONAL_CALENDAR));
 
