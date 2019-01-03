@@ -43,8 +43,20 @@ import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.UnicodeProperties;
 import com.liferay.portal.kernel.util.Validator;
+
 import it.smc.calendar.caldav.helper.util.PropsValues;
 import it.smc.calendar.caldav.sync.util.CalDAVUtil;
+
+import java.io.IOException;
+
+import java.net.URI;
+
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+
+import javax.servlet.http.HttpServletRequest;
+
 import net.fortuna.ical4j.data.CalendarBuilder;
 import net.fortuna.ical4j.data.CalendarOutputter;
 import net.fortuna.ical4j.data.ParserException;
@@ -58,13 +70,6 @@ import net.fortuna.ical4j.model.component.VEvent;
 import net.fortuna.ical4j.model.property.Action;
 import net.fortuna.ical4j.model.property.Attendee;
 import net.fortuna.ical4j.model.property.Summary;
-
-import javax.servlet.http.HttpServletRequest;
-import java.io.IOException;
-import java.net.URI;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
 
 /**
  * @author Fabio Pezzutto
@@ -98,7 +103,6 @@ public class ICSSanitizer {
 					if (vEvent.getAlarms().size() > 0) {
 						updateAlarmActions(vEvent, userId);
 					}
-
 
 					updateICSExternalAttendees(vEvent, calendarBooking);
 				}
@@ -320,12 +324,10 @@ public class ICSSanitizer {
 			return;
 		}
 
-		if (!calendarBookingExpando.hasAttribute(
-				invitedUsersCustomFieldName)) {
-
+		if (!calendarBookingExpando.hasAttribute(invitedUsersCustomFieldName)) {
 			calendarBookingExpando.addAttribute(
 				invitedUsersCustomFieldName,
-				ExpandoColumnConstants.STRING_ARRAY, new String[]{},
+				ExpandoColumnConstants.STRING_ARRAY, new String[0],
 				Boolean.FALSE);
 
 			UnicodeProperties hiddenProperties = new UnicodeProperties();
@@ -344,7 +346,7 @@ public class ICSSanitizer {
 
 			calendarBookingExpando.addAttribute(
 				invitedUsersLabelCustomFieldName,
-				ExpandoColumnConstants.STRING_ARRAY, new String[]{},
+				ExpandoColumnConstants.STRING_ARRAY, new String[0],
 				Boolean.FALSE);
 		}
 
@@ -357,7 +359,7 @@ public class ICSSanitizer {
 
 			if (Validator.isNotNull(attendee.getValue())) {
 				String attendeeEmail = StringUtil.replace(
-					attendee.getValue().toLowerCase(), "mailto:",
+					StringUtil.toLowerCase(attendee.getValue()), "mailto:",
 					StringPool.BLANK);
 
 				if (!Validator.isEmailAddress(attendeeEmail)) {
@@ -384,6 +386,7 @@ public class ICSSanitizer {
 
 		if (Validator.isNotNull(invitedUsersLabelCustomFieldName) &&
 			!ArrayUtil.isEmpty(attendeesEmailAddresses)) {
+
 			calendarBookingExpando.setAttribute(
 				invitedUsersLabelCustomFieldName, attendeesEmailAddresses,
 				Boolean.FALSE);
@@ -478,6 +481,7 @@ public class ICSSanitizer {
 		throws SanitizerException {
 
 		StringBuilder sb = new StringBuilder(9);
+
 		sb.append("BEGIN:VCALENDAR");
 		sb.append(StringPool.NEW_LINE);
 		sb.append("BEGIN:VEVENT");
@@ -500,6 +504,7 @@ public class ICSSanitizer {
 				calendarBuilder.build(unsyncStringReader);
 
 			Component vEvent = iCalCalendar.getComponent(VEvent.VEVENT);
+
 			Property attendeeProperty = vEvent.getProperty(Attendee.ATTENDEE);
 
 			attendee.setValue(attendeeProperty.getValue());

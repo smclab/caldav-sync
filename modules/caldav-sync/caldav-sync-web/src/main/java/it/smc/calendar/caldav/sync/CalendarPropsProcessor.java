@@ -28,10 +28,12 @@ import com.liferay.portal.kernel.webdav.Resource;
 import com.liferay.portal.kernel.webdav.WebDAVRequest;
 import com.liferay.portal.kernel.xml.Element;
 import com.liferay.util.xml.DocUtil;
+
 import it.smc.calendar.caldav.sync.util.CalDAVProps;
 import it.smc.calendar.caldav.sync.util.CalDAVUtil;
 import it.smc.calendar.caldav.sync.util.WebKeys;
 import it.smc.calendar.caldav.util.PropsValues;
+
 import net.fortuna.ical4j.data.CalendarOutputter;
 import net.fortuna.ical4j.model.ComponentList;
 import net.fortuna.ical4j.model.PropertyList;
@@ -166,8 +168,7 @@ public class CalendarPropsProcessor extends BasePropsProcessor {
 
 		el.addAttribute("name", WebKeys.VCALENDAR);
 
-		el = DocUtil.add(
-			supportedCalendarComponentSet, CalDAVProps.DAV_COMP);
+		el = DocUtil.add(supportedCalendarComponentSet, CalDAVProps.DAV_COMP);
 
 		el.addAttribute("name", WebKeys.VEVENT);
 	}

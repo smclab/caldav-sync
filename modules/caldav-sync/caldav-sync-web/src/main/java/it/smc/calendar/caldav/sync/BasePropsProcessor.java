@@ -32,6 +32,7 @@ import com.liferay.portal.kernel.xml.Element;
 import com.liferay.portal.kernel.xml.Namespace;
 import com.liferay.portal.kernel.xml.QName;
 import com.liferay.util.xml.DocUtil;
+
 import it.smc.calendar.caldav.sync.util.CalDAVMethod;
 import it.smc.calendar.caldav.sync.util.CalDAVProps;
 import it.smc.calendar.caldav.sync.util.CalDAVUtil;
@@ -312,8 +313,7 @@ public abstract class BasePropsProcessor implements PropsProcessor {
 
 		if (calendarResource == null) {
 			DocUtil.add(
-				failurePropElement,
-				CalDAVProps.CALDAV_CALENDAR_USER_TYPE);
+				failurePropElement, CalDAVProps.CALDAV_CALENDAR_USER_TYPE);
 		}
 
 		String className = calendarResource.getClassName();
@@ -328,7 +328,6 @@ public abstract class BasePropsProcessor implements PropsProcessor {
 		else if (className.equals(Group.class.getName())) {
 			cutypeparam = "GROUP";
 		}
-
 
 		DocUtil.add(
 			successPropElement, CalDAVProps.CALDAV_CALENDAR_USER_TYPE,
@@ -485,6 +484,10 @@ public abstract class BasePropsProcessor implements PropsProcessor {
 			CalDAVUtil.getPrincipalURL(CalDAVUtil.getUserId(webDAVRequest)));
 	}
 
+	protected void processDAVResourceId() {
+		DocUtil.add(failurePropElement, CalDAVProps.DAV_RESOURCE_ID);
+	}
+
 	protected void processDAVResourceType() {
 		Element resourceTypeElement = DocUtil.add(
 			successPropElement, CalDAVProps.DAV_RESOURCETYPE);
@@ -494,10 +497,6 @@ public abstract class BasePropsProcessor implements PropsProcessor {
 
 	protected void processDAVSource() {
 		DocUtil.add(successPropElement, CalDAVProps.DAV_SOURCE);
-	}
-
-	protected void processDAVResourceId() {
-		DocUtil.add(failurePropElement, CalDAVProps.DAV_RESOURCE_ID);
 	}
 
 	protected void processDAVSupportedReportSet() {

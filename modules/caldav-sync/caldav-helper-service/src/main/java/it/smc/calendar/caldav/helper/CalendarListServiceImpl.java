@@ -18,7 +18,6 @@ import com.liferay.calendar.model.Calendar;
 import com.liferay.calendar.model.CalendarResource;
 import com.liferay.calendar.service.CalendarLocalServiceUtil;
 import com.liferay.calendar.service.CalendarResourceServiceUtil;
-import com.liferay.calendar.service.CalendarServiceUtil;
 import com.liferay.calendar.service.permission.CalendarPermission;
 import com.liferay.portal.kernel.dao.orm.QueryUtil;
 import com.liferay.portal.kernel.exception.PortalException;

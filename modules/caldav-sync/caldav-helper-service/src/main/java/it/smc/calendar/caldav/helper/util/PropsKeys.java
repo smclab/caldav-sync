@@ -19,14 +19,14 @@ package it.smc.calendar.caldav.helper.util;
  */
 public class PropsKeys {
 
+	public static final String HIDE_PERSONAL_CALENDAR =
+		"hide.personal.calendar";
+
 	public static final String INVITED_USERS_CUSTOM_FIELD_NAME =
 		"invited.users.custom.field.name";
 
 	public static final String INVITED_USERS_LABEL_CUSTOM_FIELD_NAME =
 		"invited.users.label.custom.field.name";
-
-	public static final String HIDE_PERSONAL_CALENDAR =
-		"hide.personal.calendar";
 
 	public static final String PROPFIND_PROVIDE_SESSIONCLICKS_CALENDARS =
 		"propfind.provide.sessionclicks.calendars";
