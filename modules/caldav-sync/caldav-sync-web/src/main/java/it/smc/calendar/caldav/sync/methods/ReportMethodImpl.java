@@ -27,8 +27,8 @@ import com.liferay.portal.kernel.xml.Element;
 import com.liferay.portal.kernel.xml.Node;
 import com.liferay.portal.kernel.xml.QName;
 import com.liferay.util.xml.DocUtil;
-
-import it.smc.calendar.caldav.sync.ICSSanitizer;
+import it.smc.calendar.caldav.sync.listener.ICSImportExportListener;
+import it.smc.calendar.caldav.sync.listener.ICSContentImportExportFactoryUtil;
 import it.smc.calendar.caldav.sync.util.CalDAVProps;
 import it.smc.calendar.caldav.sync.util.CalDAVRequestThreadLocal;
 import it.smc.calendar.caldav.sync.util.CalDAVUtil;
@@ -36,7 +36,6 @@ import it.smc.calendar.caldav.util.CalendarUtil;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -56,7 +55,11 @@ public class ReportMethodImpl extends PropfindMethodImpl {
 			calendarBooking.getCalendarBookingId(),
 			CalendarDataFormat.ICAL.getValue());
 
-		data = ICSSanitizer.sanitizeDownloadICS(data, calendarBooking);
+		ICSImportExportListener icsContentListener =
+			ICSContentImportExportFactoryUtil.newInstance();
+
+		data = icsContentListener.beforeContentExported(
+			data, calendarBooking);
 
 		Element responseElement = DocUtil.add(
 			multistatusElement, CalDAVProps.createQName("response"));
@@ -70,8 +73,6 @@ public class ReportMethodImpl extends PropfindMethodImpl {
 		Element propElement = DocUtil.add(
 			propStatElement, CalDAVProps.createQName("prop"));
 
-		// TODO: check
-
 		String getetag = CalDAVUtil.buildETag(
 			String.valueOf(calendarBooking.getPrimaryKey()),
 			calendarBooking.getModifiedDate());
@@ -82,6 +83,8 @@ public class ReportMethodImpl extends PropfindMethodImpl {
 			propElement, CalDAVProps.createCalendarQName("calendar-data"));
 
 		calendarDataEl.addCDATA(data);
+
+		icsContentListener.afterContentExported(data, calendarBooking);
 
 		DocUtil.add(
 			propStatElement, CalDAVProps.createQName("status"),

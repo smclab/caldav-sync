@@ -99,6 +99,11 @@ public abstract class BasePropsProcessor implements PropsProcessor {
 			props.remove(CalDAVProps.CALDAV_GETETAG);
 		}
 
+		if (props.contains(CalDAVProps.CALDAV_MAX_RESOURCE_SIZE)) {
+			processCalDAVMaxResourceSize();
+			props.remove(CalDAVProps.CALDAV_MAX_RESOURCE_SIZE);
+		}
+
 		if (props.contains(
 				CalDAVProps.CALDAV_SUPPORTED_CALENDAR_COMPONENT_SET)) {
 
@@ -109,6 +114,11 @@ public abstract class BasePropsProcessor implements PropsProcessor {
 		if (props.contains(CalDAVProps.CALDAV_SUPPORTED_CALENDAR_DATA)) {
 			processCalDAVSupportedCalendarData();
 			props.remove(CalDAVProps.CALDAV_SUPPORTED_CALENDAR_DATA);
+		}
+
+		if (props.contains(CalDAVProps.CALDAV_VALID_CALENDAR_DATA)) {
+			processCalDAVValidCalendarData();
+			props.remove(CalDAVProps.CALDAV_VALID_CALENDAR_DATA);
 		}
 
 		if (props.contains(CalDAVProps.DAV_CREATIONDATE)) {
@@ -342,6 +352,10 @@ public abstract class BasePropsProcessor implements PropsProcessor {
 		DocUtil.add(failurePropElement, CalDAVProps.CALDAV_GETETAG);
 	}
 
+	protected void processCalDAVMaxResourceSize() {
+		DocUtil.add(failurePropElement, CalDAVProps.CALDAV_MAX_RESOURCE_SIZE);
+	}
+
 	protected void processCalDAVSupportedCalendarComponentSet() {
 		DocUtil.add(
 			failurePropElement,
@@ -351,6 +365,11 @@ public abstract class BasePropsProcessor implements PropsProcessor {
 	protected void processCalDAVSupportedCalendarData() {
 		DocUtil.add(
 			failurePropElement, CalDAVProps.CALDAV_SUPPORTED_CALENDAR_DATA);
+	}
+
+	protected void processCalDAVValidCalendarData() {
+		DocUtil.add(
+			failurePropElement, CalDAVProps.CALDAV_VALID_CALENDAR_DATA);
 	}
 
 	protected void processCustomProperties(Set<QName> props) throws Exception {

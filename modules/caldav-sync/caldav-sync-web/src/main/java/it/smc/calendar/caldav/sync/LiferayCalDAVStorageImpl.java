@@ -46,6 +46,8 @@ import com.liferay.portal.kernel.webdav.WebDAVRequest;
 import com.liferay.portal.kernel.webdav.WebDAVStorage;
 import com.liferay.portal.kernel.webdav.methods.MethodFactory;
 import com.liferay.portal.kernel.webdav.methods.MethodFactoryRegistryUtil;
+import it.smc.calendar.caldav.sync.listener.ICSImportExportListener;
+import it.smc.calendar.caldav.sync.listener.ICSContentImportExportFactoryUtil;
 import it.smc.calendar.caldav.sync.util.CalDAVHttpMethods;
 import it.smc.calendar.caldav.sync.util.CalDAVRequestThreadLocal;
 import it.smc.calendar.caldav.sync.util.CalDAVUtil;
@@ -322,13 +324,16 @@ public class LiferayCalDAVStorageImpl extends BaseWebDAVStorageImpl {
 
 			Calendar calendar = (Calendar)getResource(webDAVRequest).getModel();
 
-			data = ICSSanitizer.sanitizeUploadedICS(data, calendar);
+			ICSImportExportListener icsContentListener =
+				ICSContentImportExportFactoryUtil.newInstance();
+
+			data = icsContentListener.beforeContentImported(data, calendar);
 
 			CalendarServiceUtil.importCalendar(
 				calendar.getCalendarId(), data,
 				CalendarDataFormat.ICAL.getValue());
 
-			ICSSanitizer.updateBookingExternalAttendees(data, calendar);
+			icsContentListener.afterContentImported(data, calendar);
 
 			return HttpServletResponse.SC_CREATED;
 		}

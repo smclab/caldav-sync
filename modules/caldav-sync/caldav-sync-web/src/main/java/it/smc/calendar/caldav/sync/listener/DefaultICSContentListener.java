@@ -12,8 +12,9 @@
  * details.
  */
 
-package it.smc.calendar.caldav.sync;
+package it.smc.calendar.caldav.sync.listener;
 
+import com.liferay.calendar.constants.CalendarActionKeys;
 import com.liferay.calendar.model.Calendar;
 import com.liferay.calendar.model.CalendarBooking;
 import com.liferay.calendar.model.CalendarResource;
@@ -23,7 +24,6 @@ import com.liferay.expando.kernel.model.ExpandoBridge;
 import com.liferay.expando.kernel.model.ExpandoColumnConstants;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.io.unsync.UnsyncStringReader;
-import com.liferay.portal.kernel.io.unsync.UnsyncStringWriter;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.model.Role;
@@ -43,121 +43,60 @@ import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.UnicodeProperties;
 import com.liferay.portal.kernel.util.Validator;
-
+import com.liferay.portal.kernel.workflow.WorkflowConstants;
 import it.smc.calendar.caldav.helper.util.PropsValues;
 import it.smc.calendar.caldav.sync.util.CalDAVUtil;
-
-import java.io.IOException;
-
-import java.net.URI;
-
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-
-import javax.servlet.http.HttpServletRequest;
-
 import net.fortuna.ical4j.data.CalendarBuilder;
-import net.fortuna.ical4j.data.CalendarOutputter;
 import net.fortuna.ical4j.data.ParserException;
-import net.fortuna.ical4j.model.Component;
 import net.fortuna.ical4j.model.ComponentList;
 import net.fortuna.ical4j.model.Parameter;
 import net.fortuna.ical4j.model.Property;
 import net.fortuna.ical4j.model.PropertyList;
 import net.fortuna.ical4j.model.component.VAlarm;
 import net.fortuna.ical4j.model.component.VEvent;
+import net.fortuna.ical4j.model.parameter.Cn;
+import net.fortuna.ical4j.model.parameter.CuType;
+import net.fortuna.ical4j.model.parameter.PartStat;
+import net.fortuna.ical4j.model.parameter.Rsvp;
+import net.fortuna.ical4j.model.parameter.XParameter;
 import net.fortuna.ical4j.model.property.Action;
 import net.fortuna.ical4j.model.property.Attendee;
+import net.fortuna.ical4j.model.property.Method;
+import net.fortuna.ical4j.model.property.Organizer;
+import net.fortuna.ical4j.model.property.Status;
 import net.fortuna.ical4j.model.property.Summary;
+import net.fortuna.ical4j.model.property.Transp;
+import org.osgi.service.component.annotations.Component;
+
+import javax.servlet.http.HttpServletRequest;
+import java.io.IOException;
+import java.net.URI;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
 
 /**
  * @author Fabio Pezzutto
  */
-public class ICSSanitizer {
+@Component(
+	immediate = true,
+	service = ICSImportExportListener.class
+)
+public class DefaultICSContentListener implements ICSImportExportListener {
 
-	public static String sanitizeDownloadICS(
+	public void afterContentExported(
 			String ics, CalendarBooking calendarBooking)
 		throws SanitizerException {
-
-		try {
-			long userId = PrincipalThreadLocal.getUserId();
-
-			if (userId == 0) {
-				userId =
-					PermissionThreadLocal.getPermissionChecker().getUserId();
-			}
-
-			//TODO: find a better way to do it
-			ics = ics.replaceAll("TRIGGER:PT", "TRIGGER:PT-");
-
-			net.fortuna.ical4j.model.Calendar iCalCalendar = getICalendar(ics);
-
-			ComponentList components = iCalCalendar.getComponents(
-				Component.VEVENT);
-
-			for (Object component : components) {
-				if (component instanceof VEvent) {
-					VEvent vEvent = (VEvent)component;
-
-					if (vEvent.getAlarms().size() > 0) {
-						updateAlarmActions(vEvent, userId);
-					}
-
-					updateICSExternalAttendees(vEvent, calendarBooking);
-				}
-			}
-
-			return iCalCalendar.toString();
-		}
-		catch (Exception e) {
-			throw new SanitizerException(e);
-		}
 	}
 
-	public static String sanitizeUploadedICS(String ics, Calendar calendar)
-		throws SanitizerException {
-
-		try {
-			/*
-			ics = ics.replaceAll("\r\n", "_TMP_REPLACE_");
-			ics = ics.replaceAll(";EMAIL=\"(.*)\"", "");
-			ics = ics.replaceAll("EMAIL=\"(.*);\"", "");
-			ics = ics.replaceAll("EMAIL=\"(.*):\"", ":");
-			ics = ics.replaceAll("_TMP_REPLACE_", "\r\n");
-			*/
-
-			net.fortuna.ical4j.model.Calendar iCalCalendar = getICalendar(ics);
-
-			ComponentList components = iCalCalendar.getComponents(
-				Component.VEVENT);
-
-			for (Object component : components) {
-				if (component instanceof VEvent) {
-					VEvent vEvent = (VEvent)component;
-
-					if (vEvent.getAlarms().size() > 0) {
-						updateAlarmAttendeers(vEvent, calendar);
-					}
-				}
-			}
-
-			return iCalCalendar.toString();
-		}
-		catch (Exception e) {
-			throw new SanitizerException(e);
-		}
-	}
-
-	public static void updateBookingExternalAttendees(
-			String ics, Calendar calendar)
+	public void afterContentImported(String ics, Calendar calendar)
 		throws SanitizerException {
 
 		try {
 			net.fortuna.ical4j.model.Calendar iCalCalendar = getICalendar(ics);
 
 			ComponentList components = iCalCalendar.getComponents(
-				Component.VEVENT);
+				net.fortuna.ical4j.model.Component.VEVENT);
 
 			for (Object component : components) {
 				if (component instanceof VEvent) {
@@ -183,7 +122,91 @@ public class ICSSanitizer {
 		}
 	}
 
-	protected static net.fortuna.ical4j.model.Calendar getICalendar(String ics)
+	public String beforeContentExported(
+			String ics, CalendarBooking calendarBooking)
+		throws SanitizerException {
+
+		try {
+			long userId = PrincipalThreadLocal.getUserId();
+
+			if (userId == 0) {
+				userId =
+					PermissionThreadLocal.getPermissionChecker().getUserId();
+			}
+
+			User currentUser = UserLocalServiceUtil.getUser(userId);
+
+			//TODO: find a better way to do it
+			ics = ics.replaceAll("TRIGGER:PT", "TRIGGER:PT-");
+
+			net.fortuna.ical4j.model.Calendar iCalCalendar = getICalendar(ics);
+
+			ComponentList components = iCalCalendar.getComponents(
+				net.fortuna.ical4j.model.Component.VEVENT);
+
+			for (Object component : components) {
+				if (component instanceof VEvent) {
+					VEvent vEvent = (VEvent)component;
+
+					if (vEvent.getAlarms().size() > 0) {
+						updateAlarmActions(vEvent, userId);
+					}
+
+					updateICSExternalAttendees(vEvent, calendarBooking);
+
+					updateDowloadedInvitations(
+						currentUser, iCalCalendar, vEvent, calendarBooking);
+				}
+			}
+
+			return iCalCalendar.toString();
+		}
+		catch (Exception e) {
+			throw new SanitizerException(e);
+		}
+	}
+
+	public String beforeContentImported(String ics, Calendar calendar)
+		throws SanitizerException {
+
+		try {
+			net.fortuna.ical4j.model.Calendar iCalCalendar = getICalendar(ics);
+
+			ComponentList components = iCalCalendar.getComponents(
+				net.fortuna.ical4j.model.Component.VEVENT);
+
+			for (Object component : components) {
+				if (component instanceof VEvent) {
+					VEvent vEvent = (VEvent)component;
+
+					if (vEvent.getAlarms().size() > 0) {
+						updateAlarmAttendeers(vEvent, calendar);
+					}
+				}
+			}
+
+			return iCalCalendar.toString();
+		}
+		catch (Exception e) {
+			throw new SanitizerException(e);
+		}
+	}
+
+	protected User getCalendarBookingUser(CalendarBooking calendarBooking)
+		throws PortalException {
+
+		CalendarResource calendarResource =
+			calendarBooking.getCalendarResource();
+
+		if (calendarResource.getClassName().equals(User.class.getName())) {
+			return UserLocalServiceUtil.fetchUser(
+				calendarResource.getClassPK());
+		}
+
+		return null;
+	}
+
+	protected net.fortuna.ical4j.model.Calendar getICalendar(String ics)
 		throws IOException, ParserException {
 
 		CalendarBuilder calendarBuilder = new CalendarBuilder();
@@ -196,28 +219,7 @@ public class ICSSanitizer {
 		return iCalCalendar;
 	}
 
-	protected static String toString(
-			net.fortuna.ical4j.model.Calendar iCalCalendar)
-		throws Exception {
-
-		CalendarOutputter calendarOutputter = new CalendarOutputter(false);
-
-		ComponentList componentList = iCalCalendar.getComponents();
-
-		if (componentList.isEmpty()) {
-			calendarOutputter.setValidating(false);
-		}
-
-		UnsyncStringWriter unsyncStringWriter = new UnsyncStringWriter();
-
-		calendarOutputter.output(iCalCalendar, unsyncStringWriter);
-
-		unsyncStringWriter.flush();
-
-		return unsyncStringWriter.toString();
-	}
-
-	protected static void updateAlarmActions(VEvent vEvent, long userId)
+	protected void updateAlarmActions(VEvent vEvent, long userId)
 		throws Exception {
 
 		User user = UserLocalServiceUtil.getUser(userId);
@@ -269,8 +271,8 @@ public class ICSSanitizer {
 		}
 	}
 
-	protected static void updateAlarmAttendeers(
-			VEvent vEvent, Calendar calendar)
+	protected void updateAlarmAttendeers(
+		VEvent vEvent, Calendar calendar)
 		throws Exception {
 
 		ComponentList vAlarms = (ComponentList)vEvent.getAlarms();
@@ -308,7 +310,7 @@ public class ICSSanitizer {
 	}
 
 	protected static void updateBookingAttendees(
-			CalendarBooking calendarBooking, PropertyList attendeeList)
+		CalendarBooking calendarBooking, PropertyList attendeeList)
 		throws PortalException {
 
 		ExpandoBridge calendarBookingExpando =
@@ -337,7 +339,7 @@ public class ICSSanitizer {
 				String.valueOf(Boolean.TRUE));
 
 			calendarBookingExpando.setAttributeProperties(
-				invitedUsersCustomFieldName, hiddenProperties);
+				invitedUsersCustomFieldName, hiddenProperties, Boolean.FALSE);
 		}
 
 		if (Validator.isNotNull(invitedUsersLabelCustomFieldName) &&
@@ -393,9 +395,79 @@ public class ICSSanitizer {
 		}
 	}
 
-	protected static void updateICSExternalAttendees(
+	protected void updateDowloadedInvitations(
+			User user, net.fortuna.ical4j.model.Calendar iCalCalendar,
 			VEvent vEvent, CalendarBooking calendarBooking)
-		throws SanitizerException {
+		throws PortalException {
+
+		CalendarBooking parentBooking =
+			calendarBooking.getParentCalendarBooking();
+
+		User userOrganizer = getCalendarBookingUser(parentBooking);
+
+		if (userOrganizer != null) {
+			URI uri = URI.create(
+				"mailto:".concat(userOrganizer.getEmailAddress()));
+
+			Organizer organizer = new Organizer(uri);
+			organizer.getParameters().add(
+				new Cn(userOrganizer.getScreenName()));
+
+			vEvent.getProperties().add(organizer);
+		}
+
+		vEvent.getProperties().add(Transp.OPAQUE);
+
+		boolean hasUpdatePermissions = CalendarPermission.contains(
+			PermissionThreadLocal.getPermissionChecker(),
+			calendarBooking.getCalendarId(),
+			CalendarActionKeys.MANAGE_BOOKINGS);
+
+		User bookingUser = getCalendarBookingUser(calendarBooking);
+
+		boolean bookingPending = calendarBooking.getStatus() ==
+			WorkflowConstants.STATUS_PENDING;
+
+		Property eventStatus = vEvent.getProperty(Status.STATUS);
+
+		if (eventStatus != null) {
+			vEvent.getProperties().remove(eventStatus);
+		}
+
+		if (bookingPending) {
+			vEvent.getProperties().add(Status.VEVENT_CONFIRMED);
+		}
+		else {
+			vEvent.getProperties().add(Status.VEVENT_CONFIRMED);
+		}
+
+		if (!bookingPending || !hasUpdatePermissions ||
+			!bookingUser.equals(user)) {
+
+			return;
+		}
+
+		Property methodProperty = iCalCalendar.getProperty(Method.METHOD);
+
+		iCalCalendar.getProperties().remove(methodProperty);
+		iCalCalendar.getProperties().add(Method.REQUEST);
+
+		URI uri = URI.create("mailto:".concat(user.getEmailAddress()));
+		Attendee attendee = new Attendee(uri);
+		attendee.getParameters().add(new Cn(user.getScreenName()));
+		attendee.getParameters().add(CuType.INDIVIDUAL);
+		attendee.getParameters().add(PartStat.NEEDS_ACTION);
+		attendee.getParameters().add(
+			net.fortuna.ical4j.model.parameter.Role.REQ_PARTICIPANT);
+		attendee.getParameters().add(Rsvp.TRUE);
+		attendee.getParameters().add(new XParameter("X-NUM-GUESTS", "0"));
+
+		vEvent.getProperties().add(attendee);
+	}
+
+	protected void updateICSExternalAttendees(
+			VEvent vEvent, CalendarBooking calendarBooking)
+		throws SanitizerException, PortalException {
 
 		ExpandoBridge calendarBookingExpando =
 			calendarBooking.getExpandoBridge();
@@ -425,7 +497,7 @@ public class ICSSanitizer {
 		}
 	}
 
-	private static List<String> _getNotificationRecipients(Calendar calendar)
+	private List<String> _getNotificationRecipients(Calendar calendar)
 		throws Exception {
 
 		CalendarResource calendarResource = calendar.getCalendarResource();
@@ -450,7 +522,7 @@ public class ICSSanitizer {
 					calendar.getUserId());
 
 				if (calendarResourceUser.getUserId() !=
-						calendarUser.getUserId()) {
+					calendarUser.getUserId()) {
 
 					notificationRecipients.add(calendarUser.getEmailAddress());
 				}
@@ -464,7 +536,7 @@ public class ICSSanitizer {
 						PermissionCheckerFactoryUtil.create(roleUser);
 
 					if (!CalendarPermission.contains(
-							permissionChecker, calendar, "MANAGE_BOOKINGS")) {
+						permissionChecker, calendar, "MANAGE_BOOKINGS")) {
 
 						continue;
 					}
@@ -477,7 +549,7 @@ public class ICSSanitizer {
 		return notificationRecipients;
 	}
 
-	private static Attendee _toICalAttendee(String attendeeString)
+	private Attendee _toICalAttendee(String attendeeString)
 		throws SanitizerException {
 
 		StringBuilder sb = new StringBuilder(9);
@@ -503,7 +575,8 @@ public class ICSSanitizer {
 			net.fortuna.ical4j.model.Calendar iCalCalendar =
 				calendarBuilder.build(unsyncStringReader);
 
-			Component vEvent = iCalCalendar.getComponent(VEvent.VEVENT);
+			net.fortuna.ical4j.model.Component vEvent =
+				iCalCalendar.getComponent(VEvent.VEVENT);
 
 			Property attendeeProperty = vEvent.getProperty(Attendee.ATTENDEE);
 
@@ -523,32 +596,10 @@ public class ICSSanitizer {
 			throw new SanitizerException(e);
 		}
 
-		/*
-
-		URI uri = URI.create("mailto:".concat(emailAddress));
-
-		attendee.setCalAddress(uri);
-
-		Cn cn = new Cn(emailAddress);
-
-		ParameterList parameters = attendee.getParameters();
-
-		parameters.add(cn);
-		parameters.add(CuType.INDIVIDUAL);
-		parameters.add(net.fortuna.ical4j.model.parameter.Role.REQ_PARTICIPANT);
-		parameters.add(Rsvp.TRUE);
-
-		if (status == WorkflowConstants.STATUS_APPROVED) {
-			parameters.add(PartStat.ACCEPTED);
-		}
-		else {
-			parameters.add(PartStat.NEEDS_ACTION);
-		}
-		*/
-
 		return attendee;
 	}
 
-	private static Log _log = LogFactoryUtil.getLog(ICSSanitizer.class);
+	private static Log _log = LogFactoryUtil.getLog(
+		DefaultICSContentListener.class);
 
 }

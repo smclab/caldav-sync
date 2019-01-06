@@ -100,6 +100,12 @@ public class CalDAVProps {
 	public static final QName CALDAV_SUPPORTED_CALENDAR_DATA =
 		createCalendarQName("supported-calendar-data");
 
+	// https://tools.ietf.org/html/rfc4791#section-5.2.10
+
+	public static final QName CALDAV_VALID_CALENDAR_DATA =
+		createCalendarQName("valid-calendar-data");
+
+
 	// WebDAV properties RFC 4791
 
 	public static final QName DAV_ALLPROP = createQName("allprop");
