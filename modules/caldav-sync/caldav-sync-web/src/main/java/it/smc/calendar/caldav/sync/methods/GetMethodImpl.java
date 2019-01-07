@@ -24,6 +24,7 @@ import com.liferay.portal.kernel.webdav.WebDAVRequest;
 import com.liferay.portal.kernel.webdav.WebDAVStorage;
 import com.liferay.portal.kernel.webdav.methods.Method;
 
+import it.smc.calendar.caldav.sync.util.CalDAVUtil;
 import it.smc.calendar.caldav.sync.util.ResourceNotFoundException;
 
 import java.io.InputStream;
@@ -51,6 +52,9 @@ public class GetMethodImpl implements Method {
 			if (resource == null) {
 				return HttpServletResponse.SC_NOT_FOUND;
 			}
+
+			String id = CalDAVUtil.getResourceETag(resource);
+			response.setHeader("ETag", id);
 
 			try {
 				is = resource.getContentAsStream();

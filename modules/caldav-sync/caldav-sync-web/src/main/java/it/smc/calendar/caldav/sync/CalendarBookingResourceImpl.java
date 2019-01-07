@@ -24,11 +24,11 @@ import com.liferay.portal.kernel.util.ContentTypes;
 import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.kernel.webdav.BaseResourceImpl;
 import com.liferay.portal.kernel.webdav.WebDAVException;
-
+import it.smc.calendar.caldav.sync.listener.ICSContentImportExportFactoryUtil;
+import it.smc.calendar.caldav.sync.listener.ICSImportExportListener;
 import it.smc.calendar.caldav.sync.util.CalDAVUtil;
 
 import java.io.InputStream;
-
 import java.util.Locale;
 
 /**
@@ -57,7 +57,11 @@ public class CalendarBookingResourceImpl extends BaseResourceImpl {
 				_calendarBooking.getCalendarBookingId(),
 				CalendarDataFormat.ICAL.getValue());
 
-			data = ICSSanitizer.sanitizeDownloadICS(data);
+			ICSImportExportListener icsContentListener =
+				ICSContentImportExportFactoryUtil.newInstance();
+
+			data = icsContentListener.beforeContentExported(
+				data, _calendarBooking);
 
 			return new UnsyncByteArrayInputStream(
 				data.getBytes(StringPool.UTF8));

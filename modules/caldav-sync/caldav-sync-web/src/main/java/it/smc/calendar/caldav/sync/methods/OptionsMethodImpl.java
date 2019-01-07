@@ -40,7 +40,8 @@ public class OptionsMethodImpl implements CalDAVMethod {
 			sb.append("1, ");
 		}
 
-		sb.append("calendar-access");
+		sb.append("calendar-access, ");
+		sb.append("calendar-auto-schedule");
 
 		response.addHeader("DAV", sb.toString());
 

@@ -19,6 +19,7 @@ import com.liferay.calendar.service.CalendarResourceLocalServiceUtil;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
+import com.liferay.portal.kernel.model.Group;
 import com.liferay.portal.kernel.model.User;
 import com.liferay.portal.kernel.model.WebDAVProps;
 import com.liferay.portal.kernel.service.UserServiceUtil;
@@ -32,6 +33,7 @@ import com.liferay.portal.kernel.xml.Namespace;
 import com.liferay.portal.kernel.xml.QName;
 import com.liferay.util.xml.DocUtil;
 
+import it.smc.calendar.caldav.helper.api.CalendarHelperUtil;
 import it.smc.calendar.caldav.sync.util.CalDAVMethod;
 import it.smc.calendar.caldav.sync.util.CalDAVProps;
 import it.smc.calendar.caldav.sync.util.CalDAVUtil;
@@ -39,6 +41,7 @@ import it.smc.calendar.caldav.sync.util.PropsProcessor;
 
 import java.util.HashSet;
 import java.util.Locale;
+import java.util.Optional;
 import java.util.Set;
 
 /**
@@ -83,6 +86,11 @@ public abstract class BasePropsProcessor implements PropsProcessor {
 			props.remove(CalDAVProps.CALDAV_CALENDAR_USER_ADDRESS_SET);
 		}
 
+		if (props.contains(CalDAVProps.CALDAV_CALENDAR_USER_TYPE)) {
+			processCalDAVCalendarUserType();
+			props.remove(CalDAVProps.CALDAV_CALENDAR_USER_TYPE);
+		}
+
 		if (props.contains(CalDAVProps.CALDAV_GETCTAG)) {
 			processCalDAVGetCTag();
 			props.remove(CalDAVProps.CALDAV_GETCTAG);
@@ -91,6 +99,11 @@ public abstract class BasePropsProcessor implements PropsProcessor {
 		if (props.contains(CalDAVProps.CALDAV_GETETAG)) {
 			processCalDAVGetCTag();
 			props.remove(CalDAVProps.CALDAV_GETETAG);
+		}
+
+		if (props.contains(CalDAVProps.CALDAV_MAX_RESOURCE_SIZE)) {
+			processCalDAVMaxResourceSize();
+			props.remove(CalDAVProps.CALDAV_MAX_RESOURCE_SIZE);
 		}
 
 		if (props.contains(
@@ -103,6 +116,11 @@ public abstract class BasePropsProcessor implements PropsProcessor {
 		if (props.contains(CalDAVProps.CALDAV_SUPPORTED_CALENDAR_DATA)) {
 			processCalDAVSupportedCalendarData();
 			props.remove(CalDAVProps.CALDAV_SUPPORTED_CALENDAR_DATA);
+		}
+
+		if (props.contains(CalDAVProps.CALDAV_VALID_CALENDAR_DATA)) {
+			processCalDAVValidCalendarData();
+			props.remove(CalDAVProps.CALDAV_VALID_CALENDAR_DATA);
 		}
 
 		if (props.contains(CalDAVProps.DAV_CREATIONDATE)) {
@@ -170,9 +188,12 @@ public abstract class BasePropsProcessor implements PropsProcessor {
 			props.remove(CalDAVProps.DAV_RESOURCETYPE);
 		}
 
-		if (props.contains(CalDAVProps.DAV_SOURCE)) {
+		if (props.contains(CalDAVProps.DAV_SOURCE) ||
+			props.contains(CalDAVProps.CALDAV_SOURCE)) {
+
 			processDAVSource();
 			props.remove(CalDAVProps.DAV_SOURCE);
+			props.remove(CalDAVProps.CALDAV_SOURCE);
 		}
 
 		if (props.contains(CalDAVProps.DAV_SUPPORTED_REPORT_SET)) {
@@ -277,9 +298,20 @@ public abstract class BasePropsProcessor implements PropsProcessor {
 				successPropElement,
 				CalDAVProps.CALDAV_CALENDAR_USER_ADDRESS_SET);
 
+			String address = CalDAVUtil.getCalendarResourceURL(resource);
+
+			/*
+			Optional<User> user = CalendarHelperUtil.getCalendarResourceUser(
+				resource);
+
+			if (user.isPresent()) {
+				address = "mailto:" + user.get().getEmailAddress();
+			}
+			*/
+
 			DocUtil.add(
 				calendarHomeSetElement, CalDAVProps.createQName("href"),
-				CalDAVUtil.getCalendarResourceURL(resource));
+				address);
 		}
 		else {
 			DocUtil.add(
@@ -288,12 +320,55 @@ public abstract class BasePropsProcessor implements PropsProcessor {
 		}
 	}
 
+	protected void processCalDAVCalendarUserType() {
+		CalendarResource calendarResource;
+
+		try {
+			calendarResource =
+				CalendarResourceLocalServiceUtil.fetchCalendarResource(
+					PortalUtil.getClassNameId(User.class),
+					CalDAVUtil.getUserId(webDAVRequest));
+		}
+		catch (Exception e) {
+			_log.error(e);
+			return;
+		}
+
+		if (calendarResource == null) {
+			DocUtil.add(
+				failurePropElement, CalDAVProps.CALDAV_CALENDAR_USER_TYPE);
+		}
+
+		String className = calendarResource.getClassName();
+		String cutypeparam = "UNKNOWN";
+
+		if (CalendarHelperUtil.isCalendarResourceUserCalendar(
+			calendarResource)) {
+
+			cutypeparam = "INDIVIDUAL";
+		}
+		else if (className.equals(CalendarResource.class.getName())) {
+			cutypeparam = "RESOURCE";
+		}
+		else if (className.equals(Group.class.getName())) {
+			cutypeparam = "GROUP";
+		}
+
+		DocUtil.add(
+			successPropElement, CalDAVProps.CALDAV_CALENDAR_USER_TYPE,
+			cutypeparam);
+	}
+
 	protected void processCalDAVGetCTag() {
 		DocUtil.add(failurePropElement, CalDAVProps.CALDAV_GETCTAG);
 	}
 
 	protected void processCalDAVGetETag() {
 		DocUtil.add(failurePropElement, CalDAVProps.CALDAV_GETETAG);
+	}
+
+	protected void processCalDAVMaxResourceSize() {
+		DocUtil.add(failurePropElement, CalDAVProps.CALDAV_MAX_RESOURCE_SIZE);
 	}
 
 	protected void processCalDAVSupportedCalendarComponentSet() {
@@ -305,6 +380,11 @@ public abstract class BasePropsProcessor implements PropsProcessor {
 	protected void processCalDAVSupportedCalendarData() {
 		DocUtil.add(
 			failurePropElement, CalDAVProps.CALDAV_SUPPORTED_CALENDAR_DATA);
+	}
+
+	protected void processCalDAVValidCalendarData() {
+		DocUtil.add(
+			failurePropElement, CalDAVProps.CALDAV_VALID_CALENDAR_DATA);
 	}
 
 	protected void processCustomProperties(Set<QName> props) throws Exception {
@@ -436,6 +516,10 @@ public abstract class BasePropsProcessor implements PropsProcessor {
 		DocUtil.add(
 			principalUrlElement, CalDAVProps.createQName("href"),
 			CalDAVUtil.getPrincipalURL(CalDAVUtil.getUserId(webDAVRequest)));
+	}
+
+	protected void processDAVResourceId() {
+		DocUtil.add(failurePropElement, CalDAVProps.DAV_RESOURCE_ID);
 	}
 
 	protected void processDAVResourceType() {

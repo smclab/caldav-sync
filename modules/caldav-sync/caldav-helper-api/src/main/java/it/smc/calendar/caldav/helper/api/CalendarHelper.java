@@ -12,26 +12,23 @@
  * details.
  */
 
-package it.smc.calendar.caldav.helper.util;
+package it.smc.calendar.caldav.helper.api;
+
+import com.liferay.calendar.model.Calendar;
+import com.liferay.calendar.model.CalendarResource;
+import com.liferay.portal.kernel.model.User;
+
+import java.util.Optional;
 
 /**
  * @author Fabio Pezzutto
  */
-public class PropsKeys {
+public interface CalendarHelper {
 
-	public static final String HIDE_PERSONAL_CALENDAR =
-		"hide.personal.calendar";
+	Optional<User> getCalendarResourceUser(CalendarResource calendarResource);
 
-	public static final String INVITED_USERS_CUSTOM_FIELD_NAME =
-		"invited.users.custom.field.name";
+	boolean isCalendarResourceUserCalendar(CalendarResource calendarResource);
 
-	public static final String INVITED_USERS_LABEL_CUSTOM_FIELD_NAME =
-		"invited.users.label.custom.field.name";
-
-	public static final String PROPFIND_PROVIDE_SESSIONCLICKS_CALENDARS =
-		"propfind.provide.sessionclicks.calendars";
-
-	public static final String PROPFIND_PROVIDE_USER_GROUPS =
-		"propfind.provide.user.groups";
+	boolean isCalendarUserCalendar(Calendar calendar);
 
 }
