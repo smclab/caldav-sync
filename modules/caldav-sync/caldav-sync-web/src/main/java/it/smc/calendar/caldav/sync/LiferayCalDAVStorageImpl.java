@@ -33,6 +33,9 @@ import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.model.User;
 import com.liferay.portal.kernel.security.auth.PrincipalException;
 import com.liferay.portal.kernel.security.permission.ActionKeys;
+import com.liferay.portal.kernel.service.ServiceContext;
+import com.liferay.portal.kernel.service.ServiceContextFactory;
+import com.liferay.portal.kernel.service.UserLocalServiceUtil;
 import com.liferay.portal.kernel.service.UserServiceUtil;
 import com.liferay.portal.kernel.util.FileUtil;
 import com.liferay.portal.kernel.util.GetterUtil;
@@ -46,6 +49,8 @@ import com.liferay.portal.kernel.webdav.WebDAVRequest;
 import com.liferay.portal.kernel.webdav.WebDAVStorage;
 import com.liferay.portal.kernel.webdav.methods.MethodFactory;
 import com.liferay.portal.kernel.webdav.methods.MethodFactoryRegistryUtil;
+import com.liferay.portal.kernel.workflow.WorkflowConstants;
+import it.smc.calendar.caldav.helper.api.CalendarHelperUtil;
 import it.smc.calendar.caldav.sync.listener.ICSImportExportListener;
 import it.smc.calendar.caldav.sync.listener.ICSContentImportExportFactoryUtil;
 import it.smc.calendar.caldav.sync.util.CalDAVHttpMethods;
@@ -59,6 +64,7 @@ import javax.servlet.http.HttpServletResponse;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.Optional;
 
 /**
  * @author Fabio Pezzutto
@@ -82,6 +88,36 @@ public class LiferayCalDAVStorageImpl extends BaseWebDAVStorageImpl {
 		try {
 			CalendarBooking calendarBooking = (CalendarBooking)getResource(
 				webDAVRequest).getModel();
+
+			long currentUserId = CalDAVUtil.getUserId(webDAVRequest);
+			User currentUser = UserLocalServiceUtil.fetchUser(currentUserId);
+
+			CalendarResource calendarResource =
+				calendarBooking.getCalendarResource();
+
+			if (!calendarBooking.isMasterBooking() &&
+				CalendarHelperUtil.isCalendarResourceUserCalendar(
+					calendarResource)) {
+
+				Optional<User> calendarResourceUser =
+					CalendarHelperUtil.getCalendarResourceUser(
+						calendarResource);
+
+				if (calendarResourceUser.isPresent() &&
+					currentUser.equals(calendarResourceUser.get())) {
+
+					ServiceContext serviceContext =
+						ServiceContextFactory.getInstance(
+							CalendarBooking.class.getName(),
+							webDAVRequest.getHttpServletRequest());
+
+					CalendarBookingLocalServiceUtil.updateStatus(
+						currentUserId, calendarBooking,
+						WorkflowConstants.STATUS_DENIED, serviceContext);
+
+					return HttpServletResponse.SC_NO_CONTENT;
+				}
+			}
 
 			CalendarBookingServiceUtil.deleteCalendarBooking(
 				calendarBooking.getCalendarBookingId());

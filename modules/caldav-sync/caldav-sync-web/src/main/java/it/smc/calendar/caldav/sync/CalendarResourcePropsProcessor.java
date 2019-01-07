@@ -16,14 +16,18 @@ package it.smc.calendar.caldav.sync;
 
 import com.liferay.calendar.model.CalendarResource;
 import com.liferay.calendar.service.permission.CalendarResourcePermission;
+import com.liferay.portal.kernel.model.User;
 import com.liferay.portal.kernel.security.permission.ActionKeys;
 import com.liferay.portal.kernel.webdav.Resource;
 import com.liferay.portal.kernel.webdav.WebDAVRequest;
 import com.liferay.portal.kernel.xml.Element;
 import com.liferay.util.xml.DocUtil;
 
+import it.smc.calendar.caldav.helper.api.CalendarHelperUtil;
 import it.smc.calendar.caldav.sync.util.CalDAVProps;
 import it.smc.calendar.caldav.sync.util.CalDAVUtil;
+
+import java.util.Optional;
 
 /**
  * @author Fabio Pezzutto
@@ -53,9 +57,19 @@ public class CalendarResourcePropsProcessor extends BasePropsProcessor {
 		Element calendarHomeSetElement = DocUtil.add(
 			successPropElement, CalDAVProps.CALDAV_CALENDAR_USER_ADDRESS_SET);
 
+		String address = CalDAVUtil.getCalendarResourceURL(_calendarResource);
+
+		/*
+		Optional<User> user = CalendarHelperUtil.getCalendarResourceUser(
+			_calendarResource);
+
+		if (user.isPresent()) {
+			address = "mailto:" + user.get().getEmailAddress();
+		}
+		*/
+
 		DocUtil.add(
-			calendarHomeSetElement, CalDAVProps.createQName("href"),
-			CalDAVUtil.getCalendarResourceURL(_calendarResource));
+			calendarHomeSetElement, CalDAVProps.createQName("href"), address);
 	}
 
 	@Override

@@ -33,6 +33,7 @@ import com.liferay.portal.kernel.xml.Namespace;
 import com.liferay.portal.kernel.xml.QName;
 import com.liferay.util.xml.DocUtil;
 
+import it.smc.calendar.caldav.helper.api.CalendarHelperUtil;
 import it.smc.calendar.caldav.sync.util.CalDAVMethod;
 import it.smc.calendar.caldav.sync.util.CalDAVProps;
 import it.smc.calendar.caldav.sync.util.CalDAVUtil;
@@ -40,6 +41,7 @@ import it.smc.calendar.caldav.sync.util.PropsProcessor;
 
 import java.util.HashSet;
 import java.util.Locale;
+import java.util.Optional;
 import java.util.Set;
 
 /**
@@ -296,9 +298,20 @@ public abstract class BasePropsProcessor implements PropsProcessor {
 				successPropElement,
 				CalDAVProps.CALDAV_CALENDAR_USER_ADDRESS_SET);
 
+			String address = CalDAVUtil.getCalendarResourceURL(resource);
+
+			/*
+			Optional<User> user = CalendarHelperUtil.getCalendarResourceUser(
+				resource);
+
+			if (user.isPresent()) {
+				address = "mailto:" + user.get().getEmailAddress();
+			}
+			*/
+
 			DocUtil.add(
 				calendarHomeSetElement, CalDAVProps.createQName("href"),
-				CalDAVUtil.getCalendarResourceURL(resource));
+				address);
 		}
 		else {
 			DocUtil.add(
@@ -329,7 +342,9 @@ public abstract class BasePropsProcessor implements PropsProcessor {
 		String className = calendarResource.getClassName();
 		String cutypeparam = "UNKNOWN";
 
-		if (className.equals(CalendarResource.class.getName())) {
+		if (CalendarHelperUtil.isCalendarResourceUserCalendar(
+			calendarResource)) {
+
 			cutypeparam = "INDIVIDUAL";
 		}
 		else if (className.equals(CalendarResource.class.getName())) {

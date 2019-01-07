@@ -44,6 +44,7 @@ import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.UnicodeProperties;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.kernel.workflow.WorkflowConstants;
+import it.smc.calendar.caldav.helper.api.CalendarHelperUtil;
 import it.smc.calendar.caldav.helper.util.PropsValues;
 import it.smc.calendar.caldav.sync.util.CalDAVUtil;
 import net.fortuna.ical4j.data.CalendarBuilder;
@@ -74,6 +75,8 @@ import java.net.URI;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Optional;
+import java.util.function.Consumer;
 
 /**
  * @author Fabio Pezzutto
@@ -198,12 +201,14 @@ public class DefaultICSContentListener implements ICSImportExportListener {
 		CalendarResource calendarResource =
 			calendarBooking.getCalendarResource();
 
-		if (calendarResource.getClassName().equals(User.class.getName())) {
-			return UserLocalServiceUtil.fetchUser(
-				calendarResource.getClassPK());
+		Optional<User> user = CalendarHelperUtil.getCalendarResourceUser(
+			calendarResource);
+
+		if (!user.isPresent()) {
+			return null;
 		}
 
-		return null;
+		return user.get();
 	}
 
 	protected net.fortuna.ical4j.model.Calendar getICalendar(String ics)
@@ -403,9 +408,11 @@ public class DefaultICSContentListener implements ICSImportExportListener {
 		CalendarBooking parentBooking =
 			calendarBooking.getParentCalendarBooking();
 
+		// set organizer
+
 		User userOrganizer = getCalendarBookingUser(parentBooking);
 
-		if (userOrganizer != null) {
+		if ((userOrganizer != null) && !user.equals(userOrganizer)) {
 			URI uri = URI.create(
 				"mailto:".concat(userOrganizer.getEmailAddress()));
 
@@ -425,6 +432,8 @@ public class DefaultICSContentListener implements ICSImportExportListener {
 
 		User bookingUser = getCalendarBookingUser(calendarBooking);
 
+		// set event status
+
 		boolean bookingPending = calendarBooking.getStatus() ==
 			WorkflowConstants.STATUS_PENDING;
 
@@ -435,39 +444,143 @@ public class DefaultICSContentListener implements ICSImportExportListener {
 		}
 
 		if (bookingPending) {
-			vEvent.getProperties().add(Status.VEVENT_CONFIRMED);
+			vEvent.getProperties().add(Status.VEVENT_TENTATIVE);
 		}
 		else {
 			vEvent.getProperties().add(Status.VEVENT_CONFIRMED);
 		}
 
-		if (!bookingPending || !hasUpdatePermissions ||
-			!bookingUser.equals(user)) {
+		// update attendees status
 
-			return;
+		List<CalendarBooking> childCalendarBookings =
+			calendarBooking.getParentCalendarBooking()
+				.getChildCalendarBookings();
+
+		List<Attendee> attendees = new ArrayList<>();
+		List<String> attendeesEmails = new ArrayList<>();
+		Iterator<Attendee> attendeesIterator = vEvent.getProperties(
+			Attendee.ATTENDEE).iterator();
+
+		while (attendeesIterator.hasNext()) {
+			attendees.add(attendeesIterator.next());
 		}
 
-		Property methodProperty = iCalCalendar.getProperty(Method.METHOD);
+		for (CalendarBooking childCalendarBooking : childCalendarBookings) {
+			boolean attendeeFound = false;
 
-		iCalCalendar.getProperties().remove(methodProperty);
-		iCalCalendar.getProperties().add(Method.REQUEST);
+			Optional<User> childBookingUser =
+				CalendarHelperUtil.getCalendarResourceUser(
+					childCalendarBooking.getCalendarResource());
 
-		URI uri = URI.create("mailto:".concat(user.getEmailAddress()));
-		Attendee attendee = new Attendee(uri);
-		attendee.getParameters().add(new Cn(user.getScreenName()));
-		attendee.getParameters().add(CuType.INDIVIDUAL);
-		attendee.getParameters().add(PartStat.NEEDS_ACTION);
-		attendee.getParameters().add(
-			net.fortuna.ical4j.model.parameter.Role.REQ_PARTICIPANT);
-		attendee.getParameters().add(Rsvp.TRUE);
-		attendee.getParameters().add(new XParameter("X-NUM-GUESTS", "0"));
+			if (!childBookingUser.isPresent()) {
+				continue;
+			}
 
-		vEvent.getProperties().add(attendee);
+			for (Attendee attendee : attendees) {
+
+				String emailAddress = StringUtil.replace(
+					attendee.getValue(), "mailto:", StringPool.BLANK);
+
+				if (!Validator.isEmailAddress(emailAddress)) {
+					continue;
+				}
+
+				if (attendeesEmails.contains(emailAddress)) {
+					continue;
+				}
+
+				if (emailAddress.equals(
+						childBookingUser.get().getEmailAddress())) {
+
+					attendeeFound = true;
+					attendeesEmails.add(emailAddress);
+
+					Parameter partStatParameter = attendee.getParameter(
+						PartStat.PARTSTAT);
+
+					if (partStatParameter == null) {
+						continue;
+					}
+
+					attendee.getParameters().remove(partStatParameter);
+
+					switch (childCalendarBooking.getStatus()) {
+						case WorkflowConstants.STATUS_DENIED:
+							attendee.getParameters().add(PartStat.DECLINED);
+							break;
+						case WorkflowConstants.STATUS_APPROVED:
+							attendee.getParameters().add(PartStat.ACCEPTED);
+							break;
+						default:
+							attendee.getParameters().add(PartStat.NEEDS_ACTION);
+							break;
+					}
+
+					break;
+				}
+			}
+
+			String emailAddress = childBookingUser.get().getEmailAddress();
+
+			if (!attendeeFound && !attendeesEmails.contains(emailAddress)) {
+
+				URI uri = URI.create(
+					"mailto:" + childBookingUser.get().getEmailAddress());
+
+				Attendee attendee = new Attendee(uri);
+				attendee.getParameters().add(
+					new Cn(childBookingUser.get().getScreenName()));
+				attendee.getParameters().add(CuType.INDIVIDUAL);
+				attendee.getParameters().add(
+					net.fortuna.ical4j.model.parameter.Role.REQ_PARTICIPANT);
+				attendee.getParameters().add(Rsvp.TRUE);
+				attendee.getParameters().add(
+					new XParameter("X-NUM-GUESTS", "0"));
+
+				switch (childCalendarBooking.getStatus()) {
+					case WorkflowConstants.STATUS_DENIED:
+						attendee.getParameters().add(PartStat.DECLINED);
+						break;
+					case WorkflowConstants.STATUS_APPROVED:
+						attendee.getParameters().add(PartStat.ACCEPTED);
+						break;
+					default:
+						attendee.getParameters().add(PartStat.NEEDS_ACTION);
+						break;
+				}
+
+				vEvent.getProperties().add(attendee);
+				attendeesEmails.add(emailAddress);
+			}
+		}
+
+		// add current user as attendee
+
+		if (bookingPending && hasUpdatePermissions &&
+			bookingUser.equals(user)) {
+
+			Property methodProperty = iCalCalendar.getProperty(Method.METHOD);
+
+			iCalCalendar.getProperties().remove(methodProperty);
+			iCalCalendar.getProperties().add(Method.REQUEST);
+
+			URI uri = URI.create("mailto:".concat(user.getEmailAddress()));
+			Attendee attendee = new Attendee(uri);
+			attendee.getParameters().add(new Cn(user.getScreenName()));
+			attendee.getParameters().add(CuType.INDIVIDUAL);
+			attendee.getParameters().add(PartStat.NEEDS_ACTION);
+			attendee.getParameters().add(
+				net.fortuna.ical4j.model.parameter.Role.REQ_PARTICIPANT);
+			attendee.getParameters().add(Rsvp.TRUE);
+			attendee.getParameters().add(new XParameter("X-NUM-GUESTS", "0"));
+
+			vEvent.getProperties().add(attendee);
+		}
 	}
 
 	protected void updateICSExternalAttendees(
 			VEvent vEvent, CalendarBooking calendarBooking)
-		throws SanitizerException, PortalException {
+		throws PortalException {
 
 		ExpandoBridge calendarBookingExpando =
 			calendarBooking.getExpandoBridge();
@@ -475,7 +588,12 @@ public class DefaultICSContentListener implements ICSImportExportListener {
 		String invitedUsersCustomFieldName =
 			PropsValues.INVITED_USERS_CUSTOM_FIELD_NAME;
 
-		if (Validator.isNull(invitedUsersCustomFieldName)) {
+		String invitedUsersLabelCustomFieldName =
+			PropsValues.INVITED_USERS_LABEL_CUSTOM_FIELD_NAME;
+
+		if (Validator.isNull(invitedUsersCustomFieldName) ||
+			Validator.isNull(invitedUsersLabelCustomFieldName)) {
+
 			return;
 		}
 
@@ -483,18 +601,41 @@ public class DefaultICSContentListener implements ICSImportExportListener {
 			calendarBookingExpando.getAttribute(
 				invitedUsersCustomFieldName, Boolean.FALSE));
 
-		if (ArrayUtil.isEmpty(attendees)) {
-			return;
-		}
+		String[] visibleAttendeeEmails = GetterUtil.getStringValues(
+			calendarBookingExpando.getAttribute(
+				invitedUsersLabelCustomFieldName, Boolean.FALSE));
 
 		PropertyList propertyList = vEvent.getProperties();
 
-		Attendee attendee;
+		// remove attendee not into user visible custom field
+
+		List<Attendee> allAttendees = new ArrayList<>();
 
 		for (String attendeeString : attendees) {
-			attendee = _toICalAttendee(attendeeString);
-			propertyList.add(attendee);
+			Attendee attendee = _toICalAttendee(attendeeString);
+
+			String attendeeEmail = StringUtil.replace(
+				attendee.getValue().toLowerCase(), "mailto:",
+				StringPool.BLANK);
+
+			if (ArrayUtil.contains(visibleAttendeeEmails, attendeeEmail)) {
+				visibleAttendeeEmails = ArrayUtil.remove(
+					visibleAttendeeEmails, attendeeEmail);
+				allAttendees.add(attendee);
+			}
 		}
+
+		// add new emails ad attendee
+
+		for (String attendeeEmail : visibleAttendeeEmails) {
+			URI uri = URI.create("mailto:" + attendeeEmail);
+			Attendee attendee = new Attendee(uri);
+			attendee.getParameters().add(new Cn(attendeeEmail));
+
+			allAttendees.add(attendee);
+		}
+
+		propertyList.addAll(allAttendees);
 	}
 
 	private List<String> _getNotificationRecipients(Calendar calendar)
