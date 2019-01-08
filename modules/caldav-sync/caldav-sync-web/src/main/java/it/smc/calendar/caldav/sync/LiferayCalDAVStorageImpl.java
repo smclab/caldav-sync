@@ -69,16 +69,16 @@ import java.util.Optional;
 /**
  * @author Fabio Pezzutto
  * @author bta
+ * @author Luca Comin
  */
-
 @Component(
-		immediate = true,
-		property = {
-			"javax.portlet.name=" + CalendarPortletKeys.CALENDAR,
-			"webdav.storage.token=calendar"
-		},
-		service = WebDAVStorage.class
-	)
+	immediate = true,
+	property = {
+		"javax.portlet.name=" + CalendarPortletKeys.CALENDAR,
+		"webdav.storage.token=calendar"
+	},
+	service = WebDAVStorage.class
+)
 public class LiferayCalDAVStorageImpl extends BaseWebDAVStorageImpl {
 
 	@Override
