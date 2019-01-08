@@ -29,6 +29,7 @@ import com.liferay.portal.kernel.xml.Document;
 
 import it.smc.calendar.caldav.sync.methods.DeleteMethodImpl;
 import it.smc.calendar.caldav.sync.methods.GetMethodImpl;
+import it.smc.calendar.caldav.sync.methods.MoveMethodImpl;
 import it.smc.calendar.caldav.sync.methods.OptionsMethodImpl;
 import it.smc.calendar.caldav.sync.methods.PropfindMethodImpl;
 import it.smc.calendar.caldav.sync.methods.ProppatchMethodImpl;
@@ -47,6 +48,7 @@ import javax.servlet.http.HttpServletRequest;
 
 /**
  * @author Fabio Pezzutto
+ * @author Luca Comin
  */
 public class CalDAVMethodFactory implements MethodFactory {
 
@@ -60,6 +62,7 @@ public class CalDAVMethodFactory implements MethodFactory {
 		_methods.put(CalDAVHttpMethods.PROPPATCH, new ProppatchMethodImpl());
 		_methods.put(CalDAVHttpMethods.PUT, new PutMethodImpl());
 		_methods.put(CalDAVHttpMethods.REPORT, new ReportMethodImpl());
+		_methods.put(CalDAVHttpMethods.MOVE, new MoveMethodImpl());
 	}
 
 	public Method create(HttpServletRequest request) throws WebDAVException {

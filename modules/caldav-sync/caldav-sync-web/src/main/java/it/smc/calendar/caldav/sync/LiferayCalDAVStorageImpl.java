@@ -354,6 +354,65 @@ public class LiferayCalDAVStorageImpl extends BaseWebDAVStorageImpl {
 	}
 
 	@Override
+	public int moveSimpleResource(
+			WebDAVRequest webDAVRequest, Resource resource, String destination,
+			boolean overwrite)
+		throws WebDAVException {
+
+		try {
+			CalendarBooking calendarBooking =
+				(CalendarBooking)resource.getModel();
+
+			String[] parts = destination.split(StringPool.SLASH);
+
+			long targetCalendarId = Long.parseLong(parts[6]);
+
+			Calendar targetCalendar = CalendarServiceUtil.fetchCalendar(
+				targetCalendarId);
+
+			CalendarBooking bookingCopy =
+				CalendarBookingLocalServiceUtil.fetchCalendarBooking(
+					targetCalendarId, calendarBooking.getVEventUid());
+
+			if (bookingCopy != null) {
+				CalendarBookingServiceUtil.deleteCalendarBooking(
+					calendarBooking.getCalendarBookingId());
+			}
+			else {
+				CalendarPermission.check(
+					webDAVRequest.getPermissionChecker(),
+					calendarBooking.getCalendar(), ActionKeys.UPDATE);
+				CalendarPermission.check(
+					webDAVRequest.getPermissionChecker(), targetCalendar,
+					ActionKeys.UPDATE);
+
+				calendarBooking.setCalendarId(targetCalendarId);
+
+				CalendarBookingLocalServiceUtil.updateCalendarBooking(
+					calendarBooking);
+			}
+
+			return HttpServletResponse.SC_OK;
+		}
+		catch (PrincipalException pe) {
+			return HttpServletResponse.SC_FORBIDDEN;
+		}
+		catch (NoSuchCalendarException nsfe) {
+			return HttpServletResponse.SC_CONFLICT;
+		}
+		catch (PortalException pe) {
+			if (_log.isWarnEnabled()) {
+				_log.warn(pe, pe);
+			}
+
+			return HttpServletResponse.SC_CONFLICT;
+		}
+		catch (Exception e) {
+			throw new WebDAVException(e);
+		}
+	}
+
+	@Override
 	public int putResource(WebDAVRequest webDAVRequest) throws WebDAVException {
 		try {
 			String data = CalDAVRequestThreadLocal.getRequestContent();

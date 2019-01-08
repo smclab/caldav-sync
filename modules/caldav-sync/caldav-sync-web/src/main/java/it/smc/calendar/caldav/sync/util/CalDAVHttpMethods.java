@@ -16,9 +16,12 @@ package it.smc.calendar.caldav.sync.util;
 
 /**
  * @author Fabio Pezzutto
+ * @author Luca Comin
  */
 import com.liferay.portal.kernel.servlet.HttpMethods;
 public interface CalDAVHttpMethods extends HttpMethods {
+
+	public static final String MOVE = "MOVE";
 
 	public static final String PROPFIND = "PROPFIND";
 
