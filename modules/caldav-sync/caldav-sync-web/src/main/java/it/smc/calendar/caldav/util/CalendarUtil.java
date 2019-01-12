@@ -21,6 +21,7 @@ import com.liferay.calendar.service.CalendarBookingLocalServiceUtil;
 import com.liferay.calendar.service.CalendarServiceUtil;
 import com.liferay.calendar.service.permission.CalendarPermission;
 import com.liferay.calendar.util.comparator.CalendarNameComparator;
+import com.liferay.calendar.workflow.CalendarBookingWorkflowConstants;
 import com.liferay.portal.kernel.dao.orm.Criterion;
 import com.liferay.portal.kernel.dao.orm.DynamicQuery;
 import com.liferay.portal.kernel.dao.orm.OrderFactoryUtil;
@@ -75,8 +76,9 @@ public class CalendarUtil {
 			RestrictionsFactoryUtil.eq("calendarId", calendar.getCalendarId()));
 
 		List<Integer> calendarStatus = new ArrayList<>();
-		calendarStatus.add(WorkflowConstants.STATUS_APPROVED);
-		calendarStatus.add(WorkflowConstants.STATUS_PENDING);
+		calendarStatus.add(CalendarBookingWorkflowConstants.STATUS_APPROVED);
+		calendarStatus.add(CalendarBookingWorkflowConstants.STATUS_PENDING);
+		calendarStatus.add(CalendarBookingWorkflowConstants.STATUS_MAYBE);
 		//calendarStatus.add(WorkflowConstants.STATUS_SCHEDULED);
 
 		dynamicQuery.add(RestrictionsFactoryUtil.in("status", calendarStatus));

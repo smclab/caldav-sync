@@ -123,14 +123,12 @@ public class CalendarPropsProcessor extends BasePropsProcessor {
 
 		String address = CalDAVUtil.getCalendarResourceURL(calendarResource);
 
-		/*
 		Optional<User> user = CalendarHelperUtil.getCalendarResourceUser(
 			calendarResource);
 
 		if (user.isPresent()) {
 			address = "mailto:" + user.get().getEmailAddress();
 		}
-		*/
 
 		Element calendarUserAddressSetElement = DocUtil.add(
 			successPropElement, CalDAVProps.CALDAV_CALENDAR_USER_ADDRESS_SET);
