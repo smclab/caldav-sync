@@ -21,6 +21,7 @@ import com.liferay.calendar.service.CalendarBookingLocalServiceUtil;
 import com.liferay.calendar.service.CalendarServiceUtil;
 import com.liferay.calendar.service.permission.CalendarPermission;
 import com.liferay.calendar.util.comparator.CalendarNameComparator;
+import com.liferay.portal.kernel.dao.orm.Criterion;
 import com.liferay.portal.kernel.dao.orm.DynamicQuery;
 import com.liferay.portal.kernel.dao.orm.OrderFactoryUtil;
 import com.liferay.portal.kernel.dao.orm.ProjectionFactoryUtil;
@@ -36,16 +37,15 @@ import com.liferay.portal.kernel.workflow.WorkflowConstants;
 
 import it.smc.calendar.caldav.helper.api.CalendarListService;
 
-import java.sql.Timestamp;
+import org.osgi.service.component.annotations.Component;
+import org.osgi.service.component.annotations.Reference;
+import org.osgi.service.component.annotations.ReferencePolicyOption;
 
+import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
-
-import org.osgi.service.component.annotations.Component;
-import org.osgi.service.component.annotations.Reference;
-import org.osgi.service.component.annotations.ReferencePolicyOption;
 
 /**
  * @author Fabio Pezzutto
@@ -118,7 +118,16 @@ public class CalendarUtil {
 		DynamicQuery dynamicQuery =
 			CalendarBookingLocalServiceUtil.dynamicQuery();
 
-		dynamicQuery.add(RestrictionsFactoryUtil.eq("calendarId", calendarId));
+		Criterion calendarCriterion = RestrictionsFactoryUtil.eq(
+			"calendarId", calendarId);
+
+		Criterion parentCalendarCriterion =
+			RestrictionsFactoryUtil.sqlRestriction(
+				"parentCalendarBookingId IN (SELECT calendarBookingId FROM " +
+				"CalendarBooking WHERE calendarId = " + calendarId + ")");
+
+		dynamicQuery.add(RestrictionsFactoryUtil.or(
+			calendarCriterion, parentCalendarCriterion));
 
 		dynamicQuery.setProjection(
 			ProjectionFactoryUtil.property("modifiedDate"));
