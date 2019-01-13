@@ -46,21 +46,20 @@ public class CalendarHelperUtil {
 	}
 
 	public static CalendarHelper getService() {
-		if (_calendarHelper == null) {
+		if (_serviceTracker == null) {
 			Bundle bundle = FrameworkUtil.getBundle(CalendarHelper.class);
 
-			ServiceTracker<CalendarHelper, CalendarHelper> serviceTracker =
+			_serviceTracker =
 				new ServiceTracker<CalendarHelper, CalendarHelper>(
 					bundle.getBundleContext(), CalendarHelper.class, null);
 
-			serviceTracker.open();
-
-			_calendarHelper = serviceTracker.getService();
+			_serviceTracker.open();
 		}
 
-		return _calendarHelper;
+		return _serviceTracker.getService();
 	}
 
-	private static CalendarHelper _calendarHelper;
+	private static ServiceTracker<CalendarHelper, CalendarHelper>
+		_serviceTracker;
 
 }
