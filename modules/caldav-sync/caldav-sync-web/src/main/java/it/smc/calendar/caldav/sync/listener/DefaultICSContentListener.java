@@ -594,7 +594,7 @@ public class DefaultICSContentListener implements ICSImportExportListener {
 
 		// add current user as attendee
 
-		if (bookingPending && hasUpdatePermissions &&
+		if (bookingPending && hasUpdatePermissions && (bookingUser != null) &&
 			bookingUser.equals(user) && !attendeesEmails.contains(
 				user.getEmailAddress())) {
 
