@@ -15,13 +15,60 @@
 package it.smc.calendar.caldav.sync.ical.util;
 
 import com.liferay.calendar.workflow.CalendarBookingWorkflowConstants;
+import com.liferay.portal.kernel.workflow.WorkflowConstants;
+import net.fortuna.ical4j.model.parameter.Cn;
+import net.fortuna.ical4j.model.parameter.CuType;
 import net.fortuna.ical4j.model.parameter.PartStat;
+import net.fortuna.ical4j.model.parameter.Role;
+import net.fortuna.ical4j.model.parameter.Rsvp;
+import net.fortuna.ical4j.model.parameter.XParameter;
 import net.fortuna.ical4j.model.property.Attendee;
+
+import java.net.URI;
 
 /**
  * @author Fabio Pezzutto
  */
 public class AttendeeUtil {
+
+	public static Attendee create(
+		String emailAddress, String fullName, boolean isRoleParticipant,
+		int status) {
+
+		URI uri = URI.create("mailto:".concat(emailAddress));
+		Attendee attendee = new Attendee(uri);
+		attendee.getParameters().add(new Cn(fullName));
+		attendee.getParameters().add(CuType.INDIVIDUAL);
+
+		switch (status) {
+			case WorkflowConstants.STATUS_DENIED:
+				attendee.getParameters().add(PartStat.DECLINED);
+				break;
+			case WorkflowConstants.STATUS_APPROVED:
+				attendee.getParameters().add(PartStat.ACCEPTED);
+				break;
+			case CalendarBookingWorkflowConstants.STATUS_MAYBE:
+				attendee.getParameters().add(PartStat.TENTATIVE);
+				break;
+			default:
+				attendee.getParameters().add(PartStat.NEEDS_ACTION);
+				attendee.getParameters().add(Rsvp.TRUE);
+				break;
+		}
+
+		if (isRoleParticipant) {
+			attendee.getParameters().add(
+				net.fortuna.ical4j.model.parameter.Role.REQ_PARTICIPANT);
+		}
+		else {
+			attendee.getParameters().add(
+				Role.CHAIR);
+		}
+
+		attendee.getParameters().add(new XParameter("X-NUM-GUESTS", "0"));
+
+		return attendee;
+	}
 
 	public static int getStatus(Attendee attendee, int defaultStatus) {
 		PartStat partstat = (PartStat)attendee.getParameters().getParameter(
