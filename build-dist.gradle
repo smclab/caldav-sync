@@ -1,0 +1,24 @@
+/*
+ * Distribution Profiles
+ *
+ * Please use only "dist" or "feature" prefix
+ */
+
+configurations {
+	distBase {
+		transitive = false
+		visible = false
+	}
+	distCoreLibs {
+		transitive = false
+		visible = false
+	}
+}
+
+dependencies {
+
+	distBase project(':modules:caldav-sync:caldav-display-web')
+	distBase project(':modules:caldav-sync:caldav-helper-api')
+	distBase project(':modules:caldav-sync:caldav-helper-service')
+	distBase project(':modules:caldav-sync:caldav-sync-web')
+}

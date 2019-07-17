@@ -16,13 +16,13 @@ package it.smc.calendar.caldav.sync;
 
 import com.liferay.calendar.model.Calendar;
 import com.liferay.calendar.model.CalendarResource;
-import com.liferay.calendar.service.permission.CalendarPermission;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.io.unsync.UnsyncStringWriter;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.model.User;
 import com.liferay.portal.kernel.security.permission.ActionKeys;
+import com.liferay.portal.kernel.security.permission.resource.ModelResourcePermission;
 import com.liferay.portal.kernel.util.PrefsPropsUtil;
 import com.liferay.portal.kernel.util.PropsKeys;
 import com.liferay.portal.kernel.util.StringPool;
@@ -38,12 +38,15 @@ import it.smc.calendar.caldav.sync.util.WebKeys;
 import it.smc.calendar.caldav.util.PropsValues;
 import net.fortuna.ical4j.data.CalendarOutputter;
 import net.fortuna.ical4j.model.ComponentList;
+import org.osgi.service.component.annotations.Component;
+import org.osgi.service.component.annotations.Reference;
 
 import java.util.Optional;
 
 /**
  * @author Fabio Pezzutto
  */
+@Component(immediate = true, service = {})
 public class CalendarPropsProcessor extends BasePropsProcessor {
 
 	public CalendarPropsProcessor(
@@ -214,14 +217,19 @@ public class CalendarPropsProcessor extends BasePropsProcessor {
 
 		DocUtil.add(readPrivilegeElement, CalDAVProps.createQName("read"));
 
-		if (CalendarPermission.contains(
-				webDAVRequest.getPermissionChecker(), _calendar,
-				ActionKeys.UPDATE)) {
+		try {
+			if (_calendarModelResourcePermission.contains(
+					webDAVRequest.getPermissionChecker(), _calendar,
+					ActionKeys.UPDATE)) {
 
-			DocUtil.add(readPrivilegeElement, CalDAVProps.createQName("write"));
+				DocUtil.add(readPrivilegeElement, CalDAVProps.createQName("write"));
 
-			DocUtil.add(
-				readPrivilegeElement, CalDAVProps.createQName("write-content"));
+				DocUtil.add(
+					readPrivilegeElement, CalDAVProps.createQName("write-content"));
+			}
+		}
+		catch (PortalException e) {
+			//ignore
 		}
 	}
 
@@ -321,5 +329,18 @@ public class CalendarPropsProcessor extends BasePropsProcessor {
 		CalendarPropsProcessor.class);
 
 	private Calendar _calendar;
+
+	@Reference(
+		target = "(model.class.name=com.liferay.calendar.model.Calendar)",
+		unbind = "-"
+	)
+	protected void setModelPermissionChecker(
+		ModelResourcePermission<Calendar> modelResourcePermission) {
+
+		_calendarModelResourcePermission = modelResourcePermission;
+	}
+
+	private static ModelResourcePermission<Calendar>
+		_calendarModelResourcePermission;
 
 }

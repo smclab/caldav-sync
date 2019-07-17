@@ -79,10 +79,10 @@ public class AttendeeUtil {
 		}
 
 		if (PartStat.ACCEPTED.equals(partstat)) {
-			return CalendarBookingWorkflowConstants.STATUS_APPROVED;
+			return WorkflowConstants.STATUS_APPROVED;
 		}
 		else if (PartStat.DECLINED.equals(partstat)) {
-			return CalendarBookingWorkflowConstants.STATUS_DENIED;
+			return WorkflowConstants.STATUS_DENIED;
 		}
 		else if (PartStat.TENTATIVE.equals(partstat)) {
 			return CalendarBookingWorkflowConstants.STATUS_MAYBE;

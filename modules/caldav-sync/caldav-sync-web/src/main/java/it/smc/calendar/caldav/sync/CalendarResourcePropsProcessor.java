@@ -15,7 +15,7 @@
 package it.smc.calendar.caldav.sync;
 
 import com.liferay.calendar.model.CalendarResource;
-import com.liferay.calendar.service.permission.CalendarResourcePermission;
+import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.model.User;
 import com.liferay.portal.kernel.security.permission.ActionKeys;
 import com.liferay.portal.kernel.webdav.Resource;
@@ -26,6 +26,7 @@ import com.liferay.util.xml.DocUtil;
 import it.smc.calendar.caldav.helper.api.CalendarHelperUtil;
 import it.smc.calendar.caldav.sync.util.CalDAVProps;
 import it.smc.calendar.caldav.sync.util.CalDAVUtil;
+import it.smc.calendar.caldav.sync.util.CustomCalendarResourcePermission;
 
 import java.util.Optional;
 
@@ -81,14 +82,19 @@ public class CalendarResourcePropsProcessor extends BasePropsProcessor {
 
 		DocUtil.add(readPrivilegeElement, CalDAVProps.createQName("read"));
 
-		if (CalendarResourcePermission.contains(
-				webDAVRequest.getPermissionChecker(), _calendarResource,
-				ActionKeys.UPDATE)) {
+		try {
+			if (CustomCalendarResourcePermission.contains(
+					webDAVRequest.getPermissionChecker(), _calendarResource,
+					ActionKeys.UPDATE)) {
 
-			DocUtil.add(readPrivilegeElement, CalDAVProps.createQName("write"));
+				DocUtil.add(readPrivilegeElement, CalDAVProps.createQName("write"));
 
-			DocUtil.add(
-				readPrivilegeElement, CalDAVProps.createQName("write-content"));
+				DocUtil.add(
+					readPrivilegeElement, CalDAVProps.createQName("write-content"));
+			}
+		}
+		catch (PortalException e) {
+			//ignore
 		}
 	}
 

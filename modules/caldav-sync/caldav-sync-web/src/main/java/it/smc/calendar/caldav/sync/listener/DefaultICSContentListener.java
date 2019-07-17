@@ -19,7 +19,6 @@ import com.liferay.calendar.model.Calendar;
 import com.liferay.calendar.model.CalendarBooking;
 import com.liferay.calendar.model.CalendarResource;
 import com.liferay.calendar.service.CalendarBookingLocalServiceUtil;
-import com.liferay.calendar.service.permission.CalendarPermission;
 import com.liferay.calendar.workflow.CalendarBookingWorkflowConstants;
 import com.liferay.expando.kernel.model.ExpandoBridge;
 import com.liferay.expando.kernel.model.ExpandoColumnConstants;
@@ -27,6 +26,7 @@ import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.io.unsync.UnsyncStringReader;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
+import com.liferay.portal.kernel.model.ResourceConstants;
 import com.liferay.portal.kernel.model.Role;
 import com.liferay.portal.kernel.model.RoleConstants;
 import com.liferay.portal.kernel.model.User;
@@ -35,6 +35,7 @@ import com.liferay.portal.kernel.security.auth.PrincipalThreadLocal;
 import com.liferay.portal.kernel.security.permission.PermissionChecker;
 import com.liferay.portal.kernel.security.permission.PermissionCheckerFactoryUtil;
 import com.liferay.portal.kernel.security.permission.PermissionThreadLocal;
+import com.liferay.portal.kernel.security.permission.resource.ModelResourcePermission;
 import com.liferay.portal.kernel.service.RoleLocalServiceUtil;
 import com.liferay.portal.kernel.service.ServiceContext;
 import com.liferay.portal.kernel.service.ServiceContextThreadLocal;
@@ -47,6 +48,7 @@ import com.liferay.portal.kernel.util.UnicodeProperties;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.kernel.workflow.WorkflowConstants;
 import it.smc.calendar.caldav.helper.api.CalendarHelperUtil;
+import it.smc.calendar.caldav.helper.api.CalendarListService;
 import it.smc.calendar.caldav.helper.util.PropsValues;
 import it.smc.calendar.caldav.sync.ical.util.AttendeeUtil;
 import it.smc.calendar.caldav.sync.util.CalDAVUtil;
@@ -72,6 +74,7 @@ import net.fortuna.ical4j.model.property.Status;
 import net.fortuna.ical4j.model.property.Summary;
 import net.fortuna.ical4j.model.property.Transp;
 import org.osgi.service.component.annotations.Component;
+import org.osgi.service.component.annotations.Reference;
 
 import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
@@ -484,17 +487,18 @@ public class DefaultICSContentListener implements ICSImportExportListener {
 			Attendee organizerAttendee = AttendeeUtil.create(
 				userOrganizer.getEmailAddress(), userOrganizer.getFullName(),
 				false,
-				CalendarBookingWorkflowConstants.STATUS_APPROVED);
+				WorkflowConstants.STATUS_APPROVED);
 
 			vEvent.getProperties().add(organizerAttendee);
 		}
 
 		vEvent.getProperties().add(Transp.OPAQUE);
 
-		boolean hasUpdatePermissions = CalendarPermission.contains(
-			PermissionThreadLocal.getPermissionChecker(),
-			calendarBooking.getCalendarId(),
-			CalendarActionKeys.MANAGE_BOOKINGS);
+		boolean hasUpdatePermissions = _calendarModelResourcePermission.
+			contains(
+				PermissionThreadLocal.getPermissionChecker(),
+				calendarBooking.getCalendarId(),
+				CalendarActionKeys.MANAGE_BOOKINGS);
 
 		User bookingUser = getCalendarBookingUser(calendarBooking);
 
@@ -669,7 +673,7 @@ public class DefaultICSContentListener implements ICSImportExportListener {
 
 			Attendee attendee = AttendeeUtil.create(
 				user.getEmailAddress(), user.getFullName(), true,
-				CalendarBookingWorkflowConstants.STATUS_PENDING);
+				WorkflowConstants.STATUS_PENDING);
 
 			if (_log.isDebugEnabled()) {
 				_log.debug(
@@ -747,9 +751,15 @@ public class DefaultICSContentListener implements ICSImportExportListener {
 
 		CalendarResource calendarResource = calendar.getCalendarResource();
 
-		List<Role> roles = RoleLocalServiceUtil.getResourceBlockRoles(
-			calendar.getResourceBlockId(), Calendar.class.getName(),
+		List<Role> roles = RoleLocalServiceUtil.getResourceRoles(
+			calendar.getCompanyId(), Calendar.class.getName(),
+			ResourceConstants.SCOPE_INDIVIDUAL,
+			String.valueOf(calendar.getPrimaryKey()),
 			"MANAGE_BOOKINGS");
+
+	/*	getResourceBlockRoles(
+			calendar.getResourceBlockId(), Calendar.class.getName(),
+			"MANAGE_BOOKINGS");*/
 
 		List<String> notificationRecipients = new ArrayList<>();
 
@@ -780,7 +790,7 @@ public class DefaultICSContentListener implements ICSImportExportListener {
 					PermissionChecker permissionChecker =
 						PermissionCheckerFactoryUtil.create(roleUser);
 
-					if (!CalendarPermission.contains(
+					if (!_calendarModelResourcePermission.contains(
 						permissionChecker, calendar, "MANAGE_BOOKINGS")) {
 
 						continue;
@@ -878,4 +888,18 @@ public class DefaultICSContentListener implements ICSImportExportListener {
 	private static Log _log = LogFactoryUtil.getLog(
 		DefaultICSContentListener.class);
 
+	@Reference(
+		target = "(model.class.name=com.liferay.calendar.model.Calendar)",
+		unbind = "-"
+	)
+	protected void setModelPermissionChecker(
+		ModelResourcePermission<Calendar> modelResourcePermission) {
+
+		_calendarModelResourcePermission = modelResourcePermission;
+	}
+
+	private static CalendarListService _calendarListService;
+
+	private static ModelResourcePermission<Calendar>
+		_calendarModelResourcePermission;
 }
