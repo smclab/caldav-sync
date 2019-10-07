@@ -7,6 +7,14 @@
 #liferay.workspace.themes.dir=themes
 #liferay.workspace.wars.dir=wars
 
-# Set your liferay bundle location (the bundle used in development) 
+# Full path of Liferay Bundle in you local environment
+# 
+liferay.workspace.home.dir=/w3/java/liferay/clienti/smcecm704/apps/liferay-ce-portal-7.0-ga5
+
+# SMC Nexus registry. Please add your credential to be able to download artifacts
 #
-liferay.workspace.home.dir=/path-to-liferay-bundle/liferay-ce-portal-7.0-ga...
+#nexus.public.url=https://registry.smc.it/repository/maven-public/
+#nexus.releases.url=https://registry.smc.it/repository/maven-releases/
+#nexus.snapshots.url=https://registry.smc.it/repository/maven-snapshots/
+nexus.username=
+nexus.password=

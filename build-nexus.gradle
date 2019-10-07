@@ -1,0 +1,127 @@
+/*
+ * Nexus Repository Integration
+ */
+
+allprojects {
+	apply plugin: "net.saliman.properties"
+	apply plugin: "nu.studer.credentials"
+
+	/* We accept crypted credentials via "nu.studer.credentials" or plain
+	 * credentials via gradle-local.properties.
+	 */
+	ext.registryUsername = credentials.user ?: project.properties['nexus.username']
+	ext.registryPassword = credentials.password ?: project.properties['nexus.password']
+
+	repositories {
+		mavenLocal()
+		mavenCentral()
+
+		String publicURL = project.properties['nexus.public.url']
+		String releasesURL = project.properties['nexus.releases.url']
+		String snapshotsURL = project.properties['nexus.snapshots.url']
+
+		if (snapshotsURL) {
+			maven {
+				credentials {
+					username project.properties['registryUsername']
+					password project.properties['registryPassword']
+				}
+				url snapshotsURL
+			}
+		}
+
+		if (releasesURL) {
+			maven {
+				credentials {
+					username project.properties['registryUsername']
+					password project.properties['registryPassword']
+				}
+				url releasesURL
+			}
+		}
+
+		if (publicURL) {
+			maven {
+				credentials {
+					username project.properties['registryUsername']
+					password project.properties['registryPassword']
+				}
+				url publicURL
+			}
+		}
+	}
+}
+
+/************************
+ * RELEASE vs SNAPSHOTS *
+ ************************/
+
+apply plugin: "org.ajoberstar.grgit"
+
+if (grgit != null) {
+	logger.debug("Git ${grgit.branch.current().name}")
+
+	ext.gitClone = true
+	ext.gitBranchName = grgit.branch.current().name
+
+	if (ext.gitBranchName.startsWith("release")) {
+		ext.gitSnapshotsBranch = false
+		ext.registrySuffix = ""
+	}
+	else if (ext.gitBranchName.startsWith("development")) {
+		ext.gitSnapshotsBranch = true
+		ext.registrySuffix = "-SNAPSHOT"
+	}
+	else if ("master".equals(gitBranchName)) {
+		ext.gitSnapshotsBranch = true
+		ext.registrySuffix = "-SNAPSHOT"
+	}
+	else {
+		ext.gitSnapshotsBranch = true
+
+		def issueId = gitBranchName =~ /^(\d+)/
+
+		if (issueId.size() > 0) {
+			ext.gitIssueId = issueId[0][1]
+			ext.registrySuffix = "-${gitIssueId}-SNAPSHOT"
+		}
+		else if ("HEAD".equals(gitBranchName)) {
+			def lastTag = grgit.describe()
+			println "Git lastTag ${lastTag}"
+
+			if (lastTag.startsWith("rel_") || lastTag.startsWith("MP_v")) {
+				ext.gitSnapshotsBranch = false
+				ext.registrySuffix = ""
+			}
+			else {
+				ext.registrySuffix = "-SNAPSHOT"
+			}
+		}
+		else {
+			//throw new GradleException("Unsupported branch name ${gitBranchName}. Manage it!!")
+			println ""
+			println "WARNING:"
+			println "WARNING: Unsupported branch name ${gitBranchName}. Manage it!!"
+			println "WARNING:"
+			println ""
+
+			ext.gitSnapshotsBranch = true
+			ext.registrySuffix = "-SNAPSHOT"
+		}
+	}
+
+	//println "${gitSnapshotsBranch} ${registrySuffix}"
+	logger.debug("${gitSnapshotsBranch} ${registrySuffix}")
+}
+else {
+	println "No Git"
+
+	ext.gitClone = false
+
+	if (project.properties['nexus.release.mode'] == "true") {
+		ext.registrySuffix = ""
+	}
+	else {
+		ext.registrySuffix = "-SNAPSHOT"
+	}
+}
