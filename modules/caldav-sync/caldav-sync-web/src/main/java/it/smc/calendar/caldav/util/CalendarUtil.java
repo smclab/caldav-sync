@@ -19,8 +19,8 @@ import com.liferay.calendar.model.CalendarBooking;
 import com.liferay.calendar.model.CalendarResource;
 import com.liferay.calendar.service.CalendarBookingLocalServiceUtil;
 import com.liferay.calendar.service.CalendarServiceUtil;
-import com.liferay.calendar.service.permission.CalendarPermission;
 import com.liferay.calendar.util.comparator.CalendarNameComparator;
+import com.liferay.calendar.workflow.CalendarBookingWorkflowConstants;
 import com.liferay.portal.kernel.dao.orm.Criterion;
 import com.liferay.portal.kernel.dao.orm.DynamicQuery;
 import com.liferay.portal.kernel.dao.orm.OrderFactoryUtil;
@@ -31,6 +31,7 @@ import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.model.User;
 import com.liferay.portal.kernel.security.permission.ActionKeys;
 import com.liferay.portal.kernel.security.permission.PermissionChecker;
+import com.liferay.portal.kernel.security.permission.resource.ModelResourcePermission;
 import com.liferay.portal.kernel.util.ListUtil;
 import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.kernel.workflow.WorkflowConstants;
@@ -77,6 +78,7 @@ public class CalendarUtil {
 		List<Integer> calendarStatus = new ArrayList<>();
 		calendarStatus.add(WorkflowConstants.STATUS_APPROVED);
 		calendarStatus.add(WorkflowConstants.STATUS_PENDING);
+		calendarStatus.add(CalendarBookingWorkflowConstants.STATUS_MAYBE);
 		//calendarStatus.add(WorkflowConstants.STATUS_SCHEDULED);
 
 		dynamicQuery.add(RestrictionsFactoryUtil.in("status", calendarStatus));
@@ -153,7 +155,7 @@ public class CalendarUtil {
 			PermissionChecker permissionChecker)
 		throws PortalException {
 
-		if (!CalendarPermission.contains(
+		if (!_calendarModelResourcePermission.contains(
 				permissionChecker, calendarBooking.getCalendarId(),
 				ACTION_VIEW_BOOKING_DETAILS)) {
 
@@ -177,11 +179,11 @@ public class CalendarUtil {
 		while (itr.hasNext()) {
 			CalendarBooking calendarBooking = itr.next();
 
-			if (!CalendarPermission.contains(
+			if (!_calendarModelResourcePermission.contains(
 					permissionChecker, calendarBooking.getCalendarId(),
 					ACTION_VIEW_BOOKING_DETAILS)) {
 
-				if (!CalendarPermission.contains(
+				if (!_calendarModelResourcePermission.contains(
 						permissionChecker, calendarBooking.getCalendarId(),
 						actionId)) {
 
@@ -219,6 +221,19 @@ public class CalendarUtil {
 		_calendarListService = calendarListService;
 	}
 
+	@Reference(
+		target = "(model.class.name=com.liferay.calendar.model.Calendar)",
+		unbind = "-"
+	)
+	protected void setModelPermissionChecker(
+		ModelResourcePermission<Calendar> modelResourcePermission) {
+
+		_calendarModelResourcePermission = modelResourcePermission;
+	}
+
 	private static CalendarListService _calendarListService;
+
+	private static ModelResourcePermission<Calendar>
+		_calendarModelResourcePermission;
 
 }

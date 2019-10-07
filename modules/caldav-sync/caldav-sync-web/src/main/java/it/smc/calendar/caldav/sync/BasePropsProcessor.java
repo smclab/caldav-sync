@@ -22,6 +22,7 @@ import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.model.Group;
 import com.liferay.portal.kernel.model.User;
 import com.liferay.portal.kernel.model.WebDAVProps;
+import com.liferay.portal.kernel.service.UserLocalServiceUtil;
 import com.liferay.portal.kernel.service.UserServiceUtil;
 import com.liferay.portal.kernel.service.WebDAVPropsLocalServiceUtil;
 import com.liferay.portal.kernel.util.PortalUtil;
@@ -280,38 +281,18 @@ public abstract class BasePropsProcessor implements PropsProcessor {
 	}
 
 	protected void processCalDAVCalendarUserAddressSet() {
-		CalendarResource resource = null;
+		long userId = CalDAVUtil.getUserId(webDAVRequest);
 
-		try {
-			resource = CalendarResourceLocalServiceUtil.fetchCalendarResource(
-				PortalUtil.getClassNameId(User.class),
-				CalDAVUtil.getUserId(webDAVRequest));
-		}
-		catch (Exception e) {
-			if (_log.isWarnEnabled()) {
-				_log.warn(e);
-			}
-		}
+		User user = UserLocalServiceUtil.fetchUser(userId);
 
-		if (resource != null) {
+		if (user != null) {
 			Element calendarHomeSetElement = DocUtil.add(
 				successPropElement,
 				CalDAVProps.CALDAV_CALENDAR_USER_ADDRESS_SET);
 
-			String address = CalDAVUtil.getCalendarResourceURL(resource);
-
-			/*
-			Optional<User> user = CalendarHelperUtil.getCalendarResourceUser(
-				resource);
-
-			if (user.isPresent()) {
-				address = "mailto:" + user.get().getEmailAddress();
-			}
-			*/
-
 			DocUtil.add(
 				calendarHomeSetElement, CalDAVProps.createQName("href"),
-				address);
+				"mailto:" + user.getEmailAddress());
 		}
 		else {
 			DocUtil.add(

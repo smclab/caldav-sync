@@ -16,36 +16,31 @@
 
 <%@ include file="/init.jsp" %>
 
-<%
-String portletId = PortalUtil.getPortletId(request);
+<liferay-portlet:renderURL var="selectURL" windowState="<%= LiferayWindowState.POP_UP.toString() %>">
+	<portlet:param name="mvcRenderCommandName" value='<%= "/smc/calDav/display_links" %>' />
+</liferay-portlet:renderURL>
 
-PortletURL selectURL = renderResponse.createRenderURL();
-
-selectURL.setParameter("mvcPath", "/display_links.jsp");
-selectURL.setWindowState(LiferayWindowState.POP_UP);
-%>
-
-<div><aui:button-row>
+<div>
+	<aui:button-row>
 		<aui:button cssClass="btn-lg" name="showLinks" type="submit" value="hide-show-urls" />
 	</aui:button-row>
 </div>
 
-<aui:script use="aui-io-request,aui-base">
+<aui:script use="aui-base">
 var showlinks = A.one('#<portlet:namespace />showLinks');
-showlinks.on(
-			'click',
-			function() {
-				Liferay.Util.openWindow(
-				{
-					dialog: {
-						constrain: true,
-						modal: true,
-						width: 1000
-					},
-					title:'<liferay-ui:message key="hide-show-urls" />',
-					uri: '<%= selectURL.toString() %>'
-				}
-			);
+	showlinks.on(
+		'click',
+		function() {
+			Liferay.Util.openWindow(
+			{
+				dialog: {
+					constrain: true,
+					modal: true,
+					width: 1000
+				},
+				title:'<liferay-ui:message key="hide-show-urls" />',
+				uri: '<%= selectURL.toString() %>'
+			});
 		}
 	);
 </aui:script>

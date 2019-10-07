@@ -32,7 +32,7 @@ String userCalDAVURL = portalURL + CalDAVUtil.getPrincipalURL(themeDisplay.getUs
 	</h2>
 
 	<aui:fieldset>
-		<p class="calendar-url-entry">
+		<p class="calendar-url-entry card">
 			<span class="entry-title"><%= user.getFullName() %></span>
 			<span class="entry-url"><%= userCalDAVURL %></span>
 		</p>
@@ -68,7 +68,7 @@ if (!calendars.isEmpty()) {
 				calendarTitleSb.append(StringPool.SPACE);
 				calendarTitleSb.append(calendar.getName(locale));
 
-				if (!CalendarPermission.contains(permissionChecker, calendar, CalendarActionKeys.MANAGE_BOOKINGS)) {
+				if (!CustomCalendarPermission.contains(permissionChecker, calendar.getGroupId(), CalendarActionKeys.MANAGE_BOOKINGS)) {
 					calendarTitleSb.append(StringPool.SPACE);
 					calendarTitleSb.append(StringPool.OPEN_PARENTHESIS);
 					calendarTitleSb.append(LanguageUtil.get(request, "read-only"));
@@ -78,7 +78,7 @@ if (!calendars.isEmpty()) {
 				String color = StringPool.POUND.concat(String.format("%06X", (0xFFFFFF & calendar.getColor())));
 			%>
 
-				<p class="calendar-url-entry">
+				<p class="calendar-url-entry card">
 					<span class="calendar-list-item-color" style="background-color: <%= color %>; border-color: <%= color %>"></span>
 					<span class="entry-title"><%= calendarTitleSb.toString() %></span>
 					<span class="entry-url"><%= calDAVURL %></span>

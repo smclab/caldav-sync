@@ -18,7 +18,6 @@ import com.liferay.calendar.model.Calendar;
 import com.liferay.calendar.model.CalendarResource;
 import com.liferay.calendar.service.CalendarLocalServiceUtil;
 import com.liferay.calendar.service.CalendarResourceServiceUtil;
-import com.liferay.calendar.service.permission.CalendarPermission;
 import com.liferay.portal.kernel.dao.orm.QueryUtil;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.log.Log;
@@ -29,6 +28,7 @@ import com.liferay.portal.kernel.portlet.PortalPreferences;
 import com.liferay.portal.kernel.portlet.PortletPreferencesFactoryUtil;
 import com.liferay.portal.kernel.security.permission.ActionKeys;
 import com.liferay.portal.kernel.security.permission.PermissionChecker;
+import com.liferay.portal.kernel.security.permission.resource.ModelResourcePermission;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.PortalUtil;
 import com.liferay.portal.kernel.util.SessionClicks;
@@ -42,6 +42,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.osgi.service.component.annotations.Component;
+import org.osgi.service.component.annotations.Reference;
 
 /**
  * @author rge
@@ -77,7 +78,7 @@ public class CalendarListServiceImpl implements CalendarListService {
 				continue;
 			}
 
-			if (CalendarPermission.contains(
+			if (_calendarModelResourcePermission.contains(
 					permissionChecker, calendarId, ActionKeys.VIEW)) {
 
 				calendars.add(calendar);
@@ -103,7 +104,7 @@ public class CalendarListServiceImpl implements CalendarListService {
 
 		for (CalendarResource calendarResource : calendarResources) {
 			for (Calendar calendar : calendarResource.getCalendars()) {
-				if (CalendarPermission.contains(
+				if (_calendarModelResourcePermission.contains(
 					permissionChecker, calendar, ActionKeys.VIEW)) {
 
 					calendars.add(calendar);
@@ -191,7 +192,7 @@ public class CalendarListServiceImpl implements CalendarListService {
 				QueryUtil.ALL_POS, QueryUtil.ALL_POS);
 
 			for (Calendar calendar : allCalendars) {
-				if (CalendarPermission.contains(
+				if (_calendarModelResourcePermission.contains(
 						permissionChecker, calendar, ActionKeys.VIEW)) {
 
 					if (_log.isDebugEnabled()) {
@@ -227,4 +228,16 @@ public class CalendarListServiceImpl implements CalendarListService {
 	private static Log _log = LogFactoryUtil.getLog(
 		CalendarListServiceImpl.class);
 
+	@Reference(
+		target = "(model.class.name=com.liferay.calendar.model.Calendar)",
+		unbind = "-"
+	)
+	protected void setModelPermissionChecker(
+		ModelResourcePermission<Calendar> modelResourcePermission) {
+
+		_calendarModelResourcePermission = modelResourcePermission;
+	}
+
+	private static ModelResourcePermission<Calendar>
+		_calendarModelResourcePermission;
 }

@@ -25,7 +25,6 @@ import com.liferay.calendar.service.CalendarBookingServiceUtil;
 import com.liferay.calendar.service.CalendarLocalServiceUtil;
 import com.liferay.calendar.service.CalendarResourceLocalServiceUtil;
 import com.liferay.calendar.service.CalendarServiceUtil;
-import com.liferay.calendar.service.permission.CalendarPermission;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.exception.SystemException;
 import com.liferay.portal.kernel.log.Log;
@@ -33,6 +32,7 @@ import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.model.User;
 import com.liferay.portal.kernel.security.auth.PrincipalException;
 import com.liferay.portal.kernel.security.permission.ActionKeys;
+import com.liferay.portal.kernel.security.permission.resource.ModelResourcePermission;
 import com.liferay.portal.kernel.service.ServiceContext;
 import com.liferay.portal.kernel.service.ServiceContextFactory;
 import com.liferay.portal.kernel.service.UserLocalServiceUtil;
@@ -51,14 +51,15 @@ import com.liferay.portal.kernel.webdav.methods.MethodFactory;
 import com.liferay.portal.kernel.webdav.methods.MethodFactoryRegistryUtil;
 import com.liferay.portal.kernel.workflow.WorkflowConstants;
 import it.smc.calendar.caldav.helper.api.CalendarHelperUtil;
-import it.smc.calendar.caldav.sync.listener.ICSImportExportListener;
 import it.smc.calendar.caldav.sync.listener.ICSContentImportExportFactoryUtil;
+import it.smc.calendar.caldav.sync.listener.ICSImportExportListener;
 import it.smc.calendar.caldav.sync.util.CalDAVHttpMethods;
 import it.smc.calendar.caldav.sync.util.CalDAVRequestThreadLocal;
 import it.smc.calendar.caldav.sync.util.CalDAVUtil;
 import it.smc.calendar.caldav.sync.util.ResourceNotFoundException;
 import it.smc.calendar.caldav.util.CalendarUtil;
 import org.osgi.service.component.annotations.Component;
+import org.osgi.service.component.annotations.Reference;
 
 import javax.servlet.http.HttpServletResponse;
 import java.util.ArrayList;
@@ -237,7 +238,7 @@ public class LiferayCalDAVStorageImpl extends BaseWebDAVStorageImpl {
 							calendarBookingId);
 					}
 
-					CalendarPermission.check(
+					_calendarModelResourcePermission.check(
 						webDAVRequest.getPermissionChecker(),
 						calendarBooking.getCalendar(), ActionKeys.VIEW);
 
@@ -268,7 +269,7 @@ public class LiferayCalDAVStorageImpl extends BaseWebDAVStorageImpl {
 						"No calendar were found for GUID/ID " + calendarId);
 				}
 
-				CalendarPermission.check(
+				_calendarModelResourcePermission.check(
 					webDAVRequest.getPermissionChecker(), calendar,
 					ActionKeys.VIEW);
 
@@ -379,10 +380,10 @@ public class LiferayCalDAVStorageImpl extends BaseWebDAVStorageImpl {
 					calendarBooking.getCalendarBookingId());
 			}
 			else {
-				CalendarPermission.check(
+				_calendarModelResourcePermission.check(
 					webDAVRequest.getPermissionChecker(),
 					calendarBooking.getCalendar(), ActionKeys.UPDATE);
-				CalendarPermission.check(
+				_calendarModelResourcePermission.check(
 					webDAVRequest.getPermissionChecker(), targetCalendar,
 					ActionKeys.UPDATE);
 
@@ -540,6 +541,19 @@ public class LiferayCalDAVStorageImpl extends BaseWebDAVStorageImpl {
 
 		return new UserResourceImpl(user, parentPath, locale);
 	}
+
+	@Reference(
+		target = "(model.class.name=com.liferay.calendar.model.Calendar)",
+		unbind = "-"
+	)
+	protected void setModelPermissionChecker(
+		ModelResourcePermission<Calendar> modelResourcePermission) {
+
+		_calendarModelResourcePermission = modelResourcePermission;
+	}
+
+	private static ModelResourcePermission<Calendar>
+		_calendarModelResourcePermission;
 
 	private static Log _log = LogFactoryUtil.getLog(
 		LiferayCalDAVStorageImpl.class);
