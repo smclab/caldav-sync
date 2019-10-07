@@ -4,5 +4,5 @@ Bundle-License: Commercial
 
 Bundle-Name: Caldav Helper API
 Bundle-SymbolicName: it.smc.calendar.caldav.helper.api
-Bundle-Version: 1.1.0
+Bundle-Version: 2.0.0
 Export-Package: it.smc.calendar.caldav.helper.api
