@@ -50,6 +50,9 @@ import java.util.Set;
  */
 public abstract class BasePropsProcessor implements PropsProcessor {
 
+	public BasePropsProcessor() {
+	}
+
 	public BasePropsProcessor(
 		WebDAVRequest webDAVRequest, Resource resource, Element rootElement) {
 

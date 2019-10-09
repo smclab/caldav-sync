@@ -49,6 +49,10 @@ import java.util.Optional;
 @Component(immediate = true, service = {})
 public class CalendarPropsProcessor extends BasePropsProcessor {
 
+	public CalendarPropsProcessor(){
+		super();
+	}
+
 	public CalendarPropsProcessor(
 		WebDAVRequest webDAVRequest, Resource resource, Element rootElement) {
 
