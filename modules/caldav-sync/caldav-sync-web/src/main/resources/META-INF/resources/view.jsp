@@ -14,7 +14,7 @@
  */
 --%>
 
-<%@ include file="/init.jsp" %>
+<%@ include file="./init.jsp" %>
 
 <%
 String portalURL = PortalUtil.getPortalURL(request);
@@ -71,7 +71,8 @@ if (!calendars.isEmpty()) {
 				calendarTitleSb.append(StringPool.SPACE);
 				calendarTitleSb.append(calendar.getName(locale));
 
-				if (!CalendarPermission.contains(permissionChecker, calendar, CalendarActionKeys.MANAGE_BOOKINGS)) {
+				if (!CustomCalendarPermission.contains(permissionChecker, themeDisplay.getScopeGroupId(),
+						CalendarActionKeys.MANAGE_BOOKINGS)) {
 					calendarTitleSb.append(StringPool.SPACE);
 					calendarTitleSb.append(StringPool.OPEN_PARENTHESIS);
 					calendarTitleSb.append(LanguageUtil.get(request, "read-only"));
