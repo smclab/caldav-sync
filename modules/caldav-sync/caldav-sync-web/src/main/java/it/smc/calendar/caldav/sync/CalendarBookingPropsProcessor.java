@@ -14,10 +14,10 @@
 
 package it.smc.calendar.caldav.sync;
 
+import com.liferay.petra.xml.DocUtil;
 import com.liferay.portal.kernel.webdav.Resource;
 import com.liferay.portal.kernel.webdav.WebDAVRequest;
 import com.liferay.portal.kernel.xml.Element;
-import com.liferay.util.xml.DocUtil;
 
 import it.smc.calendar.caldav.sync.util.CalDAVProps;
 import it.smc.calendar.caldav.sync.util.CalDAVUtil;

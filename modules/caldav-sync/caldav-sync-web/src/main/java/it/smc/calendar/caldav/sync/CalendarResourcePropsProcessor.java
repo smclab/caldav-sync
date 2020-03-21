@@ -15,13 +15,13 @@
 package it.smc.calendar.caldav.sync;
 
 import com.liferay.calendar.model.CalendarResource;
+import com.liferay.petra.xml.DocUtil;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.model.User;
 import com.liferay.portal.kernel.security.permission.ActionKeys;
 import com.liferay.portal.kernel.webdav.Resource;
 import com.liferay.portal.kernel.webdav.WebDAVRequest;
 import com.liferay.portal.kernel.xml.Element;
-import com.liferay.util.xml.DocUtil;
 
 import it.smc.calendar.caldav.helper.api.CalendarHelperUtil;
 import it.smc.calendar.caldav.sync.util.CalDAVProps;
