@@ -10,6 +10,7 @@ dependencies {
 	compileOnly group: "com.liferay", name: "com.liferay.calendar.service"
 	compileOnly group: "com.liferay", name: "com.liferay.petra.string"
 	compileOnly group: "com.liferay", name: "com.liferay.petra.xml"
+	compileOnly group: "com.liferay", name: "com.liferay.product.navigation.personal.menu.api"
 	compileOnly group: "com.liferay.portal", name: "com.liferay.portal.kernel"
 	compileOnly group: "com.liferay.portal", name: "com.liferay.util.taglib"
 	compileOnly group: "javax.portlet", name: "portlet-api"
