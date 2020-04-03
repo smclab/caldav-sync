@@ -5,6 +5,7 @@
 **/.project
 **/.sass-cache
 **/.settings
+**/.vscode
 **/.web_bundle_build
 **/bin
 **/bin-service
@@ -27,4 +28,5 @@
 /plugins-sdk/dependencies/**/*.jar
 /plugins-sdk/dist
 /plugins-sdk/lib
+liferay-workspace.iml
 test-results

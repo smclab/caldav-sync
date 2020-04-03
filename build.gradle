@@ -1,4 +1,10 @@
-apply plugin: 'java'
+if (project.properties["enable.bom.tasks"] == "true") {
+	apply plugin: 'java-platform'
+}
+else {
+	apply plugin: 'java'
+}
+
 apply plugin: 'eclipse'
 
 buildscript {
@@ -24,6 +30,32 @@ allprojects {
 	group = "it.smc.marketplace.caldav-sync"
 }
 
+def productBoms = []
+
+if (project.properties["enable.bom.tasks"] == "true") {
+	println "Enable BoM"
+
+	apply from: "build-bom.gradle"
+}
+else {
+	String boms = properties["product.bill.of.meterials"]
+
+	if (boms != null) {
+		productBoms = boms.split(",")
+	}
+}
+
+task listProjects() {
+	doLast {
+		rootProject.subprojects.each { prj ->
+			if (!prj.subprojects.empty) return
+			if (prj.path.startsWith(":plugins-sdk")) return
+
+			println "${prj.path}\t${prj.group}:${prj.property('archivesBaseName')}:${prj.version}"
+		}
+	}
+}
+
 gradle.beforeProject {
 	Project project ->
 
@@ -38,22 +70,26 @@ gradle.beforeProject {
 	}
 
 	configure(project) {
-		task printProjectPath
-
-		printProjectPath {
-			doLast {
-				println project.path + " " + project.property('version')
-			}
-		}
 
 		// Add Nexus upload tasks (for binary and sources) and other
 		// useful elements or tasks
 
 		if (project.tasks.findByName("jar")) {
+			task packageForDist(dependsOn: jar) {
+				// Empty. Only needed for task dependencies
+			}
 
 			task sourcesJar(type: Jar, dependsOn:classes) {
 				classifier = 'sources'
 				from sourceSets.main.allSource
+			}
+
+			if (productBoms.size() > 0) {
+				dependencies {
+					productBoms.each {
+						compileOnly platform("${it}")
+					}
+				}
 			}
 
 			artifacts {
@@ -75,21 +111,31 @@ gradle.beforeProject {
 			// Set real artifact version
 
 			def finalVersion = project.property('version')
+			ext.originalVersion = finalVersion
 
 			if (finalVersion.endsWith("-SNAPSHOT")) {
-				//throw new GradleException("Project with SNAPSHOT version ${project.path} ${project.property('version')}")
 				println "WARNING: Project with SNAPSHOT version ${project.path} ${project.property('version')}"
 			}
 			if (!finalVersion.endsWith(project.property('registrySuffix'))) {
 				finalVersion = "${project.property('version')}${project.property('registrySuffix')}"
-				logger.debug("${project.path} change version ${project.property('version')} to ${finalVersion}")
+				logger.debug("SMC ${project.path} change version ${project.property('version')} to ${finalVersion}")
 				project['version'] = finalVersion
-				logger.debug("check ${project.property('version')} ")
+				logger.debug("SMC check ${project.property('version')} ")
 			}
 
 			uploadArchives {
-				logger.debug("${project.property('group')} ${project.property('version')}${project.property('registrySuffix')}")
-				logger.debug("${project.property('nexus.snapshots.url')} ${project.property('registryUsername')}")
+				def nexusRepository = project.property('nexus.snapshots.url')
+
+				if (!finalVersion.endsWith("-SNAPSHOT")) {
+					nexusRepository = project.property('nexus.releases.url');
+				}
+
+				def msg =
+					"${project.property('group')}:${project.property('archivesBaseName')}:${project.property('version')}" +
+					" (suffix ${project.property('registrySuffix')})" +
+					" on ${nexusRepository} as ${project.property('registryUsername')}"
+
+				logger.debug("SMC will pub ${msg}")
 
 				repositories {
 					mavenDeployer {
@@ -103,8 +149,16 @@ gradle.beforeProject {
 						}
 					}
 				}
-			}
 
+				doLast {
+					println "Published ${msg}"
+				}
+			}
+		}
+		else if (project.tasks.findByName("war")) {
+			task packageForDist(dependsOn: war) {
+				// Empty. Only needed for task dependencies
+			}
 		}
 
 	}
@@ -167,8 +221,27 @@ def getTimeStampStr() {
 }
 
 def localBundleDir = project.properties['liferay.workspace.home.dir']
+ext.productVersion = project.properties['product.version'] ?: "1.0.0"
+ext.productName = project.properties['product.name'] ?: project.name
 
-task listDistProfiles {
+String distLocalMode = project.properties["distLocalMode"]
+
+if (distLocalMode == null && project.properties['nexus.release.mode'] == "true") {
+	distLocalMode = "false"
+}
+else if (distLocalMode == null && project.properties['gitSnapshotsBranch'] == false) {
+	distLocalMode = "false"
+}
+else if (distLocalMode == null) {
+	distLocalMode = "true"
+}
+
+println "** distLocalMode = ${distLocalMode}"
+
+/*
+ * List all configurations eligile as "Distribution Profile"
+ */
+task listDistProfiles() {
 	doLast {
 		configurations.each { config ->
 			if (!config.name.startsWith("dist") && !config.name.startsWith("feature")) {
@@ -176,7 +249,54 @@ task listDistProfiles {
 			}
 
 			def taskName = config.name.capitalize()
-			println config.name + " ->  tar$taskName , zip$taskName"
+			println config.name + " ->  tar$taskName , zip$taskName , deploy$taskName"
+		}
+	}
+}
+
+/*
+ * Describe "Distribution Profile" in a way usable as dependency
+ */
+task showDistProfiles() {
+	if (distLocalMode == "true") {
+		dependsOn configurations.archives.artifacts
+	}
+
+	doLast {
+		configurations.each { config ->
+			if (!config.name.startsWith("dist") && !config.name.startsWith("feature")) {
+				return;
+			}
+
+			println "----"
+			println "Distribution Profile: ${archivesBaseName}-${productVersion} ${config.name} ${project.property('registrySuffix')}"
+			println ""
+			println "dependencies {"
+
+			def taskName = config.name.capitalize()
+
+			config.getDependencies().each{ dep ->
+				if (dep instanceof ExternalDependency) {
+					ProjectDependency projectDependency = dep as ProjectDependency
+
+					println "	compileOnly group:'${projectDependency.group}', name:'${projectDependency.name}', version:'${projectDependency.version}'"
+				}
+				else if (dep instanceof ProjectDependency) {
+					ProjectDependency projectDependency = dep as ProjectDependency
+
+					Project prj = projectDependency.getDependencyProject()
+
+					String archivesBaseName = prj.properties["archivesBaseName"]
+
+					println "	compileOnly group:'${projectDependency.group}', name:'${archivesBaseName}', version:'${projectDependency.version}'"
+				}
+				else {
+					println "	//??? ${dep}"
+				}
+			}
+
+			println "}"
+			println ""
 		}
 	}
 }
@@ -209,20 +329,6 @@ def distDependencySpec(boolean allowExternal, boolean allowProject) {
 		}
 	}
 }
-
-String distLocalMode = project.properties["distLocalMode"]
-
-if (distLocalMode == null && project.properties['nexus.release.mode'] == "true") {
-	distLocalMode = "false"
-}
-else if (distLocalMode == null && project.properties['gitSnapshotsBranch'] == false) {
-	distLocalMode = "false"
-}
-else if (distLocalMode == null) {
-	distLocalMode = "true"
-}
-
-println "** distLocalMode = ${distLocalMode}"
 
 task buildDistDepsMap() {
 	doLast {
@@ -294,17 +400,8 @@ configurations.each { config ->
 		classifier = getTimeStampStr()
 		duplicatesStrategy = DuplicatesStrategy.EXCLUDE
 		compression = Compression.GZIP
-		version = project.properties['product.version'] ?: "1.0.0"
-
-		if (distLocalMode == "true") {
-			dependsOn configurations.archives.artifacts
-			into("libs") {
-				from config
-			}
-		}
-		else {
-			dependsOn buildDistDepsMap
-		}
+		version = productVersion
+		dependsOn buildDistDepsMap
 	}
 
 	task "zip$taskName"(type: Zip) {
@@ -312,17 +409,26 @@ configurations.each { config ->
 		appendix = config.name
 		classifier = getTimeStampStr()
 		duplicatesStrategy = DuplicatesStrategy.EXCLUDE
-		version = project.properties['product.version'] ?: "1.0.0"
+		version = productVersion
+		dependsOn buildDistDepsMap
+	}
 
-		if (distLocalMode == "true") {
-			dependsOn configurations.archives.artifacts
-			into("libs") {
-				from config
+	task "deploy$taskName"(type: Copy) {
+		description = "Deploy dependencies on local Liferay"
+
+		Configuration clone = config.copy(distDependencySpec(true, false));
+
+		config.getDependencies().each{ dep ->
+			if (dep instanceof ProjectDependency) {
+				ProjectDependency projectDependency = dep as ProjectDependency
+				Project prj = projectDependency.getDependencyProject()
+
+				dependsOn "${prj.path}:deploy"
 			}
 		}
-		else {
-			dependsOn buildDistDepsMap
-		}
+
+		into "${localBundleDir}/deploy"
+		from clone
 	}
 }
 
@@ -333,3 +439,4 @@ task tarDistAll() {
 task zipDistAll() {
 	dependsOn zipProfiles
 }
+

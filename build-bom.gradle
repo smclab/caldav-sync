@@ -1,0 +1,102 @@
+/*
+ * Define logic to create and publish a bill of materials with all 
+ * modules in this repository (all packaged as jar).
+ * 
+ * To enable this logic you have to start gradle-wrapper with 
+ * "-Penable.bom.tasks=true".
+ * Common tasks are "publish" and "publishToMavenLocal"
+ *  
+ */
+
+apply plugin: "maven-publish"
+
+ext.pomInfo = {
+	delegate.licenses {
+		delegate.license {
+			delegate.name 'Unpublished Copyright SMC TREVISO SRL.'
+			//delegate.url 'https://www.smc.it/licenses/XXXX.txt'
+			delegate.distribution 'repo'
+		}
+	}
+	delegate.developers {
+		delegate.developer {
+			delegate.name "maumar"
+			delegate.organization "SMC Treviso srl"
+		}
+	}
+}
+
+publishing {
+	afterEvaluate {
+		repositories {
+			maven {
+				credentials {
+					username project.properties['registryUsername']
+					password project.properties['registryPassword']
+				}
+
+				if (registrySuffix == "-SNAPSHOT") {
+					url project.properties['nexus.snapshots.url']
+				}
+				else {
+					url project.properties['nexus.releases.url']
+				}
+			}
+		}
+		
+		publications {
+			maven(MavenPublication) {
+				version "${productVersion}${registrySuffix}"
+				artifactId "${productName}.bom"
+				from components.javaPlatform
+				
+				pom.withXml {
+					def xml = asNode()
+
+					xml.children().find {
+						it.name().localPart == 'packaging'
+					} + pomInfo
+
+					// println "withXml"
+
+					// Replace project name with Bundle-SymbolicName
+					
+					rootProject.subprojects.each { prj ->
+						if (!prj.subprojects.empty) return
+						if (prj.path.startsWith(":bom") || prj.path.startsWith(":plugins-sdk")) return
+
+						String artifactName = prj.property('archivesBaseName')
+						
+						// println "${prj.name} ${artifactName} ${prj.version}"
+
+						def pomDep = xml.dependencyManagement.dependencies.dependency.find {
+							it.artifactId.text() == prj.name && it.groupId.text() == group
+						}
+						
+						if (pomDep != null && artifactName != null) {
+							pomDep.artifactId.first().setValue(artifactName)
+						}
+					}
+
+					// println "done"
+					
+				}
+			}
+		}
+	}
+}
+
+dependencies {
+	constraints {
+		println "Inject dependencies"
+
+		rootProject.subprojects.each { prj ->
+			if (!prj.subprojects.empty) return
+			if (prj.path.startsWith(":bom") || prj.path.startsWith(":plugins-sdk")) return
+			
+			//runtime project("${prj.path}")
+			api project("${prj.path}")
+		}
+	}
+}
+

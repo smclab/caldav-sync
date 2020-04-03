@@ -1,9 +1,9 @@
 Bundle-Copyright: SMC Treviso
 Bundle-DocURL: http://www.smc.it
-Bundle-License: Commercial
+Bundle-License: LGPL
 
 Bundle-Name: Caldav Helper Service
 Bundle-SymbolicName: it.smc.calendar.caldav.helper.service
-Bundle-Version: 2.1.0
+Bundle-Version: 3.0.0
 
 Export-Package: it.smc.calendar.caldav.helper.util
