@@ -22,6 +22,7 @@ import com.liferay.calendar.service.CalendarBookingLocalServiceUtil;
 import com.liferay.calendar.workflow.CalendarBookingWorkflowConstants;
 import com.liferay.expando.kernel.model.ExpandoBridge;
 import com.liferay.expando.kernel.model.ExpandoColumnConstants;
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.io.unsync.UnsyncStringReader;
 import com.liferay.portal.kernel.log.Log;
@@ -42,7 +43,6 @@ import com.liferay.portal.kernel.service.ServiceContextThreadLocal;
 import com.liferay.portal.kernel.service.UserLocalServiceUtil;
 import com.liferay.portal.kernel.util.ArrayUtil;
 import com.liferay.portal.kernel.util.GetterUtil;
-import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.UnicodeProperties;
 import com.liferay.portal.kernel.util.Validator;
@@ -292,7 +292,7 @@ public class DefaultICSContentListener implements ICSImportExportListener {
 				propertyList.remove(propertyList.getProperty(Action.ACTION));
 			}
 			else if (vAlarm.getAction().equals(Action.EMAIL) &&
-					 !CalDAVUtil.isThunderbird(request)) {
+					!CalDAVUtil.isThunderbird(request)) {
 
 				propertyList.remove(propertyList.getProperty(Action.ACTION));
 				propertyList.add(Action.DISPLAY);

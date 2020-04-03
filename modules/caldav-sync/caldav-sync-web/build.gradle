@@ -1,18 +1,21 @@
 dependencies {
-	compile files ("./src/main/resources/META-INF/libs/backport-util-concurrent-2.2_1.jar")
-	compile files ("./src/main/resources/META-INF/libs/net.fortuna.ical4j-1.0.jar")
-	compileOnly group: 'net.fortuna.ical4j', name: 'ical4j', version: '1.0-rc3'
+	compileInclude group: "backport-util-concurrent", name: "backport-util-concurrent", version: "3.1"
+	compileInclude group: "net.fortuna.ical4j", name: "ical4j", version: "1.0-rc3", transitive: false
+
 	compileOnly project(":modules:caldav-sync:caldav-helper-api")
 	compileOnly project(":modules:caldav-sync:caldav-helper-service")
 
 	compileOnly group: "com.liferay", name: "com.liferay.application.list.api"
 	compileOnly group: "com.liferay", name: "com.liferay.calendar.api"
 	compileOnly group: "com.liferay", name: "com.liferay.calendar.service"
+	compileOnly group: "com.liferay", name: "com.liferay.petra.string"
+	compileOnly group: "com.liferay", name: "com.liferay.petra.xml"
 	compileOnly group: "com.liferay.portal", name: "com.liferay.portal.kernel"
-	compileOnly group: "com.liferay.portal", name: "com.liferay.util.java"
 	compileOnly group: "com.liferay.portal", name: "com.liferay.util.taglib"
 	compileOnly group: "javax.portlet", name: "portlet-api"
-	compileOnly group: "javax.servlet", name: "javax.servlet-api"
 	compileOnly group: "org.osgi", name: "org.osgi.core"
 	compileOnly group: "org.osgi", name: "org.osgi.service.component.annotations"
+
+	// We have to force version becuse Liferay BOMs have conflicting versions
+	compileOnly("javax.servlet:javax.servlet-api:3.0.1") { force = true }
 }

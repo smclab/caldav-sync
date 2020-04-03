@@ -17,11 +17,11 @@ package it.smc.calendar.caldav.sync;
 import com.liferay.calendar.exporter.CalendarDataFormat;
 import com.liferay.calendar.model.Calendar;
 import com.liferay.calendar.service.CalendarServiceUtil;
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.io.unsync.UnsyncByteArrayInputStream;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.util.ContentTypes;
-import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.kernel.webdav.BaseResourceImpl;
 import com.liferay.portal.kernel.webdav.WebDAVException;
 

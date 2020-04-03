@@ -15,8 +15,8 @@
 package it.smc.calendar.caldav.sync;
 
 import com.liferay.calendar.model.CalendarResource;
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.util.ContentTypes;
-import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.kernel.webdav.BaseResourceImpl;
 
 import java.util.Locale;

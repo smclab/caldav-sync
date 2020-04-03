@@ -17,7 +17,7 @@ package it.smc.calendar.caldav.sync;
 import com.liferay.calendar.model.Calendar;
 import com.liferay.calendar.model.CalendarResource;
 import com.liferay.calendar.service.CalendarResourceLocalServiceUtil;
-
+import com.liferay.petra.xml.DocUtil;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.model.User;
@@ -26,20 +26,17 @@ import com.liferay.portal.kernel.util.PortalUtil;
 import com.liferay.portal.kernel.webdav.Resource;
 import com.liferay.portal.kernel.webdav.WebDAVRequest;
 import com.liferay.portal.kernel.xml.Element;
-import com.liferay.util.xml.DocUtil;
 
 import it.smc.calendar.caldav.sync.util.CalDAVProps;
 import it.smc.calendar.caldav.sync.util.CalDAVUtil;
 import it.smc.calendar.caldav.sync.util.CustomCalendarResourcePermission;
 import it.smc.calendar.caldav.util.CalendarUtil;
-import org.osgi.service.component.annotations.Component;
 
 import java.util.List;
 
 /**
  * @author Fabio Pezzutto
  */
-
 public class PrincipalPropsProcessor extends BasePropsProcessor {
 
 	public PrincipalPropsProcessor(
