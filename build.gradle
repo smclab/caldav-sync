@@ -1,0 +1,335 @@
+apply plugin: 'java'
+apply plugin: 'eclipse'
+
+buildscript {
+	dependencies {
+		classpath "nu.studer:gradle-credentials-plugin:1.0.3"
+		classpath "net.saliman:gradle-properties-plugin:1.4.6"
+		classpath "org.ajoberstar.grgit:grgit-gradle:3.0.0"
+	}
+
+	repositories {
+		mavenLocal()
+		mavenCentral()
+
+		maven {
+			url "https://repository-cdn.liferay.com/nexus/content/groups/public"
+		}
+	}
+}
+
+apply from: "build-nexus.gradle"
+
+allprojects {
+	group = "it.smc.marketplace.caldav-sync"
+}
+
+gradle.beforeProject {
+	Project project ->
+
+	// Skip projects with childs
+	if (!project.parent || project.childProjects) {
+		return
+	}
+
+	// Skip Plugins SDK
+	if (project.path.startsWith(":plugins-sdk")) {
+		return
+	}
+
+	configure(project) {
+		task printProjectPath
+
+		printProjectPath {
+			doLast {
+				println project.path + " " + project.property('version')
+			}
+		}
+
+		// Add Nexus upload tasks (for binary and sources) and other
+		// useful elements or tasks
+
+		if (project.tasks.findByName("jar")) {
+
+			task sourcesJar(type: Jar, dependsOn:classes) {
+				classifier = 'sources'
+				from sourceSets.main.allSource
+			}
+
+			artifacts {
+				archives sourcesJar
+			}
+
+			task releaseIncrementMajor() {
+				doLast {
+					_updateBndBundleVersion(project, false)
+				}
+			}
+
+			task releaseIncrementMinor() {
+				doLast {
+					_updateBndBundleVersion(project, true)
+				}
+			}
+
+			// Set real artifact version
+
+			def finalVersion = project.property('version')
+
+			if (finalVersion.endsWith("-SNAPSHOT")) {
+				//throw new GradleException("Project with SNAPSHOT version ${project.path} ${project.property('version')}")
+				println "WARNING: Project with SNAPSHOT version ${project.path} ${project.property('version')}"
+			}
+			if (!finalVersion.endsWith(project.property('registrySuffix'))) {
+				finalVersion = "${project.property('version')}${project.property('registrySuffix')}"
+				logger.debug("${project.path} change version ${project.property('version')} to ${finalVersion}")
+				project['version'] = finalVersion
+				logger.debug("check ${project.property('version')} ")
+			}
+
+			uploadArchives {
+				logger.debug("${project.property('group')} ${project.property('version')}${project.property('registrySuffix')}")
+				logger.debug("${project.property('nexus.snapshots.url')} ${project.property('registryUsername')}")
+
+				repositories {
+					mavenDeployer {
+						pom.version = "${finalVersion}"
+
+						snapshotRepository(url: project.property('nexus.snapshots.url')) {
+							authentication(userName: project.property('registryUsername'), password: project.property('registryPassword'))
+						}
+						repository(url: project.property('nexus.releases.url')) {
+							authentication(userName: project.property('registryUsername'), password: project.property('registryPassword'))
+						}
+					}
+				}
+			}
+
+		}
+
+	}
+
+}
+
+private void _updateBndBundleVersion(Project project, boolean minorMode) {
+	def bndFile = project.file("bnd.bnd")
+
+	if (!bndFile.exists()) {
+		println "WARNING: No bnd.bnd for ${project.path}"
+	}
+	else {
+		def bndContent = bndFile as String[]
+
+		def curVersions = project.property('version').tokenize(".")
+
+		if (curVersions.size() != 3) {
+			println "WARNING: Non standard version ${moduleVersion} for ${project.path}"
+		}
+
+		def newMajor = curVersions[0].toInteger();
+		def newMinor = curVersions[1].toInteger();
+
+		if (minorMode) {
+			newMinor++
+		}
+		else {
+			newMajor++
+			newMinor = 0
+		}
+
+		def newVersion = "${newMajor}.${newMinor}.0"
+
+		bndFile.withWriter('UTF-8') { writer ->
+			bndContent.each {
+				if (it.indexOf("Bundle-Version") == 0) {
+					writer.writeLine "Bundle-Version: ${newVersion}"
+				}
+				else {
+					writer.writeLine it
+				}
+			}
+		}
+
+		println "${project.path} = ${project.property('version')} -> ${newVersion}"
+	}
+}
+
+/*
+ ***************************
+ *  Distribution Profiles  *
+ ***************************
+ */
+
+apply from: "build-dist.gradle"
+
+def getTimeStampStr() {
+	new Date().format('yyyyMMddHHmmss')
+}
+
+def localBundleDir = project.properties['liferay.workspace.home.dir']
+
+task listDistProfiles {
+	doLast {
+		configurations.each { config ->
+			if (!config.name.startsWith("dist") && !config.name.startsWith("feature")) {
+				return;
+			}
+
+			def taskName = config.name.capitalize()
+			println config.name + " ->  tar$taskName , zip$taskName"
+		}
+	}
+}
+
+/*
+ * Task da usare nel proprio ambiente di sviluppo locale per "iniettare"
+ * nel Liferay locale le librerie base necessarie. In pratica quelle
+ * considerate fondamentali per il core.
+ */
+task deployCoreDependencies(type: Copy) {
+	into "${localBundleDir}/deploy"
+	from configurations.distCoreLibs
+}
+
+def tarProfiles = []
+def zipProfiles = []
+
+def distDependencySpec(boolean allowExternal, boolean allowProject) {
+	return new Spec<Dependency>() {
+		boolean isSatisfiedBy(Dependency element) {
+			if (element instanceof ExternalDependency && allowExternal) {
+				return true
+			}
+			else if (element instanceof ProjectDependency && allowProject) {
+				return true
+			}
+			else {
+				return false
+			}
+		}
+	}
+}
+
+String distLocalMode = project.properties["distLocalMode"]
+
+if (distLocalMode == null && project.properties['nexus.release.mode'] == "true") {
+	distLocalMode = "false"
+}
+else if (distLocalMode == null && project.properties['gitSnapshotsBranch'] == false) {
+	distLocalMode = "false"
+}
+else if (distLocalMode == null) {
+	distLocalMode = "true"
+}
+
+println "** distLocalMode = ${distLocalMode}"
+
+task buildDistDepsMap() {
+	doLast {
+		configurations.each { config ->
+			if (!config.name.startsWith("dist") && !config.name.startsWith("feature")) {
+				return;
+			}
+
+			Configuration clone = null;
+
+			if (distLocalMode == "true") {
+				clone = config.copy()
+			}
+			else {
+				clone = config.copy(distDependencySpec(true, false))
+
+				config.dependencies.each { dep ->
+					if (dep instanceof ExternalDependency) {
+						// Already included
+					}
+					else if (dep instanceof ProjectDependency) {
+						ProjectDependency projectDependency = dep as ProjectDependency
+
+						Project prj = projectDependency.getDependencyProject()
+
+						String archivesBaseName = prj.properties["archivesBaseName"]
+
+						clone.dependencies.add(dependencies.create("${projectDependency.group}:${archivesBaseName}:${projectDependency.version}"))
+					}
+					else {
+						println "??? ${dep}"
+					}
+				}
+			}
+
+			def taskName = config.name.capitalize()
+
+			Task zipTargetTask = tasks.getByName("zip$taskName")
+
+			zipTargetTask.into("libs") {
+				from clone
+			}
+
+			Task tarTargetTask = tasks.getByName("tar$taskName")
+
+			tarTargetTask.into("libs") {
+				from clone
+			}
+		}
+	}
+}
+
+
+configurations.each { config ->
+	if (!config.name.startsWith("dist") && !config.name.startsWith("feature")) {
+		return;
+	}
+
+	//println config.name + ":" + config.visible
+
+	def taskName = config.name.capitalize()
+
+	tarProfiles.add("tar$taskName")
+	zipProfiles.add("zip$taskName")
+
+	task "tar$taskName"(type: Tar) {
+		description = "Build a tarball of runtime artifacts"
+		appendix = config.name
+		classifier = getTimeStampStr()
+		duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+		compression = Compression.GZIP
+		version = project.properties['product.version'] ?: "1.0.0"
+
+		if (distLocalMode == "true") {
+			dependsOn configurations.archives.artifacts
+			into("libs") {
+				from config
+			}
+		}
+		else {
+			dependsOn buildDistDepsMap
+		}
+	}
+
+	task "zip$taskName"(type: Zip) {
+		description = "Build a zip of runtime artifacts"
+		appendix = config.name
+		classifier = getTimeStampStr()
+		duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+		version = project.properties['product.version'] ?: "1.0.0"
+
+		if (distLocalMode == "true") {
+			dependsOn configurations.archives.artifacts
+			into("libs") {
+				from config
+			}
+		}
+		else {
+			dependsOn buildDistDepsMap
+		}
+	}
+}
+
+task tarDistAll() {
+	dependsOn tarProfiles
+}
+
+task zipDistAll() {
+	dependsOn zipProfiles
+}

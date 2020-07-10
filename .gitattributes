@@ -1,0 +1,6 @@
+# Autodetect text files
+* text=auto
+
+# Help for some file types
+*.pom	text eol=lf
+ivy.xml	text eol=lf
