@@ -289,7 +289,7 @@ public class DefaultICSContentListener implements ICSImportExportListener {
 				propertyList.remove(propertyList.getProperty(Action.ACTION));
 			}
 			else if (vAlarm.getAction().equals(Action.EMAIL) &&
-					 !CalDAVUtil.isThunderbird(request)) {
+					!CalDAVUtil.isThunderbird(request)) {
 
 				propertyList.remove(propertyList.getProperty(Action.ACTION));
 				propertyList.add(Action.DISPLAY);
@@ -349,59 +349,60 @@ public class DefaultICSContentListener implements ICSImportExportListener {
 		while (iterator.hasNext()) {
 			Attendee attendee = (Attendee)iterator.next();
 
-			if (Validator.isNotNull(attendee.getValue())) {
-				String attendeeEmail = StringUtil.replace(
-					StringUtil.toLowerCase(attendee.getValue()), "mailto:",
-					StringPool.BLANK);
+			if (Validator.isNull(attendee.getValue())) {
+				continue;
+			}
 
-				if (!Validator.isEmailAddress(attendeeEmail)) {
-					continue;
-				}
+			String attendeeEmail = StringUtil.replace(
+				StringUtil.toLowerCase(attendee.getValue()), "mailto:",
+				StringPool.BLANK);
 
-				User user = UserLocalServiceUtil.fetchUserByEmailAddress(
-					calendarBooking.getCompanyId(), attendeeEmail);
+			if (!Validator.isEmailAddress(attendeeEmail)) {
+				continue;
+			}
 
-				Optional<User> bookingUser =
-					CalendarHelperUtil.getCalendarResourceUser(
-						calendarBooking.getCalendarResource());
+			User user = UserLocalServiceUtil.fetchUserByEmailAddress(
+				calendarBooking.getCompanyId(), attendeeEmail);
 
-				if (user == null) {
-					attendees = ArrayUtil.append(
-						attendees, attendee.toString());
+			Optional<User> bookingUser =
+				CalendarHelperUtil.getCalendarResourceUser(
+					calendarBooking.getCalendarResource());
 
-					attendeesEmailAddresses = ArrayUtil.append(
-						attendeesEmailAddresses, attendeeEmail);
-				}
-				else if (bookingUser.isPresent() &&
-					user.equals(bookingUser.get())) {
+			if (user == null) {
+				attendees = ArrayUtil.append(attendees, attendee.toString());
 
-					int status = AttendeeUtil.getStatus(
-						attendee, calendarBooking.getStatus());
+				attendeesEmailAddresses = ArrayUtil.append(
+					attendeesEmailAddresses, attendeeEmail);
+			}
+			else if (bookingUser.isPresent() &&
+				user.equals(bookingUser.get())) {
 
-					if (status != calendarBooking.getStatus()) {
-						ServiceContext serviceContext =
-							ServiceContextThreadLocal.getServiceContext();
+				int status = AttendeeUtil.getStatus(
+					attendee, calendarBooking.getStatus());
 
-						CalendarBookingLocalServiceUtil.updateStatus(
-							user.getUserId(), calendarBooking, status,
-							serviceContext);
+				if (status != calendarBooking.getStatus()) {
+					ServiceContext serviceContext =
+						ServiceContextThreadLocal.getServiceContext();
 
-						// TODO: update parent modified date, it shouldn't be
-						// necessary
+					CalendarBookingLocalServiceUtil.updateStatus(
+						user.getUserId(), calendarBooking, status,
+						serviceContext);
 
-						LastModified iCalLastModified =
-							(LastModified)vEvent.getProperty(
-								LastModified.LAST_MODIFIED);
+					// TODO: update parent modified date, it shouldn't be
+					// necessary
 
-						Date modifiedDate = new Date();
+					LastModified iCalLastModified =
+						(LastModified)vEvent.getProperty(
+							LastModified.LAST_MODIFIED);
 
-						if (iCalLastModified != null) {
-							modifiedDate = iCalLastModified.getDate();
-						}
+					Date modifiedDate = new Date();
 
-						_updateAllBookingModifiedDate(
-							calendarBooking, modifiedDate);
+					if (iCalLastModified != null) {
+						modifiedDate = iCalLastModified.getDate();
 					}
+
+					_updateAllBookingModifiedDate(
+						calendarBooking, modifiedDate);
 				}
 			}
 		}

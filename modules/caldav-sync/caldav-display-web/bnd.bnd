@@ -4,4 +4,4 @@ Bundle-License: Commercial
 
 Bundle-Name: CalDAV Display Web
 Bundle-SymbolicName: it.smc.calendar.caldav.display
-Bundle-Version: 1.0.1
+Bundle-Version: 1.0.2
