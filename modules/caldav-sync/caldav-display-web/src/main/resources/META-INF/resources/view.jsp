@@ -27,20 +27,20 @@
 </div>
 
 <aui:script use="aui-base">
+
 var showlinks = A.one('#<portlet:namespace />showLinks');
-	showlinks.on(
-		'click',
-		function() {
-			Liferay.Util.openWindow(
-			{
-				dialog: {
-					constrain: true,
-					modal: true,
-					width: 1000
-				},
-				title:'<liferay-ui:message key="hide-show-urls" />',
-				uri: '<%= selectURL.toString() %>'
-			});
-		}
-	);
+
+showlinks.on(
+	'click', function() {
+		Liferay.Util.openWindow({
+			dialog: {
+				constrain: true,
+				modal: true,
+				width: 1000
+			},
+			title:'<liferay-ui:message key="hide-show-urls" />',
+			uri: '<%= selectURL.toString() %>'
+		});
+	}
+);
 </aui:script>

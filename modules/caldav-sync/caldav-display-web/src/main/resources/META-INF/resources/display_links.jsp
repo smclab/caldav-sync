@@ -19,8 +19,7 @@
 <%
 String portalURL = PortalUtil.getPortalURL(request);
 
-List<Calendar> calendars =
-	CalendarUtil.getAllCalendars(permissionChecker);
+List<Calendar> calendars = CalendarUtil.getAllCalendars(permissionChecker);
 
 String userCalDAVURL = portalURL + CalDAVUtil.getPrincipalURL(themeDisplay.getUserId());
 %>
