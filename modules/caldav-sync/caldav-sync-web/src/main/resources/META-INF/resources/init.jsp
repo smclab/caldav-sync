@@ -34,7 +34,7 @@ page import="com.liferay.portal.kernel.util.PortalUtil" %>
 
 <%@
 page import="it.smc.calendar.caldav.sync.util.CalDAVUtil" %><%@
-page import="it.smc.calendar.caldav.sync.util.CustomCalendarPermission" %><%@
+page import="it.smc.calendar.caldav.sync.util.CalendarModelPermission" %><%@
 page import="it.smc.calendar.caldav.util.CalendarUtil" %>
 
 <%@ page import="java.util.List" %>
