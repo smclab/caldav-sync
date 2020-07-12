@@ -308,6 +308,16 @@ public class CalendarPropsProcessor extends BasePropsProcessor {
 			resourceTypeElement, CalDAVProps.createCalendarQName("calendar"));
 	}
 
+	@Reference(
+		target = "(model.class.name=com.liferay.calendar.model.Calendar)",
+		unbind = "-"
+	)
+	protected void setModelPermissionChecker(
+		ModelResourcePermission<Calendar> modelResourcePermission) {
+
+		_calendarModelResourcePermission = modelResourcePermission;
+	}
+
 	protected String vTimeZoneToString(
 			net.fortuna.ical4j.model.Calendar iCalCalendar)
 		throws Exception {
@@ -334,17 +344,6 @@ public class CalendarPropsProcessor extends BasePropsProcessor {
 
 	private Calendar _calendar;
 
-	@Reference(
-		target = "(model.class.name=com.liferay.calendar.model.Calendar)",
-		unbind = "-"
-	)
-	protected void setModelPermissionChecker(
-		ModelResourcePermission<Calendar> modelResourcePermission) {
-
-		_calendarModelResourcePermission = modelResourcePermission;
-	}
-
-	private static ModelResourcePermission<Calendar>
-		_calendarModelResourcePermission;
+	private ModelResourcePermission<Calendar> _calendarModelResourcePermission;
 
 }

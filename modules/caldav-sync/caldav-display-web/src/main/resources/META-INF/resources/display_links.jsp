@@ -19,8 +19,7 @@
 <%
 String portalURL = PortalUtil.getPortalURL(request);
 
-List<Calendar> calendars =
-	CalendarUtil.getAllCalendars(permissionChecker);
+List<Calendar> calendars = CalendarUtil.getAllCalendars(permissionChecker);
 
 String userCalDAVURL = portalURL + CalDAVUtil.getPrincipalURL(themeDisplay.getUserId());
 %>
@@ -68,7 +67,7 @@ if (!calendars.isEmpty()) {
 				calendarTitleSb.append(StringPool.SPACE);
 				calendarTitleSb.append(calendar.getName(locale));
 
-				if (!CustomCalendarPermission.contains(permissionChecker, calendar.getGroupId(), CalendarActionKeys.MANAGE_BOOKINGS)) {
+				if (!CalendarModelPermission.contains(permissionChecker, calendar, CalendarActionKeys.MANAGE_BOOKINGS)) {
 					calendarTitleSb.append(StringPool.SPACE);
 					calendarTitleSb.append(StringPool.OPEN_PARENTHESIS);
 					calendarTitleSb.append(LanguageUtil.get(request, "read-only"));

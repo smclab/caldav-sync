@@ -29,7 +29,7 @@ import com.liferay.portal.kernel.xml.Element;
 
 import it.smc.calendar.caldav.sync.util.CalDAVProps;
 import it.smc.calendar.caldav.sync.util.CalDAVUtil;
-import it.smc.calendar.caldav.sync.util.CustomCalendarResourcePermission;
+import it.smc.calendar.caldav.sync.util.CalendarResourceModelPermission;
 import it.smc.calendar.caldav.util.CalendarUtil;
 
 import java.util.List;
@@ -86,7 +86,7 @@ public class PrincipalPropsProcessor extends BasePropsProcessor {
 						calendarResourceId);
 
 				if ((calendarResource != null) &&
-					CustomCalendarResourcePermission.contains(
+					CalendarResourceModelPermission.contains(
 						webDAVRequest.getPermissionChecker(), calendarResource,
 						ActionKeys.VIEW)) {
 
@@ -98,7 +98,6 @@ public class PrincipalPropsProcessor extends BasePropsProcessor {
 		}
 		catch (Exception e) {
 			_log.error(e);
-			return;
 		}
 	}
 

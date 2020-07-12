@@ -451,6 +451,16 @@ public class LiferayCalDAVStorageImpl extends BaseWebDAVStorageImpl {
 		}
 	}
 
+	@Reference(
+		target = "(model.class.name=com.liferay.calendar.model.Calendar)",
+		unbind = "-"
+	)
+	protected void setModelPermissionChecker(
+		ModelResourcePermission<Calendar> modelResourcePermission) {
+	
+		_calendarModelResourcePermission = modelResourcePermission;
+	}
+
 	protected List<Resource> toCalendarBookingResources(
 			WebDAVRequest webDAVRequest)
 		throws PortalException, SystemException {
@@ -542,20 +552,9 @@ public class LiferayCalDAVStorageImpl extends BaseWebDAVStorageImpl {
 		return new UserResourceImpl(user, parentPath, locale);
 	}
 
-	@Reference(
-		target = "(model.class.name=com.liferay.calendar.model.Calendar)",
-		unbind = "-"
-	)
-	protected void setModelPermissionChecker(
-		ModelResourcePermission<Calendar> modelResourcePermission) {
-
-		_calendarModelResourcePermission = modelResourcePermission;
-	}
-
-	private static ModelResourcePermission<Calendar>
-		_calendarModelResourcePermission;
-
 	private static Log _log = LogFactoryUtil.getLog(
 		LiferayCalDAVStorageImpl.class);
+
+	private ModelResourcePermission<Calendar> _calendarModelResourcePermission;
 
 }

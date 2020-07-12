@@ -16,8 +16,8 @@ package it.smc.calendar.caldav.helper;
 
 import com.liferay.calendar.model.Calendar;
 import com.liferay.calendar.model.CalendarResource;
-import com.liferay.calendar.service.CalendarLocalServiceUtil;
-import com.liferay.calendar.service.CalendarResourceServiceUtil;
+import com.liferay.calendar.service.CalendarLocalService;
+import com.liferay.calendar.service.CalendarResourceService;
 import com.liferay.portal.kernel.dao.orm.QueryUtil;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.log.Log;
@@ -33,16 +33,16 @@ import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.PortalUtil;
 import com.liferay.portal.kernel.util.SessionClicks;
 import com.liferay.portal.kernel.util.StringUtil;
-import com.liferay.portal.kernel.util.Validator;
-
-import it.smc.calendar.caldav.helper.api.CalendarListService;
-import it.smc.calendar.caldav.helper.util.PropsValues;
 
 import java.util.ArrayList;
 import java.util.List;
 
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
+import org.osgi.service.component.annotations.ReferencePolicyOption;
+
+import it.smc.calendar.caldav.helper.api.CalendarListService;
+import it.smc.calendar.caldav.helper.util.PropsValues;
 
 /**
  * @author rge
@@ -50,7 +50,106 @@ import org.osgi.service.component.annotations.Reference;
 @Component(immediate = true, service = CalendarListService.class)
 public class CalendarListServiceImpl implements CalendarListService {
 
-	public static List<Calendar> getSelectedCalendars(
+	@Override
+	public List<Calendar> getAllCalendars(PermissionChecker permissionChecker)
+		throws PortalException {
+
+		boolean useSessionClicksCalendars =
+			PropsValues.PROPFIND_PROVIDE_SESSIONCLICKS_CALENDARS;
+		boolean hidePersonalCalendar = PropsValues.HIDE_PERSONAL_CALENDAR;
+
+		List<Calendar> calendars = new ArrayList<>();
+
+		if (useSessionClicksCalendars) {
+			if (!hidePersonalCalendar) {
+				if (_log.isDebugEnabled()) {
+					_log.debug("Get user personal calendars");
+				}
+
+				if (!permissionChecker.isSignedIn()) {
+					_log.debug("Guest has no personal calendar");
+				}
+				else {
+					List<Calendar> userCalendars = getUserCalendars(
+						permissionChecker.getUserId());
+
+					if (userCalendars != null) {
+						if (_log.isDebugEnabled()) {
+							for (Calendar calendar : userCalendars) {
+								_log.debug(" - " + calendar.getName());
+							}
+						}
+
+						calendars.addAll(userCalendars);
+					}
+				}
+			}
+
+			if (PropsValues.PROPFIND_PROVIDE_USER_GROUPS) {
+				if (_log.isDebugEnabled()) {
+					_log.debug(
+						"Get also group calendars the the user belong to");
+				}
+
+				List<Calendar> userGroupCalendars = getUserGroupCalendars(
+					permissionChecker);
+
+				if (userGroupCalendars != null) {
+					if (_log.isDebugEnabled()) {
+						for (Calendar calendar : userGroupCalendars) {
+							_log.debug(" - " + calendar.getName());
+						}
+					}
+
+					calendars.addAll(userGroupCalendars);
+				}
+			}
+			else if (_log.isDebugEnabled()) {
+				_log.debug("Don't get group calendars");
+			}
+
+			if (_log.isDebugEnabled()) {
+				_log.debug("Get session click selected calendars");
+			}
+
+			List<Calendar> selectedCalendars = getSelectedCalendars(
+				permissionChecker);
+
+			if (selectedCalendars != null){
+				if (_log.isDebugEnabled()) {
+					for (Calendar calendar : selectedCalendars) {
+						_log.debug(" - " + calendar.getName());
+					}
+				}
+
+				calendars.addAll(selectedCalendars);
+			}
+		}
+		else {
+			if (_log.isDebugEnabled()) {
+				_log.debug("Get all user's visible calendars");
+			}
+
+			List<Calendar> allCalendars = _calendarLocalService.getCalendars(
+				QueryUtil.ALL_POS, QueryUtil.ALL_POS);
+
+			for (Calendar calendar : allCalendars) {
+				if (_calendarModelResourcePermission.contains(
+						permissionChecker, calendar, ActionKeys.VIEW)) {
+
+					if (_log.isDebugEnabled()) {
+						_log.debug(" - " + calendar.getName());
+					}
+
+					calendars.add(calendar);
+				}
+			}
+		}
+
+		return calendars;
+	}
+
+	public List<Calendar> getSelectedCalendars(
 			PermissionChecker permissionChecker)
 		throws PortalException {
 
@@ -71,7 +170,7 @@ public class CalendarListServiceImpl implements CalendarListService {
 			StringUtil.split(calendarIdsPref));
 
 		for (long calendarId : calendarIds) {
-			Calendar calendar = CalendarLocalServiceUtil.fetchCalendar(
+			Calendar calendar = _calendarLocalService.fetchCalendar(
 				calendarId);
 
 			if (calendar == null) {
@@ -88,7 +187,27 @@ public class CalendarListServiceImpl implements CalendarListService {
 		return calendars;
 	}
 
-	public static List<Calendar> getUserGroupCalendars(
+	public List<Calendar> getUserCalendars(long userId) {
+		long classNameId = PortalUtil.getClassNameId(User.class.getName());
+
+		CalendarResource calendarResource = null;
+
+		try {
+			calendarResource = _calendarResourceService.fetchCalendarResource(
+				classNameId, userId);
+
+			if (calendarResource != null) {
+				return calendarResource.getCalendars();
+			}
+		}
+		catch (PortalException pe) {
+			_log.error(pe, pe);
+		}
+
+		return null;
+	}
+
+	public List<Calendar> getUserGroupCalendars(
 			PermissionChecker permissionChecker)
 		throws PortalException {
 
@@ -97,7 +216,7 @@ public class CalendarListServiceImpl implements CalendarListService {
 		long classNameId = PortalUtil.getClassNameId(Group.class.getName());
 
 		List<CalendarResource> calendarResources =
-			CalendarResourceServiceUtil.search(
+			_calendarResourceService.search(
 				permissionChecker.getCompanyId(), new long[] {}, new long[] {
 					classNameId
 				}, null, true, true, QueryUtil.ALL_POS, QueryUtil.ALL_POS, null);
@@ -115,119 +234,6 @@ public class CalendarListServiceImpl implements CalendarListService {
 		return calendars;
 	}
 
-	@Override
-	public List<Calendar> getAllCalendars(PermissionChecker permissionChecker)
-		throws PortalException {
-
-		boolean useSessionClicksCalendars =
-			PropsValues.PROPFIND_PROVIDE_SESSIONCLICKS_CALENDARS;
-		boolean hidePersonalCalendar = PropsValues.HIDE_PERSONAL_CALENDAR;
-
-		List<Calendar> calendars = new ArrayList<>();
-
-		if (useSessionClicksCalendars) {
-			if (!hidePersonalCalendar) {
-				if (_log.isDebugEnabled()) {
-					_log.debug("Get user personal calendars");
-				}
-
-				List<Calendar> userCalendars =
-					getUserCalendars(permissionChecker.getUserId());
-				if (Validator.isNotNull(userCalendars)) {
-					if (_log.isDebugEnabled()) {
-						for (Calendar calendar : userCalendars) {
-							_log.debug(" - " + calendar.getName());
-						}
-					}
-
-					calendars.addAll(userCalendars);
-				}
-			}
-
-			if (PropsValues.PROPFIND_PROVIDE_USER_GROUPS) {
-				if (_log.isDebugEnabled()) {
-					_log.debug(
-						"Get also group calendars the the user belong to");
-				}
-
-				List<Calendar> userGroupCalendars =
-					getUserGroupCalendars(permissionChecker);
-				if (Validator.isNotNull(userGroupCalendars)) {
-					if (_log.isDebugEnabled()) {
-						for (Calendar calendar : userGroupCalendars) {
-							_log.debug(" - " + calendar.getName());
-						}
-					}
-
-					calendars.addAll(userGroupCalendars);
-				}
-			}
-			else if (_log.isDebugEnabled()) {
-				_log.debug("Don't get group calendars");
-			}
-
-			if (_log.isDebugEnabled()) {
-				_log.debug("Get session click selected calendars");
-			}
-
-			List<Calendar> selectedCalendars =
-				getSelectedCalendars(permissionChecker);
-
-			if(Validator.isNotNull(selectedCalendars)){
-				if (_log.isDebugEnabled()) {
-					for (Calendar calendar : selectedCalendars) {
-						_log.debug(" - " + calendar.getName());
-					}
-				}
-
-				calendars.addAll(selectedCalendars);
-			}
-		}
-		else {
-			if (_log.isDebugEnabled()) {
-				_log.debug("Get all user's visible calendars");
-			}
-
-			List<Calendar> allCalendars = CalendarLocalServiceUtil.getCalendars(
-				QueryUtil.ALL_POS, QueryUtil.ALL_POS);
-
-			for (Calendar calendar : allCalendars) {
-				if (_calendarModelResourcePermission.contains(
-						permissionChecker, calendar, ActionKeys.VIEW)) {
-
-					if (_log.isDebugEnabled()) {
-						_log.debug(" - " + calendar.getName());
-					}
-
-					calendars.add(calendar);
-				}
-			}
-		}
-
-		return calendars;
-	}
-
-	public List<Calendar> getUserCalendars(long userId) {
-		long classNameId = PortalUtil.getClassNameId(User.class.getName());
-
-		CalendarResource calendarResource = null;
-		try {
-			calendarResource =
-				CalendarResourceServiceUtil.fetchCalendarResource(
-					classNameId, userId);
-			if (Validator.isNull(calendarResource)) {
-				return null;
-			}
-		}
-		catch (PortalException pe) {
-			_log.error(pe, pe);
-		}
-		return calendarResource.getCalendars();
-	}
-
-	private static Log _log = LogFactoryUtil.getLog(
-		CalendarListServiceImpl.class);
-
 	@Reference(
 		target = "(model.class.name=com.liferay.calendar.model.Calendar)",
 		unbind = "-"
@@ -238,6 +244,15 @@ public class CalendarListServiceImpl implements CalendarListService {
 		_calendarModelResourcePermission = modelResourcePermission;
 	}
 
-	private static ModelResourcePermission<Calendar>
-		_calendarModelResourcePermission;
+	private static Log _log = LogFactoryUtil.getLog(
+		CalendarListServiceImpl.class);
+
+	@Reference(policyOption = ReferencePolicyOption.GREEDY)
+	private CalendarLocalService _calendarLocalService;
+
+	@Reference(policyOption = ReferencePolicyOption.GREEDY)
+	private CalendarResourceService _calendarResourceService;
+
+	private ModelResourcePermission<Calendar> _calendarModelResourcePermission;
+
 }

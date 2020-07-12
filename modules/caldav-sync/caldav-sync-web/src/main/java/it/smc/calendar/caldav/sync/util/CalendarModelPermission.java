@@ -11,10 +11,13 @@
  * FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
  * details.
  */
+
 package it.smc.calendar.caldav.sync.util;
 
-import com.liferay.calendar.model.CalendarResource;
+import com.liferay.calendar.model.Calendar;
 import com.liferay.portal.kernel.exception.PortalException;
+import com.liferay.portal.kernel.log.Log;
+import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.security.permission.PermissionChecker;
 import com.liferay.portal.kernel.security.permission.resource.ModelResourcePermission;
 import org.osgi.service.component.annotations.Component;
@@ -24,27 +27,51 @@ import org.osgi.service.component.annotations.Reference;
  *@author Domenico Costa
  */
 @Component(immediate = true, service = {})
-public class CustomCalendarResourcePermission {
+public class CalendarModelPermission {
 
 	public static boolean contains(
-			PermissionChecker permissionChecker,
-			CalendarResource calendarResource, String actionId)
-		throws PortalException {
+		PermissionChecker permissionChecker, long calendarId, String actionId) {
 
-		return _calendarResourceModelResourcePermission.contains(
-			permissionChecker, calendarResource, actionId);
+		try {
+			return _calendarModelResourcePermission.contains(
+				permissionChecker, calendarId, actionId);
+		}
+		catch (PortalException e) {
+			//ignore
+		}
+
+		return false;
+	}
+
+	public static boolean contains(
+		PermissionChecker permissionChecker, Calendar calendar,
+		String actionId) {
+
+		try {
+			return _calendarModelResourcePermission.contains(
+				permissionChecker, calendar, actionId);
+		}
+		catch (PortalException e) {
+			_log.error(e.getClass() + " " + e.getMessage());
+		}
+
+		return false;
 	}
 
 	@Reference(
-		target = "(model.class.name=com.liferay.calendar.model.CalendarResource)",
+		target = "(model.class.name=com.liferay.calendar.model.Calendar)",
 		unbind = "-"
 	)
 	protected void setModelPermissionChecker(
-		ModelResourcePermission<CalendarResource> modelResourcePermission) {
+		ModelResourcePermission<Calendar> modelResourcePermission) {
 
-		_calendarResourceModelResourcePermission = modelResourcePermission;
+		_calendarModelResourcePermission = modelResourcePermission;
 	}
 
-	private static ModelResourcePermission<CalendarResource>
-		_calendarResourceModelResourcePermission;
+	private static final Log _log = LogFactoryUtil.getLog(
+		CalendarModelPermission.class);
+
+	private static ModelResourcePermission<Calendar>
+		_calendarModelResourcePermission;
+
 }
