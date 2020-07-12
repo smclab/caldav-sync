@@ -12,8 +12,8 @@ apply plugin: 'eclipse'
 buildscript {
 	dependencies {
 		classpath "nu.studer:gradle-credentials-plugin:2.1"
-		classpath "net.saliman:gradle-properties-plugin:1.4.6"
-		classpath "org.ajoberstar.grgit:grgit-gradle:3.0.0"
+		classpath "net.saliman:gradle-properties-plugin:1.5.1"
+		classpath "org.ajoberstar.grgit:grgit-gradle:4.0.2"
 	}
 
 	repositories {

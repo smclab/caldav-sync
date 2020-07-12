@@ -151,6 +151,21 @@ if (changesModeEnabled && grgit != null && project.properties['gitSnapshotsBranc
 	}
 	else {
 		ext.changesMode = true;
+		
+		File smcChangesBarrier = new File(rootDir, ".smc_changes_barrier")
+
+		if (smcChangesBarrier.exists()) {
+			def content = smcChangesBarrier as String[]
+
+			//println "content=[${content}]"
+			//println "tag=[${describeTag}]"
+			if (content.length > 0 && describeTag.startsWith(content[0])) {
+				ext.changesMode = false;
+			}
+		}
+	}
+
+	if (ext.changesMode) {
 
 		def collectChangedPath = {
 			def p = "/" + it.toLowerCase()
@@ -211,15 +226,15 @@ if (changesModeEnabled && grgit != null && project.properties['gitSnapshotsBranc
 			}
 		}
 	}
-
-	if (ext.changesMode) {
-		println "Modules with changes:"
-		changedProjects.each { println "  ${it}" }
-		println ""
-	}
 }
 
-ext.changedProjects = changedProjects.sort()
+ext.changedProjects = changedProjects.sort(false)
+
+if (ext.changesMode) {
+	println "Modules with changes:"
+	ext.changedProjects.each { println "  ${it}" }
+	println ""
+}
 
 println "** changesMode = ${changesMode}"
 
