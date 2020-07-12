@@ -4,4 +4,4 @@ Bundle-License: LGPL
 
 Bundle-Name: CalDAV Display Web
 Bundle-SymbolicName: it.smc.calendar.caldav.display
-Bundle-Version: 3.0.0
+Bundle-Version: 3.1.0

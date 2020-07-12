@@ -4,5 +4,5 @@ Bundle-License: LGPL
 
 Bundle-Name: Caldav Helper API
 Bundle-SymbolicName: it.smc.calendar.caldav.helper.api
-Bundle-Version: 3.0.0
+Bundle-Version: 3.1.0
 Export-Package: it.smc.calendar.caldav.helper.api
