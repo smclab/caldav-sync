@@ -1,4 +1,6 @@
-if (project.properties["enable.bom.tasks"] == "true") {
+ext.enableBomTasks = Boolean.valueOf(project.properties["enable.bom.tasks"])
+
+if (ext.enableBomTasks) {
 	apply plugin: 'java-platform'
 }
 else {
@@ -9,7 +11,7 @@ apply plugin: 'eclipse'
 
 buildscript {
 	dependencies {
-		classpath "nu.studer:gradle-credentials-plugin:1.0.3"
+		classpath "nu.studer:gradle-credentials-plugin:2.1"
 		classpath "net.saliman:gradle-properties-plugin:1.4.6"
 		classpath "org.ajoberstar.grgit:grgit-gradle:3.0.0"
 	}
@@ -24,6 +26,14 @@ buildscript {
 	}
 }
 
+if (Boolean.valueOf(project.properties["bom.verbose.mode"])) {
+	ext.verboseMode = true
+	println "verboseMode = ${ext.verboseMode}"
+}
+else {
+	ext.verboseMode = false
+}
+
 apply from: "build-nexus.gradle"
 
 allprojects {
@@ -31,8 +41,10 @@ allprojects {
 }
 
 def productBoms = []
+def bomTaskMode = false
 
-if (project.properties["enable.bom.tasks"] == "true") {
+if (ext.enableBomTasks) {
+	bomTaskMode = true
 	println "Enable BoM"
 
 	apply from: "build-bom.gradle"
@@ -44,6 +56,11 @@ else {
 		productBoms = boms.split(",")
 	}
 }
+
+def isChangedProject = {
+	ext.changedProjects.contains(it) ? true : false
+}
+
 
 task listProjects() {
 	doLast {
@@ -84,12 +101,14 @@ gradle.beforeProject {
 				from sourceSets.main.allSource
 			}
 
-			if (productBoms.size() > 0) {
-				dependencies {
+			dependencies {
+				if (productBoms.size() > 0) {
 					productBoms.each {
 						compileOnly platform("${it}")
 					}
 				}
+				// We have to force version because Liferay BOMs have conflicting versions
+				compileOnly("javax.servlet:javax.servlet-api:3.0.1") { force = true }
 			}
 
 			artifacts {
@@ -114,8 +133,9 @@ gradle.beforeProject {
 			ext.originalVersion = finalVersion
 
 			if (finalVersion.endsWith("-SNAPSHOT")) {
-				println "WARNING: Project with SNAPSHOT version ${project.path} ${project.property('version')}"
+				println "WARNING: Project with explicit SNAPSHOT version ${project.path} ${project.property('version')}"
 			}
+
 			if (!finalVersion.endsWith(project.property('registrySuffix'))) {
 				finalVersion = "${project.property('version')}${project.property('registrySuffix')}"
 				logger.debug("SMC ${project.path} change version ${project.property('version')} to ${finalVersion}")
@@ -159,6 +179,9 @@ gradle.beforeProject {
 			task packageForDist(dependsOn: war) {
 				// Empty. Only needed for task dependencies
 			}
+
+			def finalVersion = project.property('version')
+			ext.originalVersion = finalVersion
 		}
 
 	}
@@ -287,8 +310,13 @@ task showDistProfiles() {
 					Project prj = projectDependency.getDependencyProject()
 
 					String archivesBaseName = prj.properties["archivesBaseName"]
+					String targetVersion = projectDependency.version
 
-					println "	compileOnly group:'${projectDependency.group}', name:'${archivesBaseName}', version:'${projectDependency.version}'"
+					if (!isChangedProject(prj.path) && prj.hasProperty('originalVersion')) {
+						targetVersion = prj.property('originalVersion')
+					}
+
+					println "	compileOnly group:'${projectDependency.group}', name:'${archivesBaseName}', version:'${targetVersion}'"
 				}
 				else {
 					println "	//??? ${dep}"
@@ -296,6 +324,59 @@ task showDistProfiles() {
 			}
 
 			println "}"
+			println ""
+		}
+	}
+}
+
+/*
+ * Describe "Distribution Profile" in a way usable as dependency
+ */
+task showDistInstall() {
+	if (distLocalMode == "true") {
+		dependsOn configurations.archives.artifacts
+	}
+
+	doLast {
+		configurations.each { config ->
+			if (!config.name.startsWith("dist") && !config.name.startsWith("feature")) {
+				return;
+			}
+
+			println "----"
+			println "Distribution Profile: ${archivesBaseName}-${productVersion} ${config.name} ${project.property('registrySuffix')}"
+			println ""
+
+			def taskName = config.name.capitalize()
+
+			config.getDependencies().each{ dep ->
+				if (dep instanceof ExternalDependency) {
+					// Skip.
+				}
+				else if (dep instanceof ProjectDependency) {
+					ProjectDependency projectDependency = dep as ProjectDependency
+
+					Project prj = projectDependency.getDependencyProject()
+
+					String packaging = "jar"
+					String archivesBaseName = prj.properties["archivesBaseName"]
+					String targetVersion = projectDependency.version
+
+					if (!isChangedProject(prj.path) && prj.hasProperty('originalVersion')) {
+						targetVersion = prj.property('originalVersion')
+					}
+
+					if (prj.tasks.findByName("war")) {
+						packaging = "war"
+					}
+
+					println "mvn install:install-file -Dfile='libs/${archivesBaseName}-${targetVersion}.${packaging}' -DgroupId='${prj.group}' -DartifactId='${archivesBaseName}' -Dversion='${targetVersion}' -Dpackaging=${packaging}"
+				}
+				else {
+					println "	//??? ${dep}"
+				}
+			}
+
 			println ""
 		}
 	}
@@ -339,7 +420,7 @@ task buildDistDepsMap() {
 
 			Configuration clone = null;
 
-			if (distLocalMode == "true") {
+			if (distLocalMode == "true" && project.properties['changesMode'] == false) {
 				clone = config.copy()
 			}
 			else {
@@ -354,9 +435,17 @@ task buildDistDepsMap() {
 
 						Project prj = projectDependency.getDependencyProject()
 
-						String archivesBaseName = prj.properties["archivesBaseName"]
+						//println "${prj.path}:${prj.properties['version']}:${prj.properties['originalVersion']}"
 
-						clone.dependencies.add(dependencies.create("${projectDependency.group}:${archivesBaseName}:${projectDependency.version}"))
+						if (isChangedProject(prj.path)) {
+							//println " has changes use local "
+							clone.dependencies.add(projectDependency)
+						}
+						else {
+							String archivesBaseName = prj.properties["archivesBaseName"]
+
+							clone.dependencies.add(dependencies.create("${projectDependency.group}:${archivesBaseName}:${prj.properties['originalVersion']}"))
+						}
 					}
 					else {
 						println "??? ${dep}"
@@ -430,6 +519,27 @@ configurations.each { config ->
 		into "${localBundleDir}/deploy"
 		from clone
 	}
+
+	Task zipTargetTask = tasks.getByName("zip$taskName")
+	Task tarTargetTask = tasks.getByName("tar$taskName")
+
+	if (distLocalMode == "true" && project.properties['changesMode'] == true) {
+		config.dependencies.each { dep ->
+			if (dep instanceof ProjectDependency) {
+				ProjectDependency projectDependency = dep as ProjectDependency
+
+				Project prj = projectDependency.getDependencyProject()
+
+				// println prj
+
+				if (isChangedProject(prj.path)) {
+					//println " has changes use local "
+					zipTargetTask.dependsOn(prj.path + ":packageForDist")
+				}
+			}
+		}
+	}
+
 }
 
 task tarDistAll() {
@@ -439,4 +549,3 @@ task tarDistAll() {
 task zipDistAll() {
 	dependsOn zipProfiles
 }
-

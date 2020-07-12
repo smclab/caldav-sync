@@ -1,11 +1,11 @@
 /*
- * Define logic to create and publish a bill of materials with all 
+ * Define logic to create and publish a bill of materials with all
  * modules in this repository (all packaged as jar).
- * 
- * To enable this logic you have to start gradle-wrapper with 
+ *
+ * To enable this logic you have to start gradle-wrapper with
  * "-Penable.bom.tasks=true".
  * Common tasks are "publish" and "publishToMavenLocal"
- *  
+ *
  */
 
 apply plugin: "maven-publish"
@@ -35,7 +35,7 @@ publishing {
 					password project.properties['registryPassword']
 				}
 
-				if (registrySuffix == "-SNAPSHOT") {
+				if (registrySuffix.endsWith("-SNAPSHOT")) {
 					url project.properties['nexus.snapshots.url']
 				}
 				else {
@@ -43,13 +43,15 @@ publishing {
 				}
 			}
 		}
-		
+
 		publications {
 			maven(MavenPublication) {
 				version "${productVersion}${registrySuffix}"
 				artifactId "${productName}.bom"
 				from components.javaPlatform
-				
+
+				println "I will publish '${group}:${artifactId}:${version}'"
+
 				pom.withXml {
 					def xml = asNode()
 
@@ -60,26 +62,43 @@ publishing {
 					// println "withXml"
 
 					// Replace project name with Bundle-SymbolicName
-					
+
 					rootProject.subprojects.each { prj ->
 						if (!prj.subprojects.empty) return
 						if (prj.path.startsWith(":bom") || prj.path.startsWith(":plugins-sdk")) return
 
 						String artifactName = prj.property('archivesBaseName')
+						boolean changesMode = Boolean.valueOf(prj.property('changesMode'))
+						boolean verboseMode = Boolean.valueOf(prj.property('verboseMode'))
 						
-						// println "${prj.name} ${artifactName} ${prj.version}"
+						def changedProjects = prj.property('changedProjects')
 
 						def pomDep = xml.dependencyManagement.dependencies.dependency.find {
 							it.artifactId.text() == prj.name && it.groupId.text() == group
 						}
-						
-						if (pomDep != null && artifactName != null) {
-							pomDep.artifactId.first().setValue(artifactName)
+
+						if (pomDep != null) {
+							if (artifactName != null) {
+								pomDep.artifactId.first().setValue(artifactName)
+							}
+							if (changesMode && !changedProjects.contains(prj.path)) {
+								def targetVersion = prj.hasProperty('originalVersion') ? prj.property('originalVersion') : prj.version
+
+								pomDep.version.first().setValue(targetVersion)
+
+								if (verboseMode) {
+									println "${prj.name} ${artifactName} ${targetVersion}"
+								}
+							}
+							else if (verboseMode) {
+								println "${prj.name} ${artifactName} ${prj.version}"
+							}
 						}
+
 					}
 
 					// println "done"
-					
+
 				}
 			}
 		}
@@ -93,7 +112,7 @@ dependencies {
 		rootProject.subprojects.each { prj ->
 			if (!prj.subprojects.empty) return
 			if (prj.path.startsWith(":bom") || prj.path.startsWith(":plugins-sdk")) return
-			
+
 			//runtime project("${prj.path}")
 			api project("${prj.path}")
 		}

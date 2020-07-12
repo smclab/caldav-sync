@@ -125,3 +125,101 @@ else {
 		ext.registrySuffix = "-SNAPSHOT"
 	}
 }
+
+/*************************
+ * TRACK CHANGED MODULES *
+ *************************/
+
+// Conterra' path dei moduli che hanno subito cambiamenti
+Set changedProjects = []
+
+ext.changesMode = false;
+
+def changesModeEnabled = Boolean.valueOf(project.properties["changes.mode.enabled"])
+
+if (changesModeEnabled && grgit != null && project.properties['gitSnapshotsBranch'] == true) {
+	println "Git Branch ${grgit.branch.current().name}"
+
+	def head = grgit.head();
+	logger.debug("KK head=${head}")
+
+	// Identifico l'eventuale tag di release piu' recente raggiungibile
+	def describeTag = grgit.describe(longDescr: true, match: ["rel_*"])
+
+	if (describeTag == null) {
+		println "No releases found"
+	}
+	else {
+		ext.changesMode = true;
+
+		def collectChangedPath = {
+			def p = "/" + it.toLowerCase()
+			def v = false
+
+			if (p.startsWith("/modules/")) {
+				if (p.equals("/modules/build.gradle")) {
+					v = false
+				}
+				else if (p.endsWith("/bnd.bnd")) {
+					v = true
+					changedProjects.add(p.minus("/bnd.bnd").replaceAll("/", ":"))
+				}
+				else if (p.endsWith("build.gradle")) {
+					v = true
+					changedProjects.add(p.minus("/build.gradle").replaceAll("/", ":"))
+				}
+				else if (p.contains("/src/")) {
+					v = true
+					changedProjects.add(p.minus(~/\/src\/.*$/).replaceAll("/", ":"))
+				}
+
+				if (v && ext.verboseMode) {
+					println p
+				}
+			}
+		}
+		
+		// Recupero i cambiamenti locali (non commitati)
+		def status = grgit.status();
+
+		status.staged.allChanges.each { path ->
+			collectChangedPath(path);
+		}
+		status.unstaged.allChanges.each { path ->
+			collectChangedPath(path);
+		}
+
+		// Ottengo l'oggetto Tag per averne il commit
+		def lastReleaseTag = grgit.resolve.toTag(describeTag.minus(~/-\d+-\w+$/))
+
+		println "Last ReleaseTag ${lastReleaseTag.getName()} : ${lastReleaseTag.shortMessage} : ${lastReleaseTag.dateTime} : ${lastReleaseTag.commit.id}"
+
+		// Recupero i commit successivi il tag
+		def commits = grgit.log {
+			range(lastReleaseTag.commit, head)
+		}
+
+		commits.each{c ->
+			if (ext.verboseMode) {
+				println "${c.id} : ${c.abbreviatedId} : ${c.shortMessage}"
+			}
+
+			grgit.show(commit: c).each{ rev ->
+				rev.getAllChanges().each { path ->
+					collectChangedPath(path);
+				}
+			}
+		}
+	}
+
+	if (ext.changesMode) {
+		println "Modules with changes:"
+		changedProjects.each { println "  ${it}" }
+		println ""
+	}
+}
+
+ext.changedProjects = changedProjects.sort()
+
+println "** changesMode = ${changesMode}"
+
