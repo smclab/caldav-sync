@@ -104,8 +104,7 @@ public class ReportMethodImpl extends PropfindMethodImpl {
 			CalDAVRequestThreadLocal.getRequestDocument().selectNodes(
 				"//*[local-name()='href']");
 
-		if ((hrefNodes.size() > 0) &&
-			CalDAVUtil.isCalendarBookingRequest(webDAVRequest)) {
+		if (hrefNodes.size() > 0) {
 
 			calendarBookings = new ArrayList<>();
 
