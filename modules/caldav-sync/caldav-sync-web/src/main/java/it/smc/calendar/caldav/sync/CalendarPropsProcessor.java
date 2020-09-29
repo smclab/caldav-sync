@@ -33,6 +33,7 @@ import com.liferay.portal.kernel.xml.Element;
 import it.smc.calendar.caldav.helper.api.CalendarHelperUtil;
 import it.smc.calendar.caldav.sync.util.CalDAVProps;
 import it.smc.calendar.caldav.sync.util.CalDAVUtil;
+import it.smc.calendar.caldav.sync.util.CalendarModelPermission;
 import it.smc.calendar.caldav.sync.util.ICalUtil;
 import it.smc.calendar.caldav.sync.util.WebKeys;
 import it.smc.calendar.caldav.util.PropsValues;
@@ -46,7 +47,6 @@ import java.util.Optional;
 /**
  * @author Fabio Pezzutto
  */
-@Component(immediate = true, service = {})
 public class CalendarPropsProcessor extends BasePropsProcessor {
 
 	public CalendarPropsProcessor(){
@@ -221,20 +221,16 @@ public class CalendarPropsProcessor extends BasePropsProcessor {
 
 		DocUtil.add(readPrivilegeElement, CalDAVProps.createQName("read"));
 
-		try {
-			if (_calendarModelResourcePermission.contains(
-					webDAVRequest.getPermissionChecker(), _calendar,
-					ActionKeys.UPDATE)) {
+		if (CalendarModelPermission.contains(
+				webDAVRequest.getPermissionChecker(), _calendar,
+				ActionKeys.UPDATE)) {
 
-				DocUtil.add(readPrivilegeElement, CalDAVProps.createQName("write"));
+			DocUtil.add(readPrivilegeElement, CalDAVProps.createQName("write"));
 
-				DocUtil.add(
-					readPrivilegeElement, CalDAVProps.createQName("write-content"));
-			}
+			DocUtil.add(
+				readPrivilegeElement, CalDAVProps.createQName("write-content"));
 		}
-		catch (PortalException e) {
-			//ignore
-		}
+
 	}
 
 	@Override
@@ -308,16 +304,6 @@ public class CalendarPropsProcessor extends BasePropsProcessor {
 			resourceTypeElement, CalDAVProps.createCalendarQName("calendar"));
 	}
 
-	@Reference(
-		target = "(model.class.name=com.liferay.calendar.model.Calendar)",
-		unbind = "-"
-	)
-	protected void setModelPermissionChecker(
-		ModelResourcePermission<Calendar> modelResourcePermission) {
-
-		_calendarModelResourcePermission = modelResourcePermission;
-	}
-
 	protected String vTimeZoneToString(
 			net.fortuna.ical4j.model.Calendar iCalCalendar)
 		throws Exception {
@@ -343,7 +329,5 @@ public class CalendarPropsProcessor extends BasePropsProcessor {
 		CalendarPropsProcessor.class);
 
 	private Calendar _calendar;
-
-	private ModelResourcePermission<Calendar> _calendarModelResourcePermission;
 
 }
