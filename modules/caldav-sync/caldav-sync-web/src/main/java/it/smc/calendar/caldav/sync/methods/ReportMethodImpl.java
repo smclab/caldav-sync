@@ -27,8 +27,9 @@ import com.liferay.portal.kernel.webdav.WebDAVStorage;
 import com.liferay.portal.kernel.xml.Element;
 import com.liferay.portal.kernel.xml.Node;
 import com.liferay.portal.kernel.xml.QName;
-import it.smc.calendar.caldav.sync.listener.ICSImportExportListener;
+
 import it.smc.calendar.caldav.sync.listener.ICSContentImportExportFactoryUtil;
+import it.smc.calendar.caldav.sync.listener.ICSImportExportListener;
 import it.smc.calendar.caldav.sync.util.CalDAVProps;
 import it.smc.calendar.caldav.sync.util.CalDAVRequestThreadLocal;
 import it.smc.calendar.caldav.sync.util.CalDAVUtil;
@@ -36,6 +37,7 @@ import it.smc.calendar.caldav.util.CalendarUtil;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -58,8 +60,7 @@ public class ReportMethodImpl extends PropfindMethodImpl {
 		ICSImportExportListener icsContentListener =
 			ICSContentImportExportFactoryUtil.newInstance();
 
-		data = icsContentListener.beforeContentExported(
-			data, calendarBooking);
+		data = icsContentListener.beforeContentExported(data, calendarBooking);
 
 		Element responseElement = DocUtil.add(
 			multistatusElement, CalDAVProps.createQName("response"));
@@ -70,6 +71,7 @@ public class ReportMethodImpl extends PropfindMethodImpl {
 
 		Element propStatElement = DocUtil.add(
 			responseElement, CalDAVProps.createQName("propstat"));
+
 		Element propElement = DocUtil.add(
 			propStatElement, CalDAVProps.createQName("prop"));
 
@@ -100,19 +102,26 @@ public class ReportMethodImpl extends PropfindMethodImpl {
 
 		List<CalendarBooking> calendarBookings = null;
 
-		List<Node> hrefNodes =
-			CalDAVRequestThreadLocal.getRequestDocument().selectNodes(
-				"//*[local-name()='href']");
+		List<Node> hrefNodes = CalDAVRequestThreadLocal.getRequestDocument(
+		).selectNodes(
+			"//*[local-name()='href']"
+		);
 
 		if (hrefNodes.size() > 0) {
-
 			calendarBookings = new ArrayList<>();
 
 			CalendarBooking calendarBooking;
 
 			for (Node hrefNode : hrefNodes) {
-				calendarBooking = CalDAVUtil.getCalendarBookingFromURL(
+				String icsName = CalDAVUtil.getICSNameFromURL(
 					hrefNode.getText());
+
+				if (icsName == null) {
+					continue;
+				}
+
+				calendarBooking = CalDAVUtil.getBookingFromICSAndRequest(
+					icsName, webDAVRequest);
 
 				if (calendarBooking != null) {
 					calendarBookings.add(calendarBooking);
@@ -131,7 +140,8 @@ public class ReportMethodImpl extends PropfindMethodImpl {
 				(timeRangeElement.attribute("start") != null)) {
 
 				String startDateStr = timeRangeElement.attribute(
-					"start").getValue();
+					"start"
+				).getValue();
 
 				startDate = isoDateTimeUTCFormat.parse(startDateStr);
 			}
@@ -140,7 +150,8 @@ public class ReportMethodImpl extends PropfindMethodImpl {
 				(timeRangeElement.attribute("end") != null)) {
 
 				String endDateStr = timeRangeElement.attribute(
-					"end").getValue();
+					"end"
+				).getValue();
 
 				endDate = isoDateTimeUTCFormat.parse(endDateStr);
 			}
