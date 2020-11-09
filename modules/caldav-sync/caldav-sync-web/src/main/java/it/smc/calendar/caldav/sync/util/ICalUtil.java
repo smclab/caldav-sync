@@ -15,6 +15,7 @@
 package it.smc.calendar.caldav.sync.util;
 
 import com.liferay.portal.kernel.util.ReleaseInfo;
+
 import net.fortuna.ical4j.model.Calendar;
 import net.fortuna.ical4j.model.PropertyList;
 import net.fortuna.ical4j.model.TimeZone;
@@ -30,26 +31,28 @@ import net.fortuna.ical4j.model.property.Version;
 public class ICalUtil {
 
 	public static Calendar getVTimeZoneCalendar() {
-		TimeZoneRegistry registry =
-			TimeZoneRegistryFactory.getInstance().createRegistry();
+		TimeZoneRegistry registry = TimeZoneRegistryFactory.getInstance(
+		).createRegistry();
 
 		TimeZone timeZone = registry.getTimeZone("GMT");
 
 		VTimeZone vTimeZone = timeZone.getVTimeZone();
 
-		net.fortuna.ical4j.model.Calendar iCalCalendar =
-			new net.fortuna.ical4j.model.Calendar();
+		Calendar iCalCalendar = new Calendar();
 
 		PropertyList propertiesList = iCalCalendar.getProperties();
 
 		ProdId prodId = new ProdId(
 			"-//Liferay Inc//Liferay Portal " + ReleaseInfo.getVersion() +
-			"//EN");
+				"//EN");
 
 		propertiesList.add(prodId);
 		propertiesList.add(Version.VERSION_2_0);
 
-		iCalCalendar.getComponents().add(vTimeZone);
+		iCalCalendar.getComponents(
+		).add(
+			vTimeZone
+		);
 
 		return iCalCalendar;
 	}

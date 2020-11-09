@@ -57,12 +57,12 @@ public class CalDAVMethodFactory implements MethodFactory {
 
 		_methods.put(CalDAVHttpMethods.DELETE, new DeleteMethodImpl());
 		_methods.put(CalDAVHttpMethods.GET, new GetMethodImpl());
+		_methods.put(CalDAVHttpMethods.MOVE, new MoveMethodImpl());
 		_methods.put(CalDAVHttpMethods.OPTIONS, new OptionsMethodImpl());
 		_methods.put(CalDAVHttpMethods.PROPFIND, new PropfindMethodImpl());
 		_methods.put(CalDAVHttpMethods.PROPPATCH, new ProppatchMethodImpl());
 		_methods.put(CalDAVHttpMethods.PUT, new PutMethodImpl());
 		_methods.put(CalDAVHttpMethods.REPORT, new ReportMethodImpl());
-		_methods.put(CalDAVHttpMethods.MOVE, new MoveMethodImpl());
 	}
 
 	public Method create(HttpServletRequest request) throws WebDAVException {
