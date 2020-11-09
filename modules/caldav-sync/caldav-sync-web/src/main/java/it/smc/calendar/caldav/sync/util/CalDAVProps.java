@@ -102,9 +102,8 @@ public class CalDAVProps {
 
 	// https://tools.ietf.org/html/rfc4791#section-5.2.10
 
-	public static final QName CALDAV_VALID_CALENDAR_DATA =
-		createCalendarQName("valid-calendar-data");
-
+	public static final QName CALDAV_VALID_CALENDAR_DATA = createCalendarQName(
+		"valid-calendar-data");
 
 	// WebDAV properties RFC 4791
 
@@ -194,17 +193,17 @@ public class CalDAVProps {
 
 		_allCollectionProps.add(DAV_CREATIONDATE);
 		_allCollectionProps.add(DAV_DISPLAYNAME);
-		_allCollectionProps.add(DAV_RESOURCETYPE);
 		_allCollectionProps.add(DAV_GETCONTENTTYPE);
 		_allCollectionProps.add(DAV_GETLASTMODIFIED);
+		_allCollectionProps.add(DAV_RESOURCETYPE);
 
 		_allProps.add(DAV_CREATIONDATE);
 		_allProps.add(DAV_DISPLAYNAME);
-		_allProps.add(DAV_RESOURCETYPE);
-		_allProps.add(DAV_GETCONTENTTYPE);
 		_allProps.add(DAV_GETCONTENTLENGTH);
+		_allProps.add(DAV_GETCONTENTTYPE);
 		_allProps.add(DAV_GETLASTMODIFIED);
 		_allProps.add(DAV_ISREADONLY);
+		_allProps.add(DAV_RESOURCETYPE);
 	}
 
 	private Set<QName> _getAllCollectionProList() {

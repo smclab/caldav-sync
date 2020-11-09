@@ -34,7 +34,6 @@ import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.kernel.webdav.Resource;
 import com.liferay.portal.kernel.webdav.WebDAVRequest;
-import com.liferay.portal.kernel.webdav.WebDAVStorage;
 import com.liferay.portal.kernel.webdav.WebDAVUtil;
 import com.liferay.portal.kernel.xml.Document;
 import com.liferay.portal.kernel.xml.Element;
@@ -44,7 +43,6 @@ import com.liferay.portal.kernel.xml.QName;
 import com.liferay.portal.kernel.xml.SAXReaderUtil;
 import com.liferay.portal.kernel.xml.XPath;
 
-import it.smc.calendar.caldav.sync.CalendarResourceImpl;
 import it.smc.calendar.caldav.util.CalendarUtil;
 
 import java.util.Date;
@@ -72,7 +70,7 @@ public class CalDAVUtil {
 		return primaryKey + StringPool.UNDERLINE + modifiedDate.getTime();
 	}
 
-	public static CalendarBooking getBookingFromCalendarAndURL(
+	public static CalendarBooking getCalendarBookingFromCalendarAndURL(
 		Calendar calendar, String URL) {
 
 		String icsName = getICSNameFromURL(URL);
@@ -96,8 +94,8 @@ public class CalDAVUtil {
 		calendarBooking = CalendarBookingLocalServiceUtil.fetchCalendarBooking(
 			calendarBookingId);
 
-		if (calendarBooking != null &&
-			calendarBooking.getCalendarId() == calendarId) {
+		if ((calendarBooking != null) &&
+			(calendarBooking.getCalendarId() == calendarId)) {
 
 			return calendarBooking;
 		}

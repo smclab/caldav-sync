@@ -16,7 +16,6 @@ package it.smc.calendar.caldav.sync;
 
 import com.liferay.calendar.model.CalendarResource;
 import com.liferay.petra.xml.DocUtil;
-import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.model.User;
 import com.liferay.portal.kernel.security.permission.ActionKeys;
 import com.liferay.portal.kernel.webdav.Resource;
@@ -64,7 +63,10 @@ public class CalendarResourcePropsProcessor extends BasePropsProcessor {
 			_calendarResource);
 
 		if (user.isPresent()) {
-			address = "mailto:" + user.get().getEmailAddress();
+			address =
+				"mailto:" +
+					user.get(
+					).getEmailAddress();
 		}
 
 		DocUtil.add(
@@ -86,12 +88,10 @@ public class CalendarResourcePropsProcessor extends BasePropsProcessor {
 				webDAVRequest.getPermissionChecker(), _calendarResource,
 				ActionKeys.UPDATE)) {
 
-			DocUtil.add(
-				readPrivilegeElement, CalDAVProps.createQName("write"));
+			DocUtil.add(readPrivilegeElement, CalDAVProps.createQName("write"));
 
 			DocUtil.add(
-				readPrivilegeElement,
-				CalDAVProps.createQName("write-content"));
+				readPrivilegeElement, CalDAVProps.createQName("write-content"));
 		}
 	}
 

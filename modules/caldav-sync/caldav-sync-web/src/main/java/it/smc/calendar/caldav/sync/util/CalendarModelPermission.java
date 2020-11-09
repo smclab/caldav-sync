@@ -20,28 +20,15 @@ import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.security.permission.PermissionChecker;
 import com.liferay.portal.kernel.security.permission.resource.ModelResourcePermission;
+
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
 
-/*
+/**
  *@author Domenico Costa
  */
 @Component(immediate = true, service = {})
 public class CalendarModelPermission {
-
-	public static boolean contains(
-		PermissionChecker permissionChecker, long calendarId, String actionId) {
-
-		try {
-			return _calendarModelResourcePermission.contains(
-				permissionChecker, calendarId, actionId);
-		}
-		catch (PortalException e) {
-			//ignore
-		}
-
-		return false;
-	}
 
 	public static boolean contains(
 		PermissionChecker permissionChecker, Calendar calendar,
@@ -53,6 +40,20 @@ public class CalendarModelPermission {
 		}
 		catch (PortalException e) {
 			_log.error(e.getClass() + " " + e.getMessage());
+		}
+
+		return false;
+	}
+
+	public static boolean contains(
+		PermissionChecker permissionChecker, long calendarId, String actionId) {
+
+		try {
+			return _calendarModelResourcePermission.contains(
+				permissionChecker, calendarId, actionId);
+		}
+		catch (PortalException e) {
+			//ignore
 		}
 
 		return false;
