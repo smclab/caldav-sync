@@ -27,7 +27,6 @@ import com.liferay.calendar.service.CalendarResourceLocalServiceUtil;
 import com.liferay.calendar.service.CalendarServiceUtil;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.exception.PortalException;
-import com.liferay.portal.kernel.exception.SystemException;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.model.User;
@@ -50,6 +49,7 @@ import com.liferay.portal.kernel.webdav.WebDAVStorage;
 import com.liferay.portal.kernel.webdav.methods.MethodFactory;
 import com.liferay.portal.kernel.webdav.methods.MethodFactoryRegistryUtil;
 import com.liferay.portal.kernel.workflow.WorkflowConstants;
+
 import it.smc.calendar.caldav.helper.api.CalendarHelperUtil;
 import it.smc.calendar.caldav.sync.listener.ICSContentImportExportFactoryUtil;
 import it.smc.calendar.caldav.sync.listener.ICSImportExportListener;
@@ -58,14 +58,16 @@ import it.smc.calendar.caldav.sync.util.CalDAVRequestThreadLocal;
 import it.smc.calendar.caldav.sync.util.CalDAVUtil;
 import it.smc.calendar.caldav.sync.util.ResourceNotFoundException;
 import it.smc.calendar.caldav.util.CalendarUtil;
-import org.osgi.service.component.annotations.Component;
-import org.osgi.service.component.annotations.Reference;
 
-import javax.servlet.http.HttpServletResponse;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
+
+import javax.servlet.http.HttpServletResponse;
+
+import org.osgi.service.component.annotations.Component;
+import org.osgi.service.component.annotations.Reference;
 
 /**
  * @author Fabio Pezzutto
@@ -88,7 +90,8 @@ public class LiferayCalDAVStorageImpl extends BaseWebDAVStorageImpl {
 
 		try {
 			CalendarBooking calendarBooking = (CalendarBooking)getResource(
-				webDAVRequest).getModel();
+				webDAVRequest
+			).getModel();
 
 			long currentUserId = CalDAVUtil.getUserId(webDAVRequest);
 			User currentUser = UserLocalServiceUtil.fetchUser(currentUserId);
@@ -145,7 +148,6 @@ public class LiferayCalDAVStorageImpl extends BaseWebDAVStorageImpl {
 
 	@Override
 	public MethodFactory getMethodFactory() {
-
 		return MethodFactoryRegistryUtil.getMethodFactory(
 			CalDAVMethodFactory.class.getName());
 	}
@@ -156,7 +158,8 @@ public class LiferayCalDAVStorageImpl extends BaseWebDAVStorageImpl {
 
 		try {
 			String[] pathArray = webDAVRequest.getPathArray();
-			String method = webDAVRequest.getHttpServletRequest().getMethod();
+			String method = webDAVRequest.getHttpServletRequest(
+			).getMethod();
 
 			if (CalDAVUtil.isPrincipalRequest(webDAVRequest)) {
 				long userid = GetterUtil.getLong(pathArray[2]);
@@ -192,12 +195,12 @@ public class LiferayCalDAVStorageImpl extends BaseWebDAVStorageImpl {
 			else {
 				calendarResource =
 					CalendarResourceLocalServiceUtil.
-					fetchCalendarResourceByUuidAndGroupId(
-					calendarResourceId, webDAVRequest.getGroupId());
+						fetchCalendarResourceByUuidAndGroupId(
+							calendarResourceId, webDAVRequest.getGroupId());
 			}
 
 			if (calendarResource == null) {
-				throw new ResourceNotFoundException (
+				throw new ResourceNotFoundException(
 					"No calendar resource were found for GUID/ID " +
 						calendarResourceId);
 			}
@@ -208,6 +211,7 @@ public class LiferayCalDAVStorageImpl extends BaseWebDAVStorageImpl {
 				// calendar booking resource
 
 				String resourceName = pathArray[pathArray.length - 1];
+
 				String resourceExtension = StringPool.PERIOD.concat(
 					FileUtil.getExtension(resourceName));
 
@@ -227,15 +231,16 @@ public class LiferayCalDAVStorageImpl extends BaseWebDAVStorageImpl {
 					}
 					else {
 						calendarBooking =
-							CalendarBookingLocalServiceUtil
-							.fetchCalendarBooking(GetterUtil.getLong(
-							pathArray[2]), resourceShortName);
+							CalendarBookingLocalServiceUtil.
+								fetchCalendarBooking(
+									GetterUtil.getLong(pathArray[2]),
+									resourceShortName);
 					}
 
 					if (calendarBooking == null) {
 						throw new ResourceNotFoundException(
 							"Calendar booking not found with id: " +
-							calendarBookingId);
+								calendarBookingId);
 					}
 
 					_calendarModelResourcePermission.check(
@@ -259,13 +264,12 @@ public class LiferayCalDAVStorageImpl extends BaseWebDAVStorageImpl {
 				}
 				else {
 					calendar =
-						CalendarLocalServiceUtil.
-						fetchCalendarByUuidAndGroupId(calendarId,
-								webDAVRequest.getGroupId());
+						CalendarLocalServiceUtil.fetchCalendarByUuidAndGroupId(
+							calendarId, webDAVRequest.getGroupId());
 				}
 
 				if (calendar == null) {
-					throw new ResourceNotFoundException (
+					throw new ResourceNotFoundException(
 						"No calendar were found for GUID/ID " + calendarId);
 				}
 
@@ -275,9 +279,8 @@ public class LiferayCalDAVStorageImpl extends BaseWebDAVStorageImpl {
 
 				return toResource(webDAVRequest, calendar);
 			}
-			else {
-				return toResource(webDAVRequest, calendarResource);
-			}
+
+			return toResource(webDAVRequest, calendarResource);
 		}
 		catch (Exception e) {
 			throw new WebDAVException(e);
@@ -292,6 +295,7 @@ public class LiferayCalDAVStorageImpl extends BaseWebDAVStorageImpl {
 			String[] pathArray = webDAVRequest.getPathArray();
 
 			// calendar resource collection request
+
 			CalendarResource calendarResource;
 
 			if (CalDAVUtil.isPrincipalRequest(webDAVRequest)) {
@@ -326,10 +330,10 @@ public class LiferayCalDAVStorageImpl extends BaseWebDAVStorageImpl {
 							GetterUtil.getLong(calendarResourceId));
 				}
 				else {
-					calendarResource = CalendarResourceLocalServiceUtil.
-						fetchCalendarResourceByUuidAndGroupId(
-							calendarResourceId,
-							webDAVRequest.getGroupId());
+					calendarResource =
+						CalendarResourceLocalServiceUtil.
+							fetchCalendarResourceByUuidAndGroupId(
+								calendarResourceId, webDAVRequest.getGroupId());
 				}
 			}
 
@@ -340,9 +344,8 @@ public class LiferayCalDAVStorageImpl extends BaseWebDAVStorageImpl {
 			if (CalDAVUtil.isCalendarRequest(webDAVRequest)) {
 				return toCalendarBookingResources(webDAVRequest);
 			}
-			else {
-				return toCalendarResources(webDAVRequest, calendarResource);
-			}
+
+			return toCalendarResources(webDAVRequest, calendarResource);
 		}
 		catch (Exception e) {
 			throw new WebDAVException(e);
@@ -418,7 +421,9 @@ public class LiferayCalDAVStorageImpl extends BaseWebDAVStorageImpl {
 		try {
 			String data = CalDAVRequestThreadLocal.getRequestContent();
 
-			Calendar calendar = (Calendar)getResource(webDAVRequest).getModel();
+			Calendar calendar = (Calendar)getResource(
+				webDAVRequest
+			).getModel();
 
 			ICSImportExportListener icsContentListener =
 				ICSContentImportExportFactoryUtil.newInstance();
@@ -457,21 +462,23 @@ public class LiferayCalDAVStorageImpl extends BaseWebDAVStorageImpl {
 	)
 	protected void setModelPermissionChecker(
 		ModelResourcePermission<Calendar> modelResourcePermission) {
-	
+
 		_calendarModelResourcePermission = modelResourcePermission;
 	}
 
 	protected List<Resource> toCalendarBookingResources(
 			WebDAVRequest webDAVRequest)
-		throws PortalException, SystemException {
+		throws PortalException {
 
-		Calendar calendar = (Calendar)getResource(webDAVRequest).getModel();
+		Calendar calendar = (Calendar)getResource(
+			webDAVRequest
+		).getModel();
 
 		List<CalendarBooking> calendarBookings =
 			CalendarUtil.getCalendarBookings(
 				webDAVRequest.getPermissionChecker(), calendar, null, null);
 
-		List<Resource> resources = new ArrayList<Resource>();
+		List<Resource> resources = new ArrayList<>();
 
 		for (CalendarBooking calendarBooking : calendarBookings) {
 			resources.add(toResource(webDAVRequest, calendarBooking));
@@ -482,12 +489,12 @@ public class LiferayCalDAVStorageImpl extends BaseWebDAVStorageImpl {
 
 	protected List<Resource> toCalendarResources(
 			WebDAVRequest webDAVRequest, CalendarResource calendarResource)
-		throws PortalException, SystemException {
+		throws PortalException {
 
 		List<Calendar> calendars;
 
 		if (CalDAVUtil.isIOS(webDAVRequest) ||
-			CalDAVUtil.isMacOSX(webDAVRequest)||
+			CalDAVUtil.isMacOSX(webDAVRequest) ||
 			CalDAVUtil.isOpenSync(webDAVRequest) ||
 			CalDAVUtil.isICal(webDAVRequest)) {
 
@@ -499,7 +506,7 @@ public class LiferayCalDAVStorageImpl extends BaseWebDAVStorageImpl {
 				calendarResource);
 		}
 
-		List<Resource> resources = new ArrayList<Resource>();
+		List<Resource> resources = new ArrayList<>();
 
 		for (Calendar calendar : calendars) {
 			resources.add(toResource(webDAVRequest, calendar));
@@ -509,7 +516,7 @@ public class LiferayCalDAVStorageImpl extends BaseWebDAVStorageImpl {
 	}
 
 	protected Resource toResource(
-			WebDAVRequest webDAVRequest, Calendar calendar) {
+		WebDAVRequest webDAVRequest, Calendar calendar) {
 
 		String parentPath = getRootPath() + webDAVRequest.getPath();
 
@@ -532,7 +539,7 @@ public class LiferayCalDAVStorageImpl extends BaseWebDAVStorageImpl {
 	}
 
 	protected Resource toResource(
-			WebDAVRequest webDAVRequest, CalendarResource calendarResource) {
+		WebDAVRequest webDAVRequest, CalendarResource calendarResource) {
 
 		String parentPath = getRootPath() + webDAVRequest.getPath();
 

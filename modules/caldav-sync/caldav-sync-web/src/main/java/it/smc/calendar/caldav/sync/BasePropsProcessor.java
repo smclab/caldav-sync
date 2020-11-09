@@ -314,6 +314,7 @@ public abstract class BasePropsProcessor implements PropsProcessor {
 		}
 		catch (Exception e) {
 			_log.error(e);
+
 			return;
 		}
 
@@ -326,7 +327,7 @@ public abstract class BasePropsProcessor implements PropsProcessor {
 		String cutypeparam = "UNKNOWN";
 
 		if (CalendarHelperUtil.isCalendarResourceUserCalendar(
-			calendarResource)) {
+				calendarResource)) {
 
 			cutypeparam = "INDIVIDUAL";
 		}
@@ -366,8 +367,7 @@ public abstract class BasePropsProcessor implements PropsProcessor {
 	}
 
 	protected void processCalDAVValidCalendarData() {
-		DocUtil.add(
-			failurePropElement, CalDAVProps.CALDAV_VALID_CALENDAR_DATA);
+		DocUtil.add(failurePropElement, CalDAVProps.CALDAV_VALID_CALENDAR_DATA);
 	}
 
 	protected void processCustomProperties(Set<QName> props) throws Exception {
@@ -407,6 +407,7 @@ public abstract class BasePropsProcessor implements PropsProcessor {
 
 			DocUtil.add(
 				failurePropElement, CalDAVProps.DAV_CURRENT_USER_PRINCIPAL);
+
 			return;
 		}
 
@@ -428,8 +429,10 @@ public abstract class BasePropsProcessor implements PropsProcessor {
 	protected void processDAVDisplayName() {
 		DocUtil.add(
 			successPropElement, CalDAVProps.DAV_DISPLAYNAME,
-			resource.getDisplayName().replaceAll(
-				StringPool.SPACE, StringPool.BLANK));
+			resource.getDisplayName(
+			).replaceAll(
+				StringPool.SPACE, StringPool.BLANK
+			));
 	}
 
 	protected void processDAVGetContentLength() {
@@ -443,8 +446,7 @@ public abstract class BasePropsProcessor implements PropsProcessor {
 				resource.getContentType());
 		}
 		else {
-			DocUtil.add(
-				failurePropElement, CalDAVProps.DAV_GETCONTENTTYPE);
+			DocUtil.add(failurePropElement, CalDAVProps.DAV_GETCONTENTTYPE);
 		}
 	}
 

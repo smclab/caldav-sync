@@ -99,9 +99,7 @@ public class ReportMethodImpl extends PropfindMethodImpl {
 		Element responseElement = DocUtil.add(
 			multistatusElement, CalDAVProps.createQName("response"));
 
-		DocUtil.add(
-			responseElement, CalDAVProps.createQName("href"),
-			href);
+		DocUtil.add(responseElement, CalDAVProps.createQName("href"), href);
 
 		Element propStatElement = DocUtil.add(
 			responseElement, CalDAVProps.createQName("propstat"));
@@ -134,6 +132,7 @@ public class ReportMethodImpl extends PropfindMethodImpl {
 		);
 
 		if (hrefNodes.size() > 0) {
+
 			// CALDAV:calendar-multiget REPORT
 
 			calendarBookings = new ArrayList<>();
@@ -143,20 +142,19 @@ public class ReportMethodImpl extends PropfindMethodImpl {
 			CalendarBooking calendarBooking;
 
 			if (CalDAVUtil.isCalendarRequest(webDAVRequest)) {
-				calendar =
-					(Calendar)storage.getResource(webDAVRequest).getModel();
+				calendar = (Calendar)resource.getModel();
 			}
 
 			for (Node hrefNode : hrefNodes) {
 				String URL = hrefNode.getText();
 
 				if (calendar != null) {
-					calendarBooking = CalDAVUtil.getBookingFromCalendarAndURL(
-						calendar, URL);
+					calendarBooking =
+						CalDAVUtil.getCalendarBookingFromCalendarAndURL(
+							calendar, URL);
 				}
 				else {
-					calendarBooking =
-						CalDAVUtil.getCalendarBookingFromURL(URL);
+					calendarBooking = CalDAVUtil.getCalendarBookingFromURL(URL);
 				}
 
 				if (calendarBooking != null) {
@@ -168,6 +166,7 @@ public class ReportMethodImpl extends PropfindMethodImpl {
 			}
 		}
 		else {
+
 			// CALDAV:calendar-query REPORT
 
 			Calendar calendar = (Calendar)resource.getModel();
