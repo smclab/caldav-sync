@@ -72,16 +72,14 @@ public class CalDAVUtil {
 		return primaryKey + StringPool.UNDERLINE + modifiedDate.getTime();
 	}
 
-	public static CalendarBooking getBookingFromICSAndRequest(
-			String icsName, WebDAVRequest webDAVRequest)
-		throws PortalException {
+	public static CalendarBooking getBookingFromCalendarAndURL(
+		Calendar calendar, String URL) {
 
-		WebDAVStorage storage = webDAVRequest.getWebDAVStorage();
+		String icsName = getICSNameFromURL(URL);
 
-		CalendarResourceImpl calendarWebDAVResource =
-			(CalendarResourceImpl)storage.getResource(webDAVRequest);
-
-		Calendar calendar = (Calendar)calendarWebDAVResource.getModel();
+		if (icsName == null) {
+			return null;
+		}
 
 		long calendarId = calendar.getCalendarId();
 
@@ -95,8 +93,16 @@ public class CalDAVUtil {
 
 		long calendarBookingId = GetterUtil.getLong(icsName);
 
-		return CalendarBookingLocalServiceUtil.getCalendarBooking(
+		calendarBooking = CalendarBookingLocalServiceUtil.fetchCalendarBooking(
 			calendarBookingId);
+
+		if (calendarBooking != null &&
+			calendarBooking.getCalendarId() == calendarId) {
+
+			return calendarBooking;
+		}
+
+		return null;
 	}
 
 	public static CalendarBooking getCalendarBookingFromURL(String URL)

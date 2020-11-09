@@ -93,6 +93,32 @@ public class ReportMethodImpl extends PropfindMethodImpl {
 			"HTTP/1.1 200 OK");
 	}
 
+	protected void addCalendarObjResourceNotFound(
+		String href, Element multistatusElement) {
+
+		Element responseElement = DocUtil.add(
+			multistatusElement, CalDAVProps.createQName("response"));
+
+		DocUtil.add(
+			responseElement, CalDAVProps.createQName("href"),
+			href);
+
+		Element propStatElement = DocUtil.add(
+			responseElement, CalDAVProps.createQName("propstat"));
+
+		Element propElement = DocUtil.add(
+			propStatElement, CalDAVProps.createQName("prop"));
+
+		DocUtil.add(propElement, CalDAVProps.createQName("getetag"));
+
+		DocUtil.add(
+			propElement, CalDAVProps.createCalendarQName("calendar-data"));
+
+		DocUtil.add(
+			propStatElement, CalDAVProps.createQName("status"),
+			"HTTP/1.1 404 Not Found");
+	}
+
 	@Override
 	protected void addResponse(
 			WebDAVStorage storage, WebDAVRequest webDAVRequest,
@@ -108,27 +134,42 @@ public class ReportMethodImpl extends PropfindMethodImpl {
 		);
 
 		if (hrefNodes.size() > 0) {
+			// CALDAV:calendar-multiget REPORT
+
 			calendarBookings = new ArrayList<>();
+
+			Calendar calendar = null;
 
 			CalendarBooking calendarBooking;
 
+			if (CalDAVUtil.isCalendarRequest(webDAVRequest)) {
+				calendar =
+					(Calendar)storage.getResource(webDAVRequest).getModel();
+			}
+
 			for (Node hrefNode : hrefNodes) {
-				String icsName = CalDAVUtil.getICSNameFromURL(
-					hrefNode.getText());
+				String URL = hrefNode.getText();
 
-				if (icsName == null) {
-					continue;
+				if (calendar != null) {
+					calendarBooking = CalDAVUtil.getBookingFromCalendarAndURL(
+						calendar, URL);
 				}
-
-				calendarBooking = CalDAVUtil.getBookingFromICSAndRequest(
-					icsName, webDAVRequest);
+				else {
+					calendarBooking =
+						CalDAVUtil.getCalendarBookingFromURL(URL);
+				}
 
 				if (calendarBooking != null) {
 					calendarBookings.add(calendarBooking);
 				}
+				else {
+					addCalendarObjResourceNotFound(URL, multistatusElement);
+				}
 			}
 		}
 		else {
+			// CALDAV:calendar-query REPORT
+
 			Calendar calendar = (Calendar)resource.getModel();
 
 			Date startDate = null;
