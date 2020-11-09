@@ -437,9 +437,15 @@ public abstract class BasePropsProcessor implements PropsProcessor {
 	}
 
 	protected void processDAVGetContentType() {
-		DocUtil.add(
-			successPropElement, CalDAVProps.DAV_GETCONTENTTYPE,
-			resource.getContentType());
+		if (resource instanceof CalendarBookingResourceImpl) {
+			DocUtil.add(
+				successPropElement, CalDAVProps.DAV_GETCONTENTTYPE,
+				resource.getContentType());
+		}
+		else {
+			DocUtil.add(
+				failurePropElement, CalDAVProps.DAV_GETCONTENTTYPE);
+		}
 	}
 
 	protected void processDAVGetETag() {
