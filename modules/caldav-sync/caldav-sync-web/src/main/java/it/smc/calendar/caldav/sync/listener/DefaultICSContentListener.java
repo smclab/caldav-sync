@@ -88,6 +88,12 @@ import net.fortuna.ical4j.model.property.Status;
 import net.fortuna.ical4j.model.property.Summary;
 import net.fortuna.ical4j.model.property.Transp;
 
+import net.fortuna.ical4j.model.property.XProperty;
+import net.fortuna.ical4j.model.property.XPropertyFactory;
+import org.osgi.service.component.annotations.Component;
+import org.osgi.service.component.annotations.Reference;
+import org.osgi.service.component.annotations.ReferencePolicyOption;
+
 /**
  * @author Fabio Pezzutto
  */
@@ -123,6 +129,7 @@ public class DefaultICSContentListener implements ICSImportExportListener {
 
 					if (calendarBooking != null) {
 						updateBookingAttendees(calendarBooking, vEvent);
+						updateAltDescription(calendarBooking, vEvent);
 					}
 				}
 			}
@@ -757,6 +764,27 @@ public class DefaultICSContentListener implements ICSImportExportListener {
 		}
 
 		propertyList.addAll(allAttendees);
+	}
+
+	protected void updateAltDescription(
+			CalendarBooking calendarBooking, VEvent vEvent)
+		throws PortalException {
+
+		XProperty property = (XProperty)vEvent.getProperty("X-ALT-DESC");
+
+		if (property != null) {
+			String description = property.getValue();
+			if (!Validator.isBlank(description)) {
+				User calendarBookingUser =
+					getCalendarBookingUser(calendarBooking);
+
+				calendarBooking.setDescription(
+					description, calendarBookingUser.getLocale());
+
+				_calendarBookingLocalService.updateCalendarBooking(
+					calendarBooking);
+			}
+		}
 	}
 
 	private List<String> _getNotificationRecipients(Calendar calendar)
