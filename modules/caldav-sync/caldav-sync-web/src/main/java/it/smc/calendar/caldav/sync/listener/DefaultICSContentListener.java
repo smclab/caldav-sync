@@ -54,6 +54,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
 
 import javax.servlet.http.HttpServletRequest;
@@ -71,6 +72,7 @@ import net.fortuna.ical4j.data.ParserException;
 import net.fortuna.ical4j.model.ComponentList;
 import net.fortuna.ical4j.model.DateTime;
 import net.fortuna.ical4j.model.Parameter;
+import net.fortuna.ical4j.model.ParameterList;
 import net.fortuna.ical4j.model.Property;
 import net.fortuna.ical4j.model.PropertyList;
 import net.fortuna.ical4j.model.component.VAlarm;
@@ -78,9 +80,11 @@ import net.fortuna.ical4j.model.component.VEvent;
 import net.fortuna.ical4j.model.parameter.Cn;
 import net.fortuna.ical4j.model.parameter.PartStat;
 import net.fortuna.ical4j.model.parameter.Rsvp;
+import net.fortuna.ical4j.model.parameter.XParameter;
 import net.fortuna.ical4j.model.property.Action;
 import net.fortuna.ical4j.model.property.Attendee;
 import net.fortuna.ical4j.model.property.Created;
+import net.fortuna.ical4j.model.property.Description;
 import net.fortuna.ical4j.model.property.LastModified;
 import net.fortuna.ical4j.model.property.Method;
 import net.fortuna.ical4j.model.property.Organizer;
@@ -88,8 +92,8 @@ import net.fortuna.ical4j.model.property.Status;
 import net.fortuna.ical4j.model.property.Summary;
 import net.fortuna.ical4j.model.property.Transp;
 
+import net.fortuna.ical4j.model.property.Uid;
 import net.fortuna.ical4j.model.property.XProperty;
-import net.fortuna.ical4j.model.property.XPropertyFactory;
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
 import org.osgi.service.component.annotations.ReferencePolicyOption;
@@ -214,6 +218,18 @@ public class DefaultICSContentListener implements ICSImportExportListener {
 
 					if (vEvent.getAlarms().size() > 0) {
 						updateAlarmAttendeers(vEvent, calendar);
+					}
+
+					Uid vEventUid = vEvent.getUid();
+
+					if (vEventUid != null) {
+						String vEventUidValue = vEventUid.getValue();
+
+						CalendarBooking calendarBooking =
+							_calendarBookingLocalService.fetchCalendarBooking(
+								calendar.getCalendarId(), vEventUidValue);
+
+						updateAltDescription(calendarBooking, vEvent);
 					}
 				}
 			}
@@ -770,21 +786,36 @@ public class DefaultICSContentListener implements ICSImportExportListener {
 			CalendarBooking calendarBooking, VEvent vEvent)
 		throws PortalException {
 
-		XProperty property = (XProperty)vEvent.getProperty("X-ALT-DESC");
+		XProperty vEventXAltDesc = (XProperty)vEvent.getProperty("X-ALT-DESC");
 
-		if (property != null) {
-			String description = property.getValue();
-			if (!Validator.isBlank(description)) {
-				User calendarBookingUser =
-					getCalendarBookingUser(calendarBooking);
-
-				calendarBooking.setDescription(
-					description, calendarBookingUser.getLocale());
-
-				_calendarBookingLocalService.updateCalendarBooking(
-					calendarBooking);
-			}
+		if (vEventXAltDesc == null) {
+			return;
 		}
+
+		if (calendarBooking != null) {
+			User calendarBookingUser =
+				getCalendarBookingUser(calendarBooking);
+
+			Locale locale = calendarBookingUser.getLocale();
+
+			String calendarBookingDescription =
+				calendarBooking.getDescription(locale);
+
+			XProperty calendarBookingXAltDesc = new XProperty(
+				"X-ALT-DESC", calendarBookingDescription);
+
+			ParameterList parameters =
+				calendarBookingXAltDesc.getParameters();
+
+			parameters.add(new XParameter("FMTTYPE", "text/html"));
+
+			if (calendarBookingXAltDesc.equals(vEventXAltDesc)) {
+				return;
+			}
+
+		}
+
+		_replaceDescription(vEvent, vEventXAltDesc);
 	}
 
 	private List<String> _getNotificationRecipients(Calendar calendar)
@@ -843,6 +874,21 @@ public class DefaultICSContentListener implements ICSImportExportListener {
 		}
 
 		return notificationRecipients;
+	}
+
+	private void _replaceDescription(VEvent vEvent, XProperty vEventXAltDesc) {
+		String vEventAltDescValue = vEventXAltDesc.getValue();
+
+		Property vEventDescription =
+			vEvent.getProperty(Property.DESCRIPTION);
+
+		PropertyList vEventProperties = vEvent.getProperties();
+
+		vEventProperties.remove(vEventDescription);
+
+		Description description = new Description(vEventAltDescValue);
+
+		vEventProperties.add(description);
 	}
 
 	private Attendee _toICalAttendee(String attendeeString)
