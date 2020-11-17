@@ -24,21 +24,6 @@ taglib uri="http://liferay.com/tld/security" prefix="liferay-security" %><%@
 taglib uri="http://liferay.com/tld/theme" prefix="liferay-theme" %><%@
 taglib uri="http://liferay.com/tld/ui" prefix="liferay-ui" %>
 
-<%@
-page import="com.liferay.calendar.constants.CalendarActionKeys" %><%@
-page import="com.liferay.calendar.model.Calendar" %><%@
-page import="com.liferay.calendar.model.CalendarResource" %><%@
-page import="com.liferay.petra.string.StringPool" %><%@
-page import="com.liferay.portal.kernel.language.LanguageUtil" %><%@
-page import="com.liferay.portal.kernel.util.PortalUtil" %>
-
-<%@
-page import="it.smc.calendar.caldav.sync.util.CalDAVUtil" %><%@
-page import="it.smc.calendar.caldav.sync.util.CalendarModelPermission" %><%@
-page import="it.smc.calendar.caldav.util.CalendarUtil" %>
-
-<%@ page import="java.util.List" %>
-
 <liferay-theme:defineObjects />
 
 <portlet:defineObjects />

@@ -137,15 +137,14 @@ public abstract class BasePropMethodImpl implements Method {
 
 			return status;
 		}
-		else {
-			if (_log.isDebugEnabled()) {
-				_log.debug(
-					"No resource found for " + storage.getRootPath() +
-						webDAVRequest.getPath());
-			}
 
-			return HttpServletResponse.SC_NOT_FOUND;
+		if (_log.isDebugEnabled()) {
+			_log.debug(
+				"No resource found for " + storage.getRootPath() +
+					webDAVRequest.getPath());
 		}
+
+		return HttpServletResponse.SC_NOT_FOUND;
 	}
 
 	private static Log _log = LogFactoryUtil.getLog(BasePropMethodImpl.class);

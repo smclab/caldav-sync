@@ -48,8 +48,15 @@ import com.liferay.portal.kernel.util.UnicodeProperties;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.kernel.workflow.WorkflowConstants;
 
+import it.smc.calendar.caldav.helper.api.CalendarHelperUtil;
+import it.smc.calendar.caldav.helper.util.PropsValues;
+import it.smc.calendar.caldav.sync.ical.util.AttendeeUtil;
+import it.smc.calendar.caldav.sync.util.CalDAVUtil;
+
 import java.io.IOException;
+
 import java.net.URI;
+
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Iterator;
@@ -59,14 +66,6 @@ import java.util.Optional;
 
 import javax.servlet.http.HttpServletRequest;
 
-import org.osgi.service.component.annotations.Component;
-import org.osgi.service.component.annotations.Reference;
-import org.osgi.service.component.annotations.ReferencePolicyOption;
-
-import it.smc.calendar.caldav.helper.api.CalendarHelperUtil;
-import it.smc.calendar.caldav.helper.util.PropsValues;
-import it.smc.calendar.caldav.sync.ical.util.AttendeeUtil;
-import it.smc.calendar.caldav.sync.util.CalDAVUtil;
 import net.fortuna.ical4j.data.CalendarBuilder;
 import net.fortuna.ical4j.data.ParserException;
 import net.fortuna.ical4j.model.ComponentList;
@@ -91,9 +90,9 @@ import net.fortuna.ical4j.model.property.Organizer;
 import net.fortuna.ical4j.model.property.Status;
 import net.fortuna.ical4j.model.property.Summary;
 import net.fortuna.ical4j.model.property.Transp;
-
 import net.fortuna.ical4j.model.property.Uid;
 import net.fortuna.ical4j.model.property.XProperty;
+
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
 import org.osgi.service.component.annotations.ReferencePolicyOption;
@@ -101,10 +100,7 @@ import org.osgi.service.component.annotations.ReferencePolicyOption;
 /**
  * @author Fabio Pezzutto
  */
-@Component(
-	immediate = true,
-	service = ICSImportExportListener.class
-)
+@Component(immediate = true, service = ICSImportExportListener.class)
 public class DefaultICSContentListener implements ICSImportExportListener {
 
 	public void afterContentExported(
@@ -125,7 +121,8 @@ public class DefaultICSContentListener implements ICSImportExportListener {
 				if (component instanceof VEvent) {
 					VEvent vEvent = (VEvent)component;
 
-					String bookingUuid = vEvent.getUid().getValue();
+					String bookingUuid = vEvent.getUid(
+					).getValue();
 
 					CalendarBooking calendarBooking =
 						_calendarBookingLocalService.fetchCalendarBooking(
@@ -151,8 +148,8 @@ public class DefaultICSContentListener implements ICSImportExportListener {
 			long userId = PrincipalThreadLocal.getUserId();
 
 			if (userId == 0) {
-				userId =
-					PermissionThreadLocal.getPermissionChecker().getUserId();
+				userId = PermissionThreadLocal.getPermissionChecker(
+				).getUserId();
 			}
 
 			User currentUser = _userLocalService.getUser(userId);
@@ -179,16 +176,28 @@ public class DefaultICSContentListener implements ICSImportExportListener {
 						currentUser, iCalCalendar, vEvent, calendarBooking);
 
 					DateTime modifiedDate = new DateTime(
-						calendarBooking.getModifiedDate().getTime());
+						calendarBooking.getModifiedDate(
+						).getTime());
+
 					LastModified lastModified = new LastModified(modifiedDate);
+
 					lastModified.setUtc(true);
-					vEvent.getProperties().add(lastModified);
+					vEvent.getProperties(
+					).add(
+						lastModified
+					);
 
 					DateTime createdDate = new DateTime(
-						calendarBooking.getCreateDate().getTime());
+						calendarBooking.getCreateDate(
+						).getTime());
+
 					Created created = new Created(createdDate);
+
 					created.setUtc(true);
-					vEvent.getProperties().add(created);
+					vEvent.getProperties(
+					).add(
+						created
+					);
 				}
 			}
 
@@ -317,18 +326,20 @@ public class DefaultICSContentListener implements ICSImportExportListener {
 
 				if (attendeeData.contains(currentUserEmail)) {
 					currentUserIdAttendee = true;
+
 					break;
 				}
 			}
 
 			HttpServletRequest request =
-				ServiceContextThreadLocal.getServiceContext().getRequest();
+				ServiceContextThreadLocal.getServiceContext(
+				).getRequest();
 
 			if (!currentUserIdAttendee) {
 				propertyList.remove(propertyList.getProperty(Action.ACTION));
 			}
 			else if (vAlarm.getAction().equals(Action.EMAIL) &&
-					!CalDAVUtil.isThunderbird(request)) {
+					 !CalDAVUtil.isThunderbird(request)) {
 
 				propertyList.remove(propertyList.getProperty(Action.ACTION));
 				propertyList.add(Action.DISPLAY);
@@ -336,8 +347,7 @@ public class DefaultICSContentListener implements ICSImportExportListener {
 		}
 	}
 
-	protected void updateAlarmAttendeers(
-		VEvent vEvent, Calendar calendar)
+	protected void updateAlarmAttendeers(VEvent vEvent, Calendar calendar)
 		throws Exception {
 
 		ComponentList vAlarms = (ComponentList)vEvent.getAlarms();
@@ -356,7 +366,9 @@ public class DefaultICSContentListener implements ICSImportExportListener {
 				if ((vAlarm.getSummary() == null) &&
 					(vAlarm.getDescription() != null)) {
 
-					String description = vAlarm.getDescription().getValue();
+					String description = vAlarm.getDescription(
+					).getValue();
+
 					propertyList.add(new Summary(description));
 				}
 
@@ -375,11 +387,10 @@ public class DefaultICSContentListener implements ICSImportExportListener {
 	}
 
 	protected void updateBookingAttendees(
-		CalendarBooking calendarBooking, VEvent vEvent)
+			CalendarBooking calendarBooking, VEvent vEvent)
 		throws PortalException {
 
-		PropertyList attendeeList = vEvent.getProperties(
-			Property.ATTENDEE);
+		PropertyList attendeeList = vEvent.getProperties(Property.ATTENDEE);
 
 		Iterator iterator = attendeeList.iterator();
 		String[] attendees = new String[0];
@@ -414,7 +425,7 @@ public class DefaultICSContentListener implements ICSImportExportListener {
 					attendeesEmailAddresses, attendeeEmail);
 			}
 			else if (bookingUser.isPresent() &&
-				user.equals(bookingUser.get())) {
+					 user.equals(bookingUser.get())) {
 
 				int status = AttendeeUtil.getStatus(
 					attendee, calendarBooking.getStatus());
@@ -516,19 +527,31 @@ public class DefaultICSContentListener implements ICSImportExportListener {
 				"mailto:".concat(userOrganizer.getEmailAddress()));
 
 			Organizer organizer = new Organizer(uri);
-			organizer.getParameters().add(
-				new Cn(userOrganizer.getFullName()));
 
-			vEvent.getProperties().add(organizer);
+			organizer.getParameters(
+			).add(
+				new Cn(userOrganizer.getFullName())
+			);
+
+			vEvent.getProperties(
+			).add(
+				organizer
+			);
 
 			Attendee organizerAttendee = AttendeeUtil.create(
 				userOrganizer.getEmailAddress(), userOrganizer.getFullName(),
 				false, WorkflowConstants.STATUS_APPROVED);
 
-			vEvent.getProperties().add(organizerAttendee);
+			vEvent.getProperties(
+			).add(
+				organizerAttendee
+			);
 		}
 
-		vEvent.getProperties().add(Transp.OPAQUE);
+		vEvent.getProperties(
+		).add(
+			Transp.OPAQUE
+		);
 
 		boolean hasUpdatePermissions =
 			_calendarModelResourcePermission.contains(
@@ -540,51 +563,64 @@ public class DefaultICSContentListener implements ICSImportExportListener {
 
 		// set event status
 
-		boolean bookingPending = calendarBooking.getStatus() ==
-			WorkflowConstants.STATUS_PENDING;
+		boolean bookingPending = false;
+
+		if (calendarBooking.getStatus() == WorkflowConstants.STATUS_PENDING) {
+			bookingPending = true;
+		}
 
 		if (_log.isDebugEnabled()) {
 			if (bookingUser != null) {
 				_log.debug(
 					"Booking user for booking " +
-					calendarBooking.getCalendarBookingId() + " is " +
-					bookingUser.getScreenName());
+						calendarBooking.getCalendarBookingId() + " is " +
+							bookingUser.getScreenName());
 			}
 			else {
 				_log.debug(
 					"No booking user for booking " +
-					calendarBooking.getCalendarBookingId());
+						calendarBooking.getCalendarBookingId());
 			}
 
 			if (userOrganizer != null) {
 				_log.debug(
-					"User organizer is " +  userOrganizer.getScreenName());
+					"User organizer is " + userOrganizer.getScreenName());
 			}
 		}
 
 		Property eventStatus = vEvent.getProperty(Status.STATUS);
 
 		if (eventStatus != null) {
-			vEvent.getProperties().remove(eventStatus);
+			vEvent.getProperties(
+			).remove(
+				eventStatus
+			);
 		}
 
 		if (bookingPending) {
-			vEvent.getProperties().add(Status.VEVENT_TENTATIVE);
+			vEvent.getProperties(
+			).add(
+				Status.VEVENT_TENTATIVE
+			);
 		}
 		else {
-			vEvent.getProperties().add(Status.VEVENT_CONFIRMED);
+			vEvent.getProperties(
+			).add(
+				Status.VEVENT_CONFIRMED
+			);
 		}
 
 		// update attendees status
 
 		List<CalendarBooking> childCalendarBookings =
-			calendarBooking.getParentCalendarBooking()
-				.getChildCalendarBookings();
+			calendarBooking.getParentCalendarBooking(
+			).getChildCalendarBookings();
 
 		List<Attendee> attendees = new ArrayList<>();
 		List<String> attendeesEmails = new ArrayList<>();
 		Iterator<Attendee> attendeesIterator = vEvent.getProperties(
-			Attendee.ATTENDEE).iterator();
+			Attendee.ATTENDEE
+		).iterator();
 
 		while (attendeesIterator.hasNext()) {
 			attendees.add(attendeesIterator.next());
@@ -601,13 +637,15 @@ public class DefaultICSContentListener implements ICSImportExportListener {
 				if (childBookingUser.isPresent()) {
 					_log.debug(
 						"User for calendar booking " +
-						childCalendarBooking.getCalendarBookingId() + " is " +
-						childBookingUser.get().getScreenName());
+							childCalendarBooking.getCalendarBookingId() +
+								" is " +
+									childBookingUser.get(
+									).getScreenName());
 				}
 				else {
 					_log.debug(
 						"No User found for calendar booking " +
-						childCalendarBooking.getCalendarBookingId());
+							childCalendarBooking.getCalendarBookingId());
 				}
 			}
 
@@ -616,7 +654,6 @@ public class DefaultICSContentListener implements ICSImportExportListener {
 			}
 
 			for (Attendee attendee : attendees) {
-
 				String emailAddress = StringUtil.replace(
 					attendee.getValue(), "mailto:", StringPool.BLANK);
 
@@ -641,21 +678,43 @@ public class DefaultICSContentListener implements ICSImportExportListener {
 						continue;
 					}
 
-					attendee.getParameters().remove(partStatParameter);
+					attendee.getParameters(
+					).remove(
+						partStatParameter
+					);
 
 					switch (childCalendarBooking.getStatus()) {
 						case WorkflowConstants.STATUS_DENIED:
-							attendee.getParameters().add(PartStat.DECLINED);
+							attendee.getParameters(
+							).add(
+								PartStat.DECLINED
+							);
+
 							break;
 						case WorkflowConstants.STATUS_APPROVED:
-							attendee.getParameters().add(PartStat.ACCEPTED);
-							attendee.getParameters().removeAll(Rsvp.RSVP);
+							attendee.getParameters(
+							).add(
+								PartStat.ACCEPTED
+							);
+							attendee.getParameters(
+							).removeAll(
+								Rsvp.RSVP
+							);
+
 							break;
 						case CalendarBookingWorkflowConstants.STATUS_MAYBE:
-							attendee.getParameters().add(PartStat.TENTATIVE);
+							attendee.getParameters(
+							).add(
+								PartStat.TENTATIVE
+							);
+
 							break;
 						default:
-							attendee.getParameters().add(PartStat.NEEDS_ACTION);
+							attendee.getParameters(
+							).add(
+								PartStat.NEEDS_ACTION
+							);
+
 							break;
 					}
 
@@ -663,15 +722,17 @@ public class DefaultICSContentListener implements ICSImportExportListener {
 				}
 			}
 
-			String emailAddress = childBookingUser.get().getEmailAddress();
+			String emailAddress = childBookingUser.get(
+			).getEmailAddress();
 
 			if (_log.isDebugEnabled()) {
 				_log.debug(
 					"Child booking user email address is " + emailAddress);
 			}
 
-			if ((userOrganizer != null) && childBookingUser.get().equals(
-					userOrganizer)) {
+			if ((userOrganizer != null) &&
+				childBookingUser.get().equals(userOrganizer)) {
+
 				continue;
 			}
 
@@ -680,18 +741,22 @@ public class DefaultICSContentListener implements ICSImportExportListener {
 					childBookingUser.get().getEmailAddress())) {
 
 				Attendee attendee = AttendeeUtil.create(
-					childBookingUser.get().getEmailAddress(),
-					childBookingUser.get().getFullName(), true,
-					childCalendarBooking.getStatus());
+					childBookingUser.get(
+					).getEmailAddress(),
+					childBookingUser.get(
+					).getFullName(),
+					true, childCalendarBooking.getStatus());
 
 				if (_log.isDebugEnabled()) {
 					_log.debug(
-						"Add attendee " + attendee.toString() +
-						" to booking " +
-						calendarBooking.getCalendarBookingId());
+						"Add attendee " + attendee.toString() + " to booking " +
+							calendarBooking.getCalendarBookingId());
 				}
 
-				vEvent.getProperties().add(attendee);
+				vEvent.getProperties(
+				).add(
+					attendee
+				);
 				attendeesEmails.add(emailAddress);
 			}
 		}
@@ -704,8 +769,14 @@ public class DefaultICSContentListener implements ICSImportExportListener {
 
 			Property methodProperty = iCalCalendar.getProperty(Method.METHOD);
 
-			iCalCalendar.getProperties().remove(methodProperty);
-			iCalCalendar.getProperties().add(Method.REQUEST);
+			iCalCalendar.getProperties(
+			).remove(
+				methodProperty
+			);
+			iCalCalendar.getProperties(
+			).add(
+				Method.REQUEST
+			);
 
 			Attendee attendee = AttendeeUtil.create(
 				user.getEmailAddress(), user.getFullName(), true,
@@ -714,11 +785,14 @@ public class DefaultICSContentListener implements ICSImportExportListener {
 			if (_log.isDebugEnabled()) {
 				_log.debug(
 					"Adding current user (" + user.getEmailAddress() +
-					") as attendee of booking" +
-					calendarBooking.getCalendarBookingId());
+						") as attendee of booking" +
+							calendarBooking.getCalendarBookingId());
 			}
 
-			vEvent.getProperties().add(attendee);
+			vEvent.getProperties(
+			).add(
+				attendee
+			);
 		}
 	}
 
@@ -759,8 +833,9 @@ public class DefaultICSContentListener implements ICSImportExportListener {
 			Attendee attendee = _toICalAttendee(attendeeString);
 
 			String attendeeEmail = StringUtil.replace(
-				attendee.getValue().toLowerCase(), "mailto:",
-				StringPool.BLANK);
+				attendee.getValue(
+				).toLowerCase(),
+				"mailto:", StringPool.BLANK);
 
 			if (ArrayUtil.contains(visibleAttendeeEmails, attendeeEmail)) {
 				visibleAttendeeEmails = ArrayUtil.remove(
@@ -773,8 +848,13 @@ public class DefaultICSContentListener implements ICSImportExportListener {
 
 		for (String attendeeEmail : visibleAttendeeEmails) {
 			URI uri = URI.create("mailto:" + attendeeEmail);
+
 			Attendee attendee = new Attendee(uri);
-			attendee.getParameters().add(new Cn(attendeeEmail));
+
+			attendee.getParameters(
+			).add(
+				new Cn(attendeeEmail)
+			);
 
 			allAttendees.add(attendee);
 		}
@@ -826,8 +906,7 @@ public class DefaultICSContentListener implements ICSImportExportListener {
 		List<Role> roles = _roleLocalService.getResourceRoles(
 			calendar.getCompanyId(), Calendar.class.getName(),
 			ResourceConstants.SCOPE_INDIVIDUAL,
-			String.valueOf(calendar.getPrimaryKey()),
-			"MANAGE_BOOKINGS");
+			String.valueOf(calendar.getPrimaryKey()), "MANAGE_BOOKINGS");
 
 		/*	getResourceBlockRoles(
 			calendar.getResourceBlockId(), Calendar.class.getName(),
@@ -849,7 +928,7 @@ public class DefaultICSContentListener implements ICSImportExportListener {
 					calendar.getUserId());
 
 				if (calendarResourceUser.getUserId() !=
-					calendarUser.getUserId()) {
+						calendarUser.getUserId()) {
 
 					notificationRecipients.add(calendarUser.getEmailAddress());
 				}
@@ -863,7 +942,7 @@ public class DefaultICSContentListener implements ICSImportExportListener {
 						PermissionCheckerFactoryUtil.create(roleUser);
 
 					if (!_calendarModelResourcePermission.contains(
-						permissionChecker, calendar, "MANAGE_BOOKINGS")) {
+							permissionChecker, calendar, "MANAGE_BOOKINGS")) {
 
 						continue;
 					}
@@ -924,17 +1003,21 @@ public class DefaultICSContentListener implements ICSImportExportListener {
 
 			attendee.setValue(attendeeProperty.getValue());
 
-			Iterator<Parameter> iterator =
-				attendeeProperty.getParameters().iterator();
+			Iterator<Parameter> iterator = attendeeProperty.getParameters(
+			).iterator();
 
 			while (iterator.hasNext()) {
 				Parameter parameter = iterator.next();
 
-				attendee.getParameters().add(parameter);
+				attendee.getParameters(
+				).add(
+					parameter
+				);
 			}
 		}
 		catch (Exception e) {
 			_log.error("Error parsing attendee " + attendeeString, e);
+
 			throw new SanitizerException(e);
 		}
 
@@ -949,7 +1032,6 @@ public class DefaultICSContentListener implements ICSImportExportListener {
 			calendarBooking.getParentCalendarBooking();
 
 		if (calendarBooking.getModifiedDate().getTime() < date.getTime()) {
-
 			parentCalendarBooking.setModifiedDate(date);
 
 			_calendarBookingLocalService.updateCalendarBooking(
@@ -962,6 +1044,7 @@ public class DefaultICSContentListener implements ICSImportExportListener {
 		for (CalendarBooking childCalendarBooking : childCalendarBookings) {
 			if (childCalendarBooking.getModifiedDate().getTime() >=
 					date.getTime()) {
+
 				continue;
 			}
 

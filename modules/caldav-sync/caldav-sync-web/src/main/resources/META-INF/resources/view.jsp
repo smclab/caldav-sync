@@ -29,6 +29,7 @@ portletDisplay.setShowBackIcon(true);
 <div class="container-fluid-1280 ">
 	<h2>
 		<liferay-ui:message key="caldav-url-for-collection" />
+
 		<liferay-ui:icon-help message="caldav-url-for-collection-help" />
 	</h2>
 
@@ -47,6 +48,7 @@ if (!calendars.isEmpty()) {
 	<div class="container-fluid-1280 ">
 		<h2>
 			<liferay-ui:message key="caldav-url-without-collection" />
+
 			<liferay-ui:icon-help message="caldav-url-without-collection-help" />
 		</h2>
 

@@ -18,6 +18,7 @@ import com.liferay.calendar.exporter.CalendarDataFormat;
 import com.liferay.calendar.model.Calendar;
 import com.liferay.calendar.model.CalendarBooking;
 import com.liferay.calendar.model.CalendarResource;
+import com.liferay.calendar.service.CalendarBookingLocalServiceUtil;
 import com.liferay.calendar.service.CalendarBookingServiceUtil;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.exception.PortalException;
@@ -69,20 +70,45 @@ public class CalDAVUtil {
 		return primaryKey + StringPool.UNDERLINE + modifiedDate.getTime();
 	}
 
-	public static CalendarBooking getCalendarBookingFromURL(String URL)
-		throws PortalException {
+	public static CalendarBooking getCalendarBookingFromCalendarAndURL(
+		Calendar calendar, String URL) {
 
-		if (!URL.endsWith(CalendarDataFormat.ICAL.getValue())) {
+		String icsName = getICSNameFromURL(URL);
+
+		if (icsName == null) {
 			return null;
 		}
 
-		String calendarBookingICSStr = StringUtil.extractLast(
-			URL, StringPool.SLASH);
+		long calendarId = calendar.getCalendarId();
 
-		String calendarBookingIdStr = StringUtil.extractFirst(
-			calendarBookingICSStr, StringPool.PERIOD);
+		CalendarBooking calendarBooking =
+			CalendarBookingLocalServiceUtil.fetchCalendarBooking(
+				calendarId, icsName);
 
-		long calendarBookingId = GetterUtil.getLong(calendarBookingIdStr);
+		if (calendarBooking != null) {
+			return calendarBooking;
+		}
+
+		long calendarBookingId = GetterUtil.getLong(icsName);
+
+		calendarBooking = CalendarBookingLocalServiceUtil.fetchCalendarBooking(
+			calendarBookingId);
+
+		if ((calendarBooking != null) &&
+			(calendarBooking.getCalendarId() == calendarId)) {
+
+			return calendarBooking;
+		}
+
+		return null;
+	}
+
+	public static CalendarBooking getCalendarBookingFromURL(String URL)
+		throws PortalException {
+
+		String icsName = getICSNameFromURL(URL);
+
+		long calendarBookingId = GetterUtil.getLong(icsName);
 
 		return CalendarBookingServiceUtil.getCalendarBooking(calendarBookingId);
 	}
@@ -95,11 +121,14 @@ public class CalDAVUtil {
 		sb.append(PortalUtil.getPathContext());
 		sb.append("/webdav/");
 		sb.append(
-			calendarBooking.getCalendarResource().getCalendarResourceId());
+			calendarBooking.getCalendarResource(
+			).getCalendarResourceId());
 		sb.append(StringPool.SLASH);
 		sb.append(WebKeys.CALDAV_TOKEN);
 		sb.append(StringPool.SLASH);
-		sb.append(calendarBooking.getCalendar().getCalendarId());
+		sb.append(
+			calendarBooking.getCalendar(
+			).getCalendarId());
 		sb.append(StringPool.SLASH);
 		sb.append(calendarBooking.getCalendarBookingId());
 		sb.append(StringPool.PERIOD);
@@ -110,7 +139,7 @@ public class CalDAVUtil {
 
 	public static String getCalendarColor(Calendar calendar) {
 		return StringPool.POUND.concat(
-			String.format("%06X", (0xFFFFFF & calendar.getColor())));
+			String.format("%06X", 0xFFFFFF & calendar.getColor()));
 	}
 
 	public static String getCalendarResourceURL(
@@ -145,6 +174,18 @@ public class CalDAVUtil {
 		sb.append(StringPool.SLASH);
 
 		return sb.toString();
+	}
+
+	public static String getICSNameFromURL(String URL) {
+		if (!URL.endsWith(CalendarDataFormat.ICAL.getValue())) {
+			return null;
+		}
+
+		String calendarBookingICSStr = StringUtil.extractLast(
+			URL, StringPool.SLASH);
+
+		return StringUtil.extractFirst(
+			calendarBookingICSStr, StringPool.PERIOD);
 	}
 
 	public static String getPrincipalURL(long userId) {
@@ -190,8 +231,10 @@ public class CalDAVUtil {
 		try {
 			Set<QName> props = new HashSet<>();
 
-			Resource resource = webDAVRequest.getWebDAVStorage().getResource(
-				webDAVRequest);
+			Resource resource = webDAVRequest.getWebDAVStorage(
+			).getResource(
+				webDAVRequest
+			);
 
 			Document document = CalDAVRequestThreadLocal.getRequestDocument();
 
@@ -199,9 +242,8 @@ public class CalDAVUtil {
 				if (resource.isCollection()) {
 					return CalDAVProps.getAllCollectionProps();
 				}
-				else {
-					return CalDAVProps.getAllResourceProps();
-				}
+
+				return CalDAVProps.getAllResourceProps();
 			}
 
 			Element rootElement = document.getRootElement();
@@ -210,9 +252,8 @@ public class CalDAVUtil {
 				if (resource.isCollection()) {
 					return CalDAVProps.getAllCollectionProps();
 				}
-				else {
-					return CalDAVProps.getAllResourceProps();
-				}
+
+				return CalDAVProps.getAllResourceProps();
 			}
 
 			Element propElement = rootElement.element("prop");
@@ -265,7 +306,8 @@ public class CalDAVUtil {
 		}
 
 		if (userId == 0) {
-			userId = PermissionThreadLocal.getPermissionChecker().getUserId();
+			userId = PermissionThreadLocal.getPermissionChecker(
+			).getUserId();
 		}
 
 		return userId;
@@ -277,9 +319,8 @@ public class CalDAVUtil {
 		if (Validator.isNull(userAgent)) {
 			return false;
 		}
-		else {
-			return userAgent.contains("Android");
-		}
+
+		return userAgent.contains("Android");
 	}
 
 	public static boolean isAndroidCalDAVSyncAdapter(
@@ -290,9 +331,8 @@ public class CalDAVUtil {
 		if (Validator.isNull(userAgent)) {
 			return false;
 		}
-		else {
-			return userAgent.contains("CalDAV Sync Adapter");
-		}
+
+		return userAgent.contains("CalDAV Sync Adapter");
 	}
 
 	public static boolean isCalendarBookingRequest(
@@ -324,9 +364,8 @@ public class CalDAVUtil {
 		if (Validator.isNull(userAgent)) {
 			return false;
 		}
-		else {
-			return userAgent.contains("iCal");
-		}
+
+		return userAgent.contains("iCal");
 	}
 
 	public static boolean isIOS(WebDAVRequest webDAVRequest) {
@@ -335,9 +374,8 @@ public class CalDAVUtil {
 		if (Validator.isNull(userAgent)) {
 			return false;
 		}
-		else {
-			return userAgent.contains("iOS");
-		}
+
+		return userAgent.contains("iOS");
 	}
 
 	public static boolean isMacOSX(WebDAVRequest webDAVRequest) {
@@ -346,16 +384,15 @@ public class CalDAVUtil {
 		if (Validator.isNull(userAgent)) {
 			return false;
 		}
-		else {
-			if (userAgent.contains("OS+X") || userAgent.contains("Mac+OS") ||
-				userAgent.contains("OS X") || userAgent.contains("Core") ||
-				userAgent.contains("OS_X")) {
 
-				return true;
-			}
+		if (userAgent.contains("OS+X") || userAgent.contains("Mac+OS") ||
+			userAgent.contains("OS X") || userAgent.contains("Core") ||
+			userAgent.contains("OS_X")) {
 
-			return false;
+			return true;
 		}
+
+		return false;
 	}
 
 	public static boolean isOpenSync(WebDAVRequest webDAVRequest) {
@@ -364,9 +401,8 @@ public class CalDAVUtil {
 		if (Validator.isNull(userAgent)) {
 			return false;
 		}
-		else {
-			return userAgent.contains("OpenSync");
-		}
+
+		return userAgent.contains("OpenSync");
 	}
 
 	public static boolean isPrincipalRequest(WebDAVRequest webDAVRequest) {
@@ -375,9 +411,8 @@ public class CalDAVUtil {
 		if ((path.length == 3) && path[0].equals("user")) {
 			return true;
 		}
-		else {
-			return false;
-		}
+
+		return false;
 	}
 
 	public static boolean isRequestContentXML(HttpServletRequest request) {
@@ -388,9 +423,8 @@ public class CalDAVUtil {
 
 			return true;
 		}
-		else {
-			return false;
-		}
+
+		return false;
 	}
 
 	public static boolean isThunderbird(HttpServletRequest request) {
@@ -423,15 +457,14 @@ public class CalDAVUtil {
 		if (Validator.isNull(userAgent)) {
 			return false;
 		}
-		else {
-			if (userAgent.contains("Thunderbird") ||
-				userAgent.contains("Lightning")) {
 
-				return true;
-			}
+		if (userAgent.contains("Thunderbird") ||
+			userAgent.contains("Lightning")) {
 
-			return false;
+			return true;
 		}
+
+		return false;
 	}
 
 	private static Log _log = LogFactoryUtil.getLog(CalDAVUtil.class);
