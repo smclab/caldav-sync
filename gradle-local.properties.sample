@@ -11,7 +11,10 @@
 # 
 liferay.workspace.home.dir=/w3/java/liferay/clienti/smcecm704/apps/liferay-ce-portal-7.0-ga5
 
-# SMC Nexus registry. Please add your credential to be able to download artifacts
+# SMC Nexus registry. Please add your credential to be able to download artifacts.
+#
+# NB: You could set your credentials into "$GRADLE_HOME/gradle.properties" (using nexus.username and
+# nexus.password properties) and comment the following lines
 #
 #nexus.public.url=https://registry.smc.it/repository/maven-public/
 #nexus.releases.url=https://registry.smc.it/repository/maven-releases/

@@ -20,6 +20,16 @@ allprojects {
 		String releasesURL = project.properties['nexus.releases.url']
 		String snapshotsURL = project.properties['nexus.snapshots.url']
 
+		if (publicURL) {
+			maven {
+				credentials {
+					username project.properties['registryUsername']
+					password project.properties['registryPassword']
+				}
+				url publicURL
+			}
+		}
+
 		if (snapshotsURL) {
 			maven {
 				credentials {
@@ -37,16 +47,6 @@ allprojects {
 					password project.properties['registryPassword']
 				}
 				url releasesURL
-			}
-		}
-
-		if (publicURL) {
-			maven {
-				credentials {
-					username project.properties['registryUsername']
-					password project.properties['registryPassword']
-				}
-				url publicURL
 			}
 		}
 	}
@@ -89,7 +89,7 @@ if (grgit != null) {
 			def lastTag = grgit.describe()
 			println "Git lastTag ${lastTag}"
 
-			if (lastTag.startsWith("rel_") || lastTag.startsWith("MP_v")) {
+			if (lastTag != null && (lastTag.startsWith("rel_") || lastTag.startsWith("MP_v"))) {
 				ext.gitSnapshotsBranch = false
 				ext.registrySuffix = ""
 			}
@@ -125,3 +125,122 @@ else {
 		ext.registrySuffix = "-SNAPSHOT"
 	}
 }
+
+/*************************
+ * TRACK CHANGED MODULES *
+ *************************/
+
+// Will collect path of modules with changes since last release
+Set changedProjects = []
+
+ext.changesMode = false;
+
+def changesModeEnabled = Boolean.valueOf(project.properties["changes.mode.enabled"])
+def changesVerboseMode = Boolean.valueOf(project.properties["changes.verbose.mode"])
+
+//if (changesModeEnabled && grgit != null && project.properties['gitSnapshotsBranch'] == true) {
+if (changesModeEnabled && grgit != null) {
+	println "Git Branch ${grgit.branch.current().name}"
+
+	def head = grgit.head();
+	logger.debug("KK head=${head}")
+	
+	// Identity the most recent release tag reachable. 
+	// WARNING: Seems GitHut release Tag are not annotated tags
+	def describeTag = grgit.describe(longDescr: true, match: ["rel_*"], tags: true)
+
+	if (describeTag == null) {
+		println "No releases found"
+	}
+	else {
+		ext.changesMode = true;
+
+		def collectChangedPath = {
+			def p = "/" + it.toLowerCase()
+			def v = false
+
+			if (p.startsWith("/modules/")) {
+				if (p.equals("/modules/build.gradle")) {
+					v = false
+				}
+				else if (p.endsWith("/bnd.bnd")) {
+					v = true
+					changedProjects.add(p.minus("/bnd.bnd").replaceAll("/", ":"))
+				}
+				else if (p.endsWith("build.gradle")) {
+					v = true
+					changedProjects.add(p.minus("/build.gradle").replaceAll("/", ":"))
+				}
+				else if (p.contains("/src/")) {
+					v = true
+					changedProjects.add(p.minus(~/\/src\/.*$/).replaceAll("/", ":"))
+				}
+
+				if (v && changesVerboseMode) {
+					println p
+				}
+			}
+		}
+		
+		// Collect local uncommitted changes
+		
+		def status = grgit.status();
+
+		status.staged.allChanges.each { path ->
+			collectChangedPath(path);
+		}
+		status.unstaged.allChanges.each { path ->
+			collectChangedPath(path);
+		}
+
+		def productVersion = project.properties['product.version'] ?: "1.0.0"
+
+		// Get Tag object (to have commit id)
+
+		def lastTagName = describeTag.minus(~/-\d+-\w+$/)
+		
+		def lastReleaseTag = null
+		
+		grgit.tag.list().each { tag ->
+			if (tag.name.equals(lastTagName)) {
+				lastReleaseTag = tag
+			}
+		}
+	
+		if (lastReleaseTag == null) {
+			lastReleaseTag = grgit.resolve.toTag(lastTagName)
+		}
+
+		println "Curr release..: ${productVersion}"
+		println "Last ReleaseTag ${lastReleaseTag.getName()} : ${lastReleaseTag.shortMessage} : ${lastReleaseTag.dateTime} : ${lastReleaseTag.commit.id}"
+
+		// Collect changes on commits ahead the tag
+		
+		def commits = grgit.log {
+			range(lastReleaseTag.commit, head)
+		}
+
+		commits.each{c ->
+			if (changesVerboseMode) {
+				println "${c.id} : ${c.abbreviatedId} : ${c.shortMessage}"
+			}
+
+			grgit.show(commit: c).each{ rev ->
+				rev.getAllChanges().each { path ->
+					collectChangedPath(path);
+				}
+			}
+		}
+	}
+
+	if (ext.changesMode) {
+		println "Modules with changes:"
+		changedProjects.each { println "  ${it}" }
+		println ""
+	}
+}
+
+ext.changedProjects = changedProjects.sort()
+
+println "** changesMode = ${changesMode}"
+

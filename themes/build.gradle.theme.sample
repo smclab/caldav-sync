@@ -1,0 +1,46 @@
+apply plugin: 'war'
+
+// WARNING: Module Version is defined inside package.json
+
+def finalVersion = "${project.property('version')}${project.property('registrySuffix')}"
+def nexusRepository = project.property('nexus.snapshots.url')
+
+if (!finalVersion.endsWith("-SNAPSHOT")) {
+	nexusRepository = project.property('nexus.releases.url');
+}
+
+publishing {
+	publications {
+		mavenJava(MavenPublication) {
+			version = "${finalVersion}"
+			artifactId = project.property('archivesBaseName')
+			artifact("dist/${project.name}.war")
+		}
+	}
+	repositories {
+		maven {
+			url = nexusRepository
+			credentials {
+				username project.property('registryUsername')
+				password project.property('registryPassword')
+			}
+		}
+	}
+}
+
+task showPublishDetails() {
+	def msg =
+		"${project.property('group')}:${project.property('archivesBaseName')}:${project.property('version')}" +
+		" (suffix ${project.property('registrySuffix')})" +
+		" on ${nexusRepository} as ${project.property('registryUsername')}"
+
+	doLast {
+		println "Published ${msg}"
+	}
+}
+
+war.dependsOn gulpBuild
+
+publish.dependsOn(gulpBuild, showPublishDetails);
+
+publishToMavenLocal.dependsOn(gulpBuild, showPublishDetails);

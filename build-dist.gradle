@@ -1,7 +1,8 @@
 /*
  * Distribution Profiles
  *
- * Please use only "dist" or "feature" prefix
+ * Please use only "dist" or "feature" prefix. To use BoM dependencies in the
+ * resolution the configuration needs to have "transitive=true"
  */
 
 configurations {
