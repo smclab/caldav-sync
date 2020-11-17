@@ -11,6 +11,7 @@
  * FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
  * details.
  */
+
 package it.smc.calendar.caldav.sync.methods;
 
 import com.liferay.portal.kernel.webdav.Resource;
@@ -30,10 +31,13 @@ public class MoveMethodImpl implements Method {
 
 		Resource resource = storage.getResource(webDAVRequest);
 
-		String destination = webDAVRequest.getHttpServletRequest().getHeader(
-			"destination");
+		String destination = webDAVRequest.getHttpServletRequest(
+		).getHeader(
+			"destination"
+		);
 
 		return storage.moveSimpleResource(
 			webDAVRequest, resource, destination, true);
 	}
+
 }

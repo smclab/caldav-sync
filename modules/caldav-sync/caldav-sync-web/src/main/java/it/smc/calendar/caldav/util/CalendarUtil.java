@@ -38,20 +38,21 @@ import com.liferay.portal.kernel.workflow.WorkflowConstants;
 
 import it.smc.calendar.caldav.helper.api.CalendarListService;
 
-import org.osgi.service.component.annotations.Component;
-import org.osgi.service.component.annotations.Reference;
-import org.osgi.service.component.annotations.ReferencePolicyOption;
-
 import java.sql.Timestamp;
+
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 
+import org.osgi.service.component.annotations.Component;
+import org.osgi.service.component.annotations.Reference;
+import org.osgi.service.component.annotations.ReferencePolicyOption;
+
 /**
  * @author Fabio Pezzutto
  */
-@Component(immediate = true, service=CalendarUtil.class)
+@Component(immediate = true, service = CalendarUtil.class)
 public class CalendarUtil {
 
 	public static final String ACTION_VIEW_BOOKING_DETAILS =
@@ -126,10 +127,11 @@ public class CalendarUtil {
 		Criterion parentCalendarCriterion =
 			RestrictionsFactoryUtil.sqlRestriction(
 				"parentCalendarBookingId IN (SELECT calendarBookingId FROM " +
-				"CalendarBooking WHERE calendarId = " + calendarId + ")");
+					"CalendarBooking WHERE calendarId = " + calendarId + ")");
 
-		dynamicQuery.add(RestrictionsFactoryUtil.or(
-			calendarCriterion, parentCalendarCriterion));
+		dynamicQuery.add(
+			RestrictionsFactoryUtil.or(
+				calendarCriterion, parentCalendarCriterion));
 
 		dynamicQuery.setProjection(
 			ProjectionFactoryUtil.property("modifiedDate"));
@@ -209,12 +211,11 @@ public class CalendarUtil {
 
 			return true;
 		}
-		else {
-			return false;
-		}
+
+		return false;
 	}
 
-	@Reference(unbind ="-", policyOption= ReferencePolicyOption.GREEDY)
+	@Reference(policyOption = ReferencePolicyOption.GREEDY, unbind = "-")
 	protected void setCalendarListService(
 		CalendarListService calendarListService) {
 
@@ -232,7 +233,6 @@ public class CalendarUtil {
 	}
 
 	private static CalendarListService _calendarListService;
-
 	private static ModelResourcePermission<Calendar>
 		_calendarModelResourcePermission;
 
