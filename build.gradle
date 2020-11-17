@@ -1,19 +1,11 @@
-ext.enableBomTasks = Boolean.valueOf(project.properties["enable.bom.tasks"])
-
-if (ext.enableBomTasks) {
-	apply plugin: 'java-platform'
-}
-else {
-	apply plugin: 'java'
-}
-
+apply plugin: 'java-library'
 apply plugin: 'eclipse'
 
 buildscript {
 	dependencies {
 		classpath "nu.studer:gradle-credentials-plugin:2.1"
 		classpath "net.saliman:gradle-properties-plugin:1.5.1"
-		classpath "org.ajoberstar.grgit:grgit-gradle:4.0.2"
+		classpath "org.ajoberstar.grgit:grgit-gradle:4.1.0"
 	}
 
 	repositories {
@@ -26,14 +18,6 @@ buildscript {
 	}
 }
 
-if (Boolean.valueOf(project.properties["bom.verbose.mode"])) {
-	ext.verboseMode = true
-	println "verboseMode = ${ext.verboseMode}"
-}
-else {
-	ext.verboseMode = false
-}
-
 apply from: "build-nexus.gradle"
 
 allprojects {
@@ -41,21 +25,12 @@ allprojects {
 }
 
 def productBoms = []
-def bomTaskMode = false
+String boms = properties["product.bill.of.meterials"]
 
-if (ext.enableBomTasks) {
-	bomTaskMode = true
-	println "Enable BoM"
-
-	apply from: "build-bom.gradle"
+if (boms != null) {
+	productBoms = boms.split(",")
 }
-else {
-	String boms = properties["product.bill.of.meterials"]
 
-	if (boms != null) {
-		productBoms = boms.split(",")
-	}
-}
 
 def isChangedProject = {
 	ext.changedProjects.contains(it) ? true : false
@@ -66,7 +41,7 @@ task listProjects() {
 	doLast {
 		rootProject.subprojects.each { prj ->
 			if (!prj.subprojects.empty) return
-			if (prj.path.startsWith(":plugins-sdk")) return
+			if (prj.path.equals(":bom") || prj.path.startsWith(":plugins-sdk")) return
 
 			println "${prj.path}\t${prj.group}:${prj.property('archivesBaseName')}:${prj.version}"
 		}
@@ -76,13 +51,13 @@ task listProjects() {
 gradle.beforeProject {
 	Project project ->
 
-	// Skip projects with childs
+	// Skip root and projects with childs
 	if (!project.parent || project.childProjects) {
 		return
 	}
 
-	// Skip Plugins SDK
-	if (project.path.startsWith(":plugins-sdk")) {
+	// Skip BoM project and Plugins SDK
+	if (project.path.equals(":bom") || project.path.startsWith(":plugins-sdk")) {
 		return
 	}
 
@@ -96,23 +71,17 @@ gradle.beforeProject {
 				// Empty. Only needed for task dependencies
 			}
 
+			// Force encoding (for portability)
+			compileJava.options.encoding = 'UTF-8'
+
 			task sourcesJar(type: Jar, dependsOn:classes) {
 				classifier = 'sources'
 				from sourceSets.main.allSource
 			}
 
 			dependencies {
-				if (productBoms.size() > 0) {
-					productBoms.each {
-						compileOnly platform("${it}")
-					}
-				}
 				// We have to force version because Liferay BOMs have conflicting versions
 				compileOnly("javax.servlet:javax.servlet-api:3.0.1") { force = true }
-			}
-
-			artifacts {
-				archives sourcesJar
 			}
 
 			task releaseIncrementMajor() {
@@ -143,37 +112,49 @@ gradle.beforeProject {
 				logger.debug("SMC check ${project.property('version')} ")
 			}
 
-			uploadArchives {
-				def nexusRepository = project.property('nexus.snapshots.url')
+			def nexusRepository = project.property('nexus.snapshots.url')
 
-				if (!finalVersion.endsWith("-SNAPSHOT")) {
-					nexusRepository = project.property('nexus.releases.url');
-				}
+			if (!finalVersion.endsWith("-SNAPSHOT")) {
+				nexusRepository = project.property('nexus.releases.url');
+			}
 
-				def msg =
-					"${project.property('group')}:${project.property('archivesBaseName')}:${project.property('version')}" +
-					" (suffix ${project.property('registrySuffix')})" +
-					" on ${nexusRepository} as ${project.property('registryUsername')}"
-
-				logger.debug("SMC will pub ${msg}")
-
-				repositories {
-					mavenDeployer {
-						pom.version = "${finalVersion}"
-
-						snapshotRepository(url: project.property('nexus.snapshots.url')) {
-							authentication(userName: project.property('registryUsername'), password: project.property('registryPassword'))
+			project.plugins.withId('maven-publish') {
+				publishing {
+					publications {
+						mavenJava(MavenPublication) {
+							version = "${finalVersion}"
+							artifactId = project.property('archivesBaseName')
+							from components.java
+							artifact(tasks["sourcesJar"])
 						}
-						repository(url: project.property('nexus.releases.url')) {
-							authentication(userName: project.property('registryUsername'), password: project.property('registryPassword'))
+					}
+					repositories {
+						maven {
+							url = nexusRepository
+							credentials {
+								username project.property('registryUsername')
+								password project.property('registryPassword')
+							}
 						}
 					}
 				}
 
-				doLast {
-					println "Published ${msg}"
+				task showPublishDetails() {
+					def msg =
+						"${project.property('group')}:${project.property('archivesBaseName')}:${project.property('version')}" +
+						" (suffix ${project.property('registrySuffix')})" +
+						" on ${nexusRepository} as ${project.property('registryUsername')}"
+
+					doLast {
+						println "Published ${msg}"
+					}
 				}
+
+				publish.dependsOn(showPublishDetails);
+
+				publishToMavenLocal.dependsOn(showPublishDetails);
 			}
+
 		}
 		else if (project.tasks.findByName("war")) {
 			task packageForDist(dependsOn: war) {
@@ -182,6 +163,9 @@ gradle.beforeProject {
 
 			def finalVersion = project.property('version')
 			ext.originalVersion = finalVersion
+
+			// Force encoding (for portability)
+			compileJava.options.encoding = 'UTF-8'
 		}
 
 	}
@@ -239,6 +223,28 @@ private void _updateBndBundleVersion(Project project, boolean minorMode) {
 
 apply from: "build-dist.gradle"
 
+// Apply custom BoMs to all the notable configurations
+//
+configurations.each { config ->
+	if (config.name.equals("targetPlatformBoms")) {
+		if (productBoms.size() > 0) {
+			productBoms.each {
+				config.dependencies.add(dependencies.platform("${it}"))
+			}
+		}
+	}
+	else if (!config.name.startsWith("dist") && !config.name.startsWith("feature")) {
+		return;
+	}
+
+	if (productBoms.size() > 0) {
+		productBoms.each {
+			config.dependencies.add(dependencies.platform("${it}"))
+		}
+	}
+}
+
+
 def getTimeStampStr() {
 	new Date().format('yyyyMMddHHmmss')
 }
@@ -262,7 +268,7 @@ else if (distLocalMode == null) {
 println "** distLocalMode = ${distLocalMode}"
 
 /*
- * List all configurations eligile as "Distribution Profile"
+ * List all configurations eligible as "Distribution Profile"
  */
 task listDistProfiles() {
 	doLast {
@@ -278,7 +284,9 @@ task listDistProfiles() {
 }
 
 /*
- * Describe "Distribution Profile" in a way usable as dependency
+ * Describe "Distribution Profile" in a way usable in build-dist.gradle
+ * as dependency
+ * TODO: Find a way to resolve bom versions
  */
 task showDistProfiles() {
 	if (distLocalMode == "true") {
@@ -296,13 +304,16 @@ task showDistProfiles() {
 			println ""
 			println "dependencies {"
 
-			def taskName = config.name.capitalize()
-
 			config.getDependencies().each{ dep ->
 				if (dep instanceof ExternalDependency) {
 					ProjectDependency projectDependency = dep as ProjectDependency
 
-					println "	compileOnly group:'${projectDependency.group}', name:'${projectDependency.name}', version:'${projectDependency.version}'"
+					if (projectDependency.version != null) {
+						println "	compileOnly group:'${projectDependency.group}', name:'${projectDependency.name}', version:'${projectDependency.version}'"
+					}
+					else {
+						println "	compileOnly group:'${projectDependency.group}', name:'${projectDependency.name}'"
+					}
 				}
 				else if (dep instanceof ProjectDependency) {
 					ProjectDependency projectDependency = dep as ProjectDependency
@@ -330,7 +341,8 @@ task showDistProfiles() {
 }
 
 /*
- * Describe "Distribution Profile" in a way usable as dependency
+ * Describe "Distribution Profile" in a way usable to materialize a
+ * local maven repository
  */
 task showDistInstall() {
 	if (distLocalMode == "true") {
@@ -383,9 +395,8 @@ task showDistInstall() {
 }
 
 /*
- * Task da usare nel proprio ambiente di sviluppo locale per "iniettare"
- * nel Liferay locale le librerie base necessarie. In pratica quelle
- * considerate fondamentali per il core.
+ * This task is useful on local developer environment to deploy project
+ * core element on local Liferay.
  */
 task deployCoreDependencies(type: Copy) {
 	into "${localBundleDir}/deploy"
@@ -422,9 +433,23 @@ task buildDistDepsMap() {
 
 			if (distLocalMode == "true" && project.properties['changesMode'] == false) {
 				clone = config.copy()
+
+				// Ensure clone has custom BoMs
+				if (productBoms.size() > 0) {
+					productBoms.each {
+						clone.dependencies.add(dependencies.platform("${it}"))
+					}
+				}
 			}
 			else {
 				clone = config.copy(distDependencySpec(true, false))
+
+				// Ensure clone has custom BoMs
+				if (productBoms.size() > 0) {
+					productBoms.each {
+						clone.dependencies.add(dependencies.platform("${it}"))
+					}
+				}
 
 				config.dependencies.each { dep ->
 					if (dep instanceof ExternalDependency) {
@@ -490,6 +515,7 @@ configurations.each { config ->
 		duplicatesStrategy = DuplicatesStrategy.EXCLUDE
 		compression = Compression.GZIP
 		version = productVersion
+
 		dependsOn buildDistDepsMap
 	}
 
@@ -499,6 +525,7 @@ configurations.each { config ->
 		classifier = getTimeStampStr()
 		duplicatesStrategy = DuplicatesStrategy.EXCLUDE
 		version = productVersion
+
 		dependsOn buildDistDepsMap
 	}
 
@@ -530,10 +557,7 @@ configurations.each { config ->
 
 				Project prj = projectDependency.getDependencyProject()
 
-				// println prj
-
 				if (isChangedProject(prj.path)) {
-					//println " has changes use local "
 					zipTargetTask.dependsOn(prj.path + ":packageForDist")
 				}
 			}
@@ -548,4 +572,82 @@ task tarDistAll() {
 
 task zipDistAll() {
 	dependsOn zipProfiles
+}
+
+/*
+ * List projects which artifact isn't already published to Maven Repository
+ */
+task checkPubStatus() {
+
+	doLast {
+		def prjMap = [:]
+
+		// Create a configuration with all the projects
+
+		Configuration config = configurations.create("publicationStatus")
+
+		config.transitive = false
+		config.visible = false
+
+		rootProject.subprojects.each { prj ->
+			if (!prj.subprojects.empty) return
+			if (prj.path.startsWith(":bom") || prj.path.startsWith(":plugins-sdk")) return
+
+			String archivesBaseName = prj.properties["archivesBaseName"]
+			String targetVersion = prj.properties["version"]
+
+			if (!isChangedProject(prj.path) && prj.hasProperty('originalVersion')) {
+				targetVersion = prj.property('originalVersion')
+			}
+
+			def prjId = "${prj.group}:${archivesBaseName}:${targetVersion}"
+
+			logger.debug("SMC ${prj} : ${prjId}")
+
+			config.dependencies.add(dependencies.create("${prjId}"))
+
+			prjMap["${prjId}"] = prj
+		}
+
+		//deltaPublication.resolve()
+
+		def resolved = config.getResolvedConfiguration()
+
+		println "Has errors = ${resolved.hasError()}"
+
+		println "INFO: modules with changes but same version is already published"
+
+		resolved.getLenientConfiguration().getFirstLevelModuleDependencies().each{ dep ->
+			def prjId = "${dep.moduleGroup}:${dep.moduleName}:${dep.moduleVersion}"
+
+			Project prj = prjMap["${prjId}"]
+
+			if (prj != null) {
+				if (isChangedProject(prj.path)) {
+					logger.debug("SMC ${prjId} -> 	${prj.path}")
+					println "	${prj.path}"
+				}
+			}
+			else {
+				println "	not found ${prjId}"
+			}
+		}
+
+		println "ERROR: modules not published"
+
+		resolved.getLenientConfiguration().getUnresolvedModuleDependencies().each{ dep ->
+			def prjId = "${dep.selector.group}:${dep.selector.name}:${dep.selector.version}"
+
+			Project prj = prjMap["${prjId}"]
+
+			if (prj != null) {
+				logger.debug("SMC ${prjId} -> 	${prj.path}")
+				println "	${prj.path}"
+			}
+			else {
+				println "	not found ${prjId}"
+			}
+		}
+
+	}
 }
