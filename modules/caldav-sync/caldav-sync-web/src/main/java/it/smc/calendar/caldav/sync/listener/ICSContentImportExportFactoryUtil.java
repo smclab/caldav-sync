@@ -27,20 +27,19 @@ public class ICSContentImportExportFactoryUtil {
 		return _serviceTracker.getService();
 	}
 
+	private static ServiceTracker
+		<ICSImportExportListener, ICSImportExportListener> _serviceTracker;
+
 	static {
 		Bundle bundle = FrameworkUtil.getBundle(ICSImportExportListener.class);
 
 		ServiceTracker<ICSImportExportListener, ICSImportExportListener>
 			serviceTracker = new ServiceTracker<>(
-				bundle.getBundleContext(), ICSImportExportListener.class,
-			null);
+				bundle.getBundleContext(), ICSImportExportListener.class, null);
 
 		serviceTracker.open();
 
 		_serviceTracker = serviceTracker;
 	}
-
-	private static ServiceTracker<ICSImportExportListener, ICSImportExportListener>
-		_serviceTracker;
 
 }
