@@ -77,8 +77,11 @@ public class PrincipalPropsProcessor extends BasePropsProcessor {
 			List<Calendar> allCalendars = CalendarUtil.getAllCalendars(
 				webDAVRequest.getPermissionChecker());
 
-			long[] calendarResourceIds = allCalendars.stream().mapToLong(
-				cal -> cal.getCalendarResourceId()).distinct().toArray();
+			long[] calendarResourceIds = allCalendars.stream(
+			).mapToLong(
+				cal -> cal.getCalendarResourceId()
+			).distinct(
+			).toArray();
 
 			for (long calendarResourceId : calendarResourceIds) {
 				CalendarResource calendarResource =

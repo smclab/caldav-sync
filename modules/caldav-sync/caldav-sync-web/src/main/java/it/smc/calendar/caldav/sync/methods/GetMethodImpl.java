@@ -54,6 +54,7 @@ public class GetMethodImpl implements Method {
 			}
 
 			String id = CalDAVUtil.getResourceETag(resource);
+
 			response.setHeader("ETag", id);
 
 			try {
