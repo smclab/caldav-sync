@@ -33,8 +33,7 @@ import org.osgi.service.component.annotations.Component;
 public class CaldavSyncPersonalMenuEntry extends BasePersonalMenuEntry {
 
 	@Override
-	protected String getPortletId() {
+	public String getPortletId() {
 		return CaldavSyncPortletKeys.CaldavSync;
 	}
-
 }

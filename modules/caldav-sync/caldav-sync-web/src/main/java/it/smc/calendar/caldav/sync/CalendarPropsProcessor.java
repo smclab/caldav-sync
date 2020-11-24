@@ -24,8 +24,6 @@ import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.model.User;
 import com.liferay.portal.kernel.security.permission.ActionKeys;
-import com.liferay.portal.kernel.util.PrefsPropsUtil;
-import com.liferay.portal.kernel.util.PropsKeys;
 import com.liferay.portal.kernel.webdav.Resource;
 import com.liferay.portal.kernel.webdav.WebDAVRequest;
 import com.liferay.portal.kernel.xml.Element;
@@ -157,9 +155,8 @@ public class CalendarPropsProcessor extends BasePropsProcessor {
 
 	@Override
 	protected void processCalDAVMaxResourceSize() {
-		long maxResourceSize =
-			PrefsPropsUtil.getLong(
-				PropsKeys.UPLOAD_SERVLET_REQUEST_IMPL_MAX_SIZE) / 8;
+		//TODO get property from configuration (https://github.com/brianchandotcom/liferay-portal/pull/49270/files)
+		long maxResourceSize = 1048576000 / 8;
 
 		DocUtil.add(
 			successPropElement, CalDAVProps.CALDAV_MAX_RESOURCE_SIZE,
