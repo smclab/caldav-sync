@@ -80,8 +80,10 @@ gradle.beforeProject {
 			}
 
 			dependencies {
+				/* No more needed
 				// We have to force version because Liferay BOMs have conflicting versions
 				compileOnly("javax.servlet:javax.servlet-api:3.0.1") { force = true }
+				*/
 			}
 
 			task releaseIncrementMajor() {
@@ -614,6 +616,7 @@ task checkPubStatus() {
 		def resolved = config.getResolvedConfiguration()
 
 		println "Has errors = ${resolved.hasError()}"
+
 
 		println "INFO: modules with changes but same version is already published"
 
