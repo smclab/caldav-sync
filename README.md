@@ -16,6 +16,6 @@ Please visit our link for documentations and manuals:
 Some hints for contributors:
 * this repository manages and maintains compatibility with both the CE and DXP versions of Liferay
 * in this branch the basic compatibility, managed through BOM in the gradle.properties file, is:
-    - Liferay 7.3 CE GA1 (7.3.0)
+    - Liferay 7.3 CE GA6 (7.3.5)
     - Liferay 7.3 DXP GA1
 * any compatibility issues with GA or subsequent fixpacks must be managed through new targeted artifacts
