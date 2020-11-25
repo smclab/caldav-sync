@@ -27,6 +27,7 @@ import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.io.unsync.UnsyncStringReader;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
+import com.liferay.portal.kernel.model.Company;
 import com.liferay.portal.kernel.model.ResourceConstants;
 import com.liferay.portal.kernel.model.Role;
 import com.liferay.portal.kernel.model.RoleConstants;
@@ -37,12 +38,14 @@ import com.liferay.portal.kernel.security.permission.PermissionChecker;
 import com.liferay.portal.kernel.security.permission.PermissionCheckerFactoryUtil;
 import com.liferay.portal.kernel.security.permission.PermissionThreadLocal;
 import com.liferay.portal.kernel.security.permission.resource.ModelResourcePermission;
+import com.liferay.portal.kernel.service.CompanyLocalService;
 import com.liferay.portal.kernel.service.RoleLocalService;
 import com.liferay.portal.kernel.service.ServiceContext;
 import com.liferay.portal.kernel.service.ServiceContextThreadLocal;
 import com.liferay.portal.kernel.service.UserLocalService;
 import com.liferay.portal.kernel.util.ArrayUtil;
 import com.liferay.portal.kernel.util.GetterUtil;
+import com.liferay.portal.kernel.util.HtmlUtil;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.UnicodeProperties;
 import com.liferay.portal.kernel.util.Validator;
@@ -65,6 +68,7 @@ import java.util.Locale;
 import java.util.Optional;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.swing.text.html.HTML;
 
 import net.fortuna.ical4j.data.CalendarBuilder;
 import net.fortuna.ical4j.data.ParserException;
@@ -130,7 +134,6 @@ public class DefaultICSContentListener implements ICSImportExportListener {
 
 					if (calendarBooking != null) {
 						updateBookingAttendees(calendarBooking, vEvent);
-						updateAltDescription(calendarBooking, vEvent);
 					}
 				}
 			}
@@ -198,6 +201,9 @@ public class DefaultICSContentListener implements ICSImportExportListener {
 					).add(
 						created
 					);
+
+					_updateAltDescription(
+						calendarBooking, vEvent, currentUser);
 				}
 			}
 
@@ -238,7 +244,7 @@ public class DefaultICSContentListener implements ICSImportExportListener {
 							_calendarBookingLocalService.fetchCalendarBooking(
 								calendar.getCalendarId(), vEventUidValue);
 
-						updateAltDescription(calendarBooking, vEvent);
+						updateDescription(calendarBooking, vEvent);
 					}
 				}
 			}
@@ -862,7 +868,7 @@ public class DefaultICSContentListener implements ICSImportExportListener {
 		propertyList.addAll(allAttendees);
 	}
 
-	protected void updateAltDescription(
+	protected void updateDescription(
 			CalendarBooking calendarBooking, VEvent vEvent)
 		throws PortalException {
 
@@ -878,11 +884,25 @@ public class DefaultICSContentListener implements ICSImportExportListener {
 
 			Locale locale = calendarBookingUser.getLocale();
 
-			String calendarBookingDescription =
+			String calendarBookingDescriptionHTML =
 				calendarBooking.getDescription(locale);
 
+			Description calendarBookingDescription =
+				new Description(
+					HtmlUtil.stripHtml(calendarBookingDescriptionHTML));
+
+			Description vEventDescription =
+				(Description)vEvent.getProperty(Property.DESCRIPTION);
+
+			if (calendarBookingDescription.equals(vEventDescription)) {
+				// The client has not modified DESCRIPTION at all,
+				// so in any case the X-ALT-DESC is preferred
+				_replaceDescription(vEvent, vEventXAltDesc);
+				return;
+			}
+
 			XProperty calendarBookingXAltDesc = new XProperty(
-				"X-ALT-DESC", calendarBookingDescription);
+				"X-ALT-DESC", calendarBookingDescriptionHTML);
 
 			ParameterList parameters =
 				calendarBookingXAltDesc.getParameters();
@@ -890,6 +910,8 @@ public class DefaultICSContentListener implements ICSImportExportListener {
 			parameters.add(new XParameter("FMTTYPE", "text/html"));
 
 			if (calendarBookingXAltDesc.equals(vEventXAltDesc)) {
+				// The client has handled DESCRIPTION directly,
+				// in this case X-ALT-DESC can not be preferred
 				return;
 			}
 
@@ -1055,6 +1077,36 @@ public class DefaultICSContentListener implements ICSImportExportListener {
 		}
 	}
 
+	private void _updateAltDescription(
+			CalendarBooking calendarBooking, VEvent vEvent, User user)
+		throws PortalException {
+
+		// review on LPS-20825
+
+		XProperty xAltDesc = (XProperty)vEvent.getProperty("X-ALT-DESC");
+
+		if (xAltDesc == null) {
+			return;
+		}
+
+		long companyId = calendarBooking.getCompanyId();
+
+		Company company = _companyLocalService.getCompany(companyId);
+
+		String calendarBookingDescriptionHTML = StringUtil.replace(
+				calendarBooking.getDescription(user.getLocale()),
+				new String[] {"href=\"/", "src=\"/"},
+				new String[] {
+					"href=\"" +
+					company.getPortalURL(calendarBooking.getGroupId()) +
+					"/",
+					"src=\"" +
+					company.getPortalURL(calendarBooking.getGroupId()) + "/"
+				});
+
+		xAltDesc.setValue(calendarBookingDescriptionHTML);
+	}
+
 	private static Log _log = LogFactoryUtil.getLog(
 		DefaultICSContentListener.class);
 
@@ -1062,6 +1114,9 @@ public class DefaultICSContentListener implements ICSImportExportListener {
 	private CalendarBookingLocalService _calendarBookingLocalService;
 
 	private ModelResourcePermission<Calendar> _calendarModelResourcePermission;
+
+	@Reference(policyOption = ReferencePolicyOption.GREEDY)
+	private CompanyLocalService _companyLocalService;
 
 	@Reference(policyOption = ReferencePolicyOption.GREEDY)
 	private RoleLocalService _roleLocalService;
