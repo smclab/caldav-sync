@@ -17,7 +17,7 @@
 <%@ include file="/init.jsp" %>
 
 <liferay-portlet:renderURL var="selectURL" windowState="<%= LiferayWindowState.POP_UP.toString() %>">
-	<portlet:param name="mvcRenderCommandName" value='<%= "/smc/calDav/display_links" %>' />
+	<portlet:param name="mvcRenderCommandName" value='<%= "/smc/calDAV/displayLinks" %>' />
 </liferay-portlet:renderURL>
 
 <div>

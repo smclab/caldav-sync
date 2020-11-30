@@ -20,6 +20,6 @@ package it.smc.calendar.caldav.display.portlet.constants;
 public class CalDAVDisplayPortletKeys {
 
 	public static final String CalDAVDisplay =
-		"it_smc_calendar_caldav_display_portlet_portlet_CalDAVDisplayPortlet";
+		"it_smc_calendar_caldavsync_CalDAVDisplayPortlet";
 
 }
