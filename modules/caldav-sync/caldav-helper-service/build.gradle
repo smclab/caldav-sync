@@ -1,5 +1,4 @@
 dependencies {
-	compileOnly group: "com.liferay", name: "com.liferay.calendar.api"
 	compileOnly group: "com.liferay", name: "com.liferay.calendar.service"
 	compileOnly group: "com.liferay.portal", name: "release.portal.api"
 
