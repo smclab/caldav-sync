@@ -19,6 +19,7 @@ import com.liferay.calendar.model.Calendar;
 import com.liferay.calendar.model.CalendarBooking;
 import com.liferay.calendar.model.CalendarResource;
 import com.liferay.calendar.service.CalendarBookingLocalService;
+import com.liferay.calendar.util.JCalendarUtil;
 import com.liferay.calendar.workflow.CalendarBookingWorkflowConstants;
 import com.liferay.expando.kernel.model.ExpandoBridge;
 import com.liferay.expando.kernel.model.ExpandoColumnConstants;
@@ -66,6 +67,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
+import java.util.TimeZone;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.swing.text.html.HTML;
@@ -88,6 +90,8 @@ import net.fortuna.ical4j.model.property.Action;
 import net.fortuna.ical4j.model.property.Attendee;
 import net.fortuna.ical4j.model.property.Created;
 import net.fortuna.ical4j.model.property.Description;
+import net.fortuna.ical4j.model.property.DtEnd;
+import net.fortuna.ical4j.model.property.DtStart;
 import net.fortuna.ical4j.model.property.LastModified;
 import net.fortuna.ical4j.model.property.Method;
 import net.fortuna.ical4j.model.property.Organizer;
@@ -177,6 +181,9 @@ public class DefaultICSContentListener implements ICSImportExportListener {
 
 					updateDowloadedInvitations(
 						currentUser, iCalCalendar, vEvent, calendarBooking);
+
+					updateAllDayDate(
+						vEvent, calendarBooking, currentUser);
 
 					DateTime modifiedDate = new DateTime(
 						calendarBooking.getModifiedDate(
@@ -389,6 +396,41 @@ public class DefaultICSContentListener implements ICSImportExportListener {
 					propertyList.add(attendee);
 				}
 			}
+		}
+	}
+
+	protected void updateAllDayDate(
+		VEvent vEvent, CalendarBooking calendarBooking, User user) {
+
+		if (calendarBooking.isAllDay()) {
+			PropertyList propertyList = vEvent.getProperties();
+
+			TimeZone userTimeZone = user.getTimeZone();
+
+			java.util.Calendar endJCalendar = JCalendarUtil.getJCalendar(
+				calendarBooking.getEndTime(), userTimeZone);
+
+			endJCalendar.add(java.util.Calendar.DAY_OF_MONTH, 1);
+
+			long utcStart = calendarBooking.getStartTime() +
+					 userTimeZone.getRawOffset();
+
+			long utcEnd = endJCalendar.getTimeInMillis() +
+					 userTimeZone.getRawOffset();
+
+			DtStart dtStart = new DtStart(
+				new net.fortuna.ical4j.model.Date(utcStart), true);
+
+			DtEnd dtEnd = new DtEnd(
+				new net.fortuna.ical4j.model.Date(utcEnd), true);
+
+			propertyList.remove(vEvent.getStartDate());
+
+			propertyList.remove(vEvent.getEndDate());
+
+			propertyList.add(dtStart);
+
+			propertyList.add(dtEnd);
 		}
 	}
 
