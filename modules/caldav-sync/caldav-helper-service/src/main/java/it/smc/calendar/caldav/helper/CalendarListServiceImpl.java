@@ -35,7 +35,9 @@ import com.liferay.portal.kernel.util.SessionClicks;
 import com.liferay.portal.kernel.util.StringUtil;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
@@ -58,7 +60,7 @@ public class CalendarListServiceImpl implements CalendarListService {
 			PropsValues.PROPFIND_PROVIDE_SESSIONCLICKS_CALENDARS;
 		boolean hidePersonalCalendar = PropsValues.HIDE_PERSONAL_CALENDAR;
 
-		List<Calendar> calendars = new ArrayList<>();
+		Set<Calendar> calendars = new HashSet<>();
 
 		if (useSessionClicksCalendars) {
 			if (!hidePersonalCalendar) {
@@ -146,7 +148,7 @@ public class CalendarListServiceImpl implements CalendarListService {
 			}
 		}
 
-		return calendars;
+		return new ArrayList<>(calendars);
 	}
 
 	public List<Calendar> getSelectedCalendars(
