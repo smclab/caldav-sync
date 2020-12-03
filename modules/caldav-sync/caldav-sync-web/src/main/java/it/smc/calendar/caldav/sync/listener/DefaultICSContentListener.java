@@ -407,22 +407,40 @@ public class DefaultICSContentListener implements ICSImportExportListener {
 
 			TimeZone userTimeZone = user.getTimeZone();
 
-			java.util.Calendar endJCalendar = JCalendarUtil.getJCalendar(
-				calendarBooking.getEndTime(), userTimeZone);
+			TimeZone utcTimeZone = TimeZone.getTimeZone("UTC");
+
+			java.util.Calendar startJCalendar =
+				JCalendarUtil.getJCalendar(
+					calendarBooking.getStartTime(), utcTimeZone);
+
+			boolean normalize = true;
+
+			if (startJCalendar.get(java.util.Calendar.HOUR) == 0) {
+				normalize = false;
+			}
+
+			java.util.Calendar endJCalendar =
+				JCalendarUtil.getJCalendar(
+				calendarBooking.getEndTime(), utcTimeZone);
 
 			endJCalendar.add(java.util.Calendar.DAY_OF_MONTH, 1);
 
-			long utcStart = calendarBooking.getStartTime() +
-					 userTimeZone.getRawOffset();
+			long utcStart = startJCalendar.getTimeInMillis();
 
-			long utcEnd = endJCalendar.getTimeInMillis() +
-					 userTimeZone.getRawOffset();
+			long utcEnd = endJCalendar.getTimeInMillis();
+
+			if (normalize) {
+				utcStart += userTimeZone.getRawOffset();
+				utcEnd += userTimeZone.getRawOffset();
+			}
 
 			DtStart dtStart = new DtStart(
-				new net.fortuna.ical4j.model.Date(utcStart), true);
+				new net.fortuna.ical4j.model.Date(utcStart),
+				true);
 
 			DtEnd dtEnd = new DtEnd(
-				new net.fortuna.ical4j.model.Date(utcEnd), true);
+				new net.fortuna.ical4j.model.Date(utcEnd),
+				true);
 
 			propertyList.remove(vEvent.getStartDate());
 
