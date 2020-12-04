@@ -26,6 +26,7 @@ import com.liferay.expando.kernel.model.ExpandoColumnConstants;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.io.unsync.UnsyncStringReader;
+import com.liferay.portal.kernel.language.LanguageUtil;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.model.Company;
@@ -66,6 +67,7 @@ import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Optional;
 import java.util.TimeZone;
 
@@ -138,6 +140,7 @@ public class DefaultICSContentListener implements ICSImportExportListener {
 
 					if (calendarBooking != null) {
 						updateBookingAttendees(calendarBooking, vEvent);
+						updateTitleAndDescription(calendarBooking, vEvent);
 					}
 				}
 			}
@@ -978,6 +981,36 @@ public class DefaultICSContentListener implements ICSImportExportListener {
 		}
 
 		_replaceDescription(vEvent, vEventXAltDesc);
+	}
+
+	protected void updateTitleAndDescription(
+		CalendarBooking calendarBooking, VEvent vEvent) {
+
+		Locale locale;
+
+		try {
+			Calendar calendar = calendarBooking.getCalendar();
+			long userId = calendar.getUserId();
+			User user = _userLocalService.getUser(userId);
+			locale = user.getLocale();
+		}
+		catch (PortalException e) {
+			locale = Locale.getDefault();
+		}
+
+		String title = calendarBooking.getTitle(locale);
+		String description = calendarBooking.getDescription(locale);
+
+		Map<Locale, String> titleMap = calendarBooking.getTitleMap();
+		Map<Locale, String> descriptionMap =
+			calendarBooking.getDescriptionMap();
+
+		for (Locale l : LanguageUtil.getAvailableLocales()) {
+			titleMap.put(l, title);
+			descriptionMap.put(l, description);
+		}
+
+		_calendarBookingLocalService.updateCalendarBooking(calendarBooking);
 	}
 
 	private List<String> _getNotificationRecipients(Calendar calendar)
