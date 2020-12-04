@@ -85,6 +85,7 @@ import net.fortuna.ical4j.model.component.VEvent;
 import net.fortuna.ical4j.model.parameter.Cn;
 import net.fortuna.ical4j.model.parameter.PartStat;
 import net.fortuna.ical4j.model.parameter.Rsvp;
+import net.fortuna.ical4j.model.parameter.Value;
 import net.fortuna.ical4j.model.parameter.XParameter;
 import net.fortuna.ical4j.model.property.Action;
 import net.fortuna.ical4j.model.property.Attendee;
@@ -98,6 +99,7 @@ import net.fortuna.ical4j.model.property.Organizer;
 import net.fortuna.ical4j.model.property.Status;
 import net.fortuna.ical4j.model.property.Summary;
 import net.fortuna.ical4j.model.property.Transp;
+import net.fortuna.ical4j.model.property.Trigger;
 import net.fortuna.ical4j.model.property.Uid;
 import net.fortuna.ical4j.model.property.XProperty;
 
@@ -239,6 +241,7 @@ public class DefaultICSContentListener implements ICSImportExportListener {
 
 					if (vEvent.getAlarms().size() > 0) {
 						updateAlarmAttendeers(vEvent, calendar);
+						removeIgnorableTriggers(vEvent);
 					}
 
 					Uid vEventUid = vEvent.getUid();
@@ -293,6 +296,28 @@ public class DefaultICSContentListener implements ICSImportExportListener {
 			unsyncStringReader);
 
 		return iCalCalendar;
+	}
+
+	protected void removeIgnorableTriggers(VEvent vEvent) {
+		ArrayList<VAlarm> alarms = (ArrayList<VAlarm>)vEvent.getAlarms();
+
+		ParameterList parameterList = new ParameterList();
+
+		parameterList.add(new Value("DATE-TIME"));
+
+		Trigger ignorableTrigger = new Trigger(
+			parameterList, "19760401T005545Z");
+
+		alarms.removeIf(
+			a -> {
+				Trigger trigger = a.getTrigger();
+
+				if (trigger != null) {
+					return trigger.equals(ignorableTrigger);
+				}
+
+				return true;
+			});
 	}
 
 	@Reference(
@@ -1055,8 +1080,7 @@ public class DefaultICSContentListener implements ICSImportExportListener {
 	private void _replaceDescription(VEvent vEvent, XProperty vEventXAltDesc) {
 		String vEventAltDescValue = vEventXAltDesc.getValue();
 
-		Property vEventDescription =
-			vEvent.getProperty(Property.DESCRIPTION);
+		Property vEventDescription = vEvent.getProperty(Property.DESCRIPTION);
 
 		PropertyList vEventProperties = vEvent.getProperties();
 
