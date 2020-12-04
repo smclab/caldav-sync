@@ -19,12 +19,14 @@ import com.liferay.calendar.model.Calendar;
 import com.liferay.calendar.model.CalendarBooking;
 import com.liferay.calendar.model.CalendarResource;
 import com.liferay.calendar.service.CalendarBookingLocalService;
+import com.liferay.calendar.util.JCalendarUtil;
 import com.liferay.calendar.workflow.CalendarBookingWorkflowConstants;
 import com.liferay.expando.kernel.model.ExpandoBridge;
 import com.liferay.expando.kernel.model.ExpandoColumnConstants;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.io.unsync.UnsyncStringReader;
+import com.liferay.portal.kernel.language.LanguageUtil;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.model.ResourceConstants;
@@ -43,6 +45,7 @@ import com.liferay.portal.kernel.service.ServiceContextThreadLocal;
 import com.liferay.portal.kernel.service.UserLocalService;
 import com.liferay.portal.kernel.util.ArrayUtil;
 import com.liferay.portal.kernel.util.GetterUtil;
+import com.liferay.portal.kernel.util.ReleaseInfo;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.UnicodeProperties;
 import com.liferay.portal.kernel.util.Validator;
@@ -59,10 +62,13 @@ import java.net.URI;
 
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Optional;
+import java.util.TimeZone;
 
 import javax.servlet.http.HttpServletRequest;
 
@@ -79,17 +85,21 @@ import net.fortuna.ical4j.model.component.VEvent;
 import net.fortuna.ical4j.model.parameter.Cn;
 import net.fortuna.ical4j.model.parameter.PartStat;
 import net.fortuna.ical4j.model.parameter.Rsvp;
+import net.fortuna.ical4j.model.parameter.Value;
 import net.fortuna.ical4j.model.parameter.XParameter;
 import net.fortuna.ical4j.model.property.Action;
 import net.fortuna.ical4j.model.property.Attendee;
 import net.fortuna.ical4j.model.property.Created;
 import net.fortuna.ical4j.model.property.Description;
+import net.fortuna.ical4j.model.property.DtEnd;
+import net.fortuna.ical4j.model.property.DtStart;
 import net.fortuna.ical4j.model.property.LastModified;
 import net.fortuna.ical4j.model.property.Method;
 import net.fortuna.ical4j.model.property.Organizer;
 import net.fortuna.ical4j.model.property.Status;
 import net.fortuna.ical4j.model.property.Summary;
 import net.fortuna.ical4j.model.property.Transp;
+import net.fortuna.ical4j.model.property.Trigger;
 import net.fortuna.ical4j.model.property.Uid;
 import net.fortuna.ical4j.model.property.XProperty;
 
@@ -131,6 +141,7 @@ public class DefaultICSContentListener implements ICSImportExportListener {
 					if (calendarBooking != null) {
 						updateBookingAttendees(calendarBooking, vEvent);
 						updateAltDescription(calendarBooking, vEvent);
+						updateTitleAndDescription(calendarBooking, vEvent);
 					}
 				}
 			}
@@ -174,6 +185,9 @@ public class DefaultICSContentListener implements ICSImportExportListener {
 
 					updateDowloadedInvitations(
 						currentUser, iCalCalendar, vEvent, calendarBooking);
+
+					updateAllDayDate(
+						vEvent, calendarBooking, currentUser);
 
 					DateTime modifiedDate = new DateTime(
 						calendarBooking.getModifiedDate(
@@ -227,6 +241,7 @@ public class DefaultICSContentListener implements ICSImportExportListener {
 
 					if (vEvent.getAlarms().size() > 0) {
 						updateAlarmAttendeers(vEvent, calendar);
+						removeIgnorableTriggers(vEvent);
 					}
 
 					Uid vEventUid = vEvent.getUid();
@@ -281,6 +296,28 @@ public class DefaultICSContentListener implements ICSImportExportListener {
 			unsyncStringReader);
 
 		return iCalCalendar;
+	}
+
+	protected void removeIgnorableTriggers(VEvent vEvent) {
+		ArrayList<VAlarm> alarms = (ArrayList<VAlarm>)vEvent.getAlarms();
+
+		ParameterList parameterList = new ParameterList();
+
+		parameterList.add(new Value("DATE-TIME"));
+
+		Trigger ignorableTrigger = new Trigger(
+			parameterList, "19760401T005545Z");
+
+		alarms.removeIf(
+			a -> {
+				Trigger trigger = a.getTrigger();
+
+				if (trigger != null) {
+					return trigger.equals(ignorableTrigger);
+				}
+
+				return true;
+			});
 	}
 
 	@Reference(
@@ -383,6 +420,59 @@ public class DefaultICSContentListener implements ICSImportExportListener {
 					propertyList.add(attendee);
 				}
 			}
+		}
+	}
+
+	protected void updateAllDayDate(
+		VEvent vEvent, CalendarBooking calendarBooking, User user) {
+
+		if (calendarBooking.isAllDay()) {
+			PropertyList propertyList = vEvent.getProperties();
+
+			TimeZone userTimeZone = user.getTimeZone();
+
+			TimeZone utcTimeZone = TimeZone.getTimeZone("UTC");
+
+			java.util.Calendar startJCalendar =
+				JCalendarUtil.getJCalendar(
+					calendarBooking.getStartTime(), utcTimeZone);
+
+			boolean normalize = true;
+
+			if (startJCalendar.get(java.util.Calendar.HOUR) == 0) {
+				normalize = false;
+			}
+
+			java.util.Calendar endJCalendar =
+				JCalendarUtil.getJCalendar(
+				calendarBooking.getEndTime(), utcTimeZone);
+
+			endJCalendar.add(java.util.Calendar.DAY_OF_MONTH, 1);
+
+			long utcStart = startJCalendar.getTimeInMillis();
+
+			long utcEnd = endJCalendar.getTimeInMillis();
+
+			if (normalize) {
+				utcStart += userTimeZone.getRawOffset();
+				utcEnd += userTimeZone.getRawOffset();
+			}
+
+			DtStart dtStart = new DtStart(
+				new net.fortuna.ical4j.model.Date(utcStart),
+				true);
+
+			DtEnd dtEnd = new DtEnd(
+				new net.fortuna.ical4j.model.Date(utcEnd),
+				true);
+
+			propertyList.remove(vEvent.getStartDate());
+
+			propertyList.remove(vEvent.getEndDate());
+
+			propertyList.add(dtStart);
+
+			propertyList.add(dtEnd);
 		}
 	}
 
@@ -898,6 +988,38 @@ public class DefaultICSContentListener implements ICSImportExportListener {
 		_replaceDescription(vEvent, vEventXAltDesc);
 	}
 
+	protected void updateTitleAndDescription(
+		CalendarBooking calendarBooking, VEvent vEvent) {
+
+		Locale locale;
+
+		try {
+			Calendar calendar = calendarBooking.getCalendar();
+			long userId = calendar.getUserId();
+			User user = _userLocalService.getUser(userId);
+			locale = user.getLocale();
+		}
+		catch (PortalException e) {
+			locale = Locale.getDefault();
+		}
+
+		String title = calendarBooking.getTitle(locale);
+		String description = calendarBooking.getDescription(locale);
+
+		Map<Locale, String> titleMap = new HashMap<>();
+		Map<Locale, String> descriptionMap = new HashMap<>();
+
+		for (Locale l : LanguageUtil.getAvailableLocales()) {
+			titleMap.put(l, title);
+			descriptionMap.put(l, description);
+		}
+
+		calendarBooking.setTitleMap(titleMap);
+		calendarBooking.setDescriptionMap(descriptionMap);
+
+		_calendarBookingLocalService.updateCalendarBooking(calendarBooking);
+	}
+
 	private List<String> _getNotificationRecipients(Calendar calendar)
 		throws Exception {
 
@@ -918,16 +1040,20 @@ public class DefaultICSContentListener implements ICSImportExportListener {
 			String name = role.getName();
 
 			if (name.equals(RoleConstants.OWNER)) {
-				User calendarResourceUser = _userLocalService.getUser(
+				User calendarResourceUser = _userLocalService.fetchUser(
 					calendarResource.getUserId());
 
-				notificationRecipients.add(
-					calendarResourceUser.getEmailAddress());
+				if (calendarResourceUser != null) {
+					notificationRecipients.add(
+						calendarResourceUser.getEmailAddress());
+				}
 
-				User calendarUser = _userLocalService.getUser(
+				User calendarUser = _userLocalService.fetchUser(
 					calendar.getUserId());
 
-				if (calendarResourceUser.getUserId() !=
+				if (calendarUser != null &&
+					calendarResourceUser != null &&
+					calendarResourceUser.getUserId() !=
 						calendarUser.getUserId()) {
 
 					notificationRecipients.add(calendarUser.getEmailAddress());
@@ -958,8 +1084,7 @@ public class DefaultICSContentListener implements ICSImportExportListener {
 	private void _replaceDescription(VEvent vEvent, XProperty vEventXAltDesc) {
 		String vEventAltDescValue = vEventXAltDesc.getValue();
 
-		Property vEventDescription =
-			vEvent.getProperty(Property.DESCRIPTION);
+		Property vEventDescription = vEvent.getProperty(Property.DESCRIPTION);
 
 		PropertyList vEventProperties = vEvent.getProperties();
 
