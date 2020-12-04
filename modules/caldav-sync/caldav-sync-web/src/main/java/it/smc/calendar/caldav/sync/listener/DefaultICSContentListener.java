@@ -64,6 +64,7 @@ import java.net.URI;
 
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
@@ -1001,14 +1002,16 @@ public class DefaultICSContentListener implements ICSImportExportListener {
 		String title = calendarBooking.getTitle(locale);
 		String description = calendarBooking.getDescription(locale);
 
-		Map<Locale, String> titleMap = calendarBooking.getTitleMap();
-		Map<Locale, String> descriptionMap =
-			calendarBooking.getDescriptionMap();
+		Map<Locale, String> titleMap = new HashMap<>();
+		Map<Locale, String> descriptionMap = new HashMap<>();
 
 		for (Locale l : LanguageUtil.getAvailableLocales()) {
 			titleMap.put(l, title);
 			descriptionMap.put(l, description);
 		}
+
+		calendarBooking.setTitleMap(titleMap);
+		calendarBooking.setDescriptionMap(descriptionMap);
 
 		_calendarBookingLocalService.updateCalendarBooking(calendarBooking);
 	}
