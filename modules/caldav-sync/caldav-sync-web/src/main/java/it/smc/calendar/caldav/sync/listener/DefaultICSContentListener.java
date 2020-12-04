@@ -1061,16 +1061,20 @@ public class DefaultICSContentListener implements ICSImportExportListener {
 			String name = role.getName();
 
 			if (name.equals(RoleConstants.OWNER)) {
-				User calendarResourceUser = _userLocalService.getUser(
+				User calendarResourceUser = _userLocalService.fetchUser(
 					calendarResource.getUserId());
 
-				notificationRecipients.add(
-					calendarResourceUser.getEmailAddress());
+				if (calendarResourceUser != null) {
+					notificationRecipients.add(
+						calendarResourceUser.getEmailAddress());
+				}
 
-				User calendarUser = _userLocalService.getUser(
+				User calendarUser = _userLocalService.fetchUser(
 					calendar.getUserId());
 
-				if (calendarResourceUser.getUserId() !=
+				if (calendarUser != null &&
+					calendarResourceUser != null &&
+					calendarResourceUser.getUserId() !=
 						calendarUser.getUserId()) {
 
 					notificationRecipients.add(calendarUser.getEmailAddress());
