@@ -43,12 +43,14 @@ import com.liferay.portal.kernel.xml.QName;
 import com.liferay.portal.kernel.xml.SAXReaderUtil;
 import com.liferay.portal.kernel.xml.XPath;
 
+import it.smc.calendar.caldav.helper.api.UserAgentHelperUtil;
 import it.smc.calendar.caldav.util.CalendarUtil;
 
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.function.Predicate;
 
 import javax.servlet.http.HttpServletRequest;
 
@@ -314,25 +316,14 @@ public class CalDAVUtil {
 	}
 
 	public static boolean isAndroid(WebDAVRequest webDAVRequest) {
-		String userAgent = getUserAgent(webDAVRequest);
-
-		if (Validator.isNull(userAgent)) {
-			return false;
-		}
-
-		return userAgent.contains("Android");
+		return isUserAgent(webDAVRequest, UserAgentHelperUtil::isAndroid);
 	}
 
 	public static boolean isAndroidCalDAVSyncAdapter(
 		WebDAVRequest webDAVRequest) {
 
-		String userAgent = getUserAgent(webDAVRequest);
-
-		if (Validator.isNull(userAgent)) {
-			return false;
-		}
-
-		return userAgent.contains("CalDAV Sync Adapter");
+		return isUserAgent(
+			webDAVRequest, UserAgentHelperUtil::isAndroidCalDAVSyncAdapter);
 	}
 
 	public static boolean isCalendarBookingRequest(
@@ -359,50 +350,19 @@ public class CalDAVUtil {
 	}
 
 	public static boolean isICal(WebDAVRequest webDAVRequest) {
-		String userAgent = getUserAgent(webDAVRequest);
-
-		if (Validator.isNull(userAgent)) {
-			return false;
-		}
-
-		return userAgent.contains("iCal");
+		return isUserAgent(webDAVRequest, UserAgentHelperUtil::isICal);
 	}
 
 	public static boolean isIOS(WebDAVRequest webDAVRequest) {
-		String userAgent = getUserAgent(webDAVRequest);
-
-		if (Validator.isNull(userAgent)) {
-			return false;
-		}
-
-		return userAgent.contains("iOS");
+		return isUserAgent(webDAVRequest, UserAgentHelperUtil::isIOS);
 	}
 
 	public static boolean isMacOSX(WebDAVRequest webDAVRequest) {
-		String userAgent = getUserAgent(webDAVRequest);
-
-		if (Validator.isNull(userAgent)) {
-			return false;
-		}
-
-		if (userAgent.contains("OS+X") || userAgent.contains("Mac+OS") ||
-			userAgent.contains("OS X") || userAgent.contains("Core") ||
-			userAgent.contains("OS_X") || (userAgent.contains("macOS"))) {
-
-			return true;
-		}
-
-		return false;
+		return isUserAgent(webDAVRequest, UserAgentHelperUtil::isMacOSX);
 	}
 
 	public static boolean isOpenSync(WebDAVRequest webDAVRequest) {
-		String userAgent = getUserAgent(webDAVRequest);
-
-		if (Validator.isNull(userAgent)) {
-			return false;
-		}
-
-		return userAgent.contains("OpenSync");
+		return isUserAgent(webDAVRequest, UserAgentHelperUtil::isOpenSync);
 	}
 
 	public static boolean isPrincipalRequest(WebDAVRequest webDAVRequest) {
@@ -428,15 +388,11 @@ public class CalDAVUtil {
 	}
 
 	public static boolean isThunderbird(HttpServletRequest request) {
-		String userAgent = getUserAgent(request);
-
-		return isThunderbird(userAgent);
+		return isUserAgent(request, UserAgentHelperUtil::isThunderbird);
 	}
 
 	public static boolean isThunderbird(WebDAVRequest webDAVRequest) {
-		String userAgent = getUserAgent(webDAVRequest);
-
-		return isThunderbird(userAgent);
+		return isUserAgent(webDAVRequest, UserAgentHelperUtil::isThunderbird);
 	}
 
 	private static String getUserAgent(HttpServletRequest request) {
@@ -453,18 +409,28 @@ public class CalDAVUtil {
 		return getUserAgent(webDAVRequest.getHttpServletRequest());
 	}
 
-	private static boolean isThunderbird(String userAgent) {
+	private static boolean isUserAgent(
+		WebDAVRequest request, Predicate<String> predicate) {
+
+		String userAgent = getUserAgent(request);
+
 		if (Validator.isNull(userAgent)) {
 			return false;
 		}
 
-		if (userAgent.contains("Thunderbird") ||
-			userAgent.contains("Lightning")) {
+		return predicate.test(userAgent);
+	}
 
-			return true;
+	private static boolean isUserAgent(
+		HttpServletRequest request, Predicate<String> predicate) {
+
+		String userAgent = getUserAgent(request);
+
+		if (Validator.isNull(userAgent)) {
+			return false;
 		}
 
-		return false;
+		return predicate.test(userAgent);
 	}
 
 	private static Log _log = LogFactoryUtil.getLog(CalDAVUtil.class);
