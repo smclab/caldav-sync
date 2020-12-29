@@ -1,6 +1,7 @@
 package it.smc.calendar.caldav.helper;
 
 import it.smc.calendar.caldav.helper.api.UserAgentHelper;
+import it.smc.calendar.caldav.helper.util.PropsValues;
 import org.osgi.service.component.annotations.Component;
 
 /**
@@ -14,40 +15,49 @@ public class UserAgentHelperImpl implements UserAgentHelper {
 
 	@Override
 	public boolean isAndroid(String userAgent) {
-		return userAgent.contains("Android");
+		return _contained(userAgent, PropsValues.USERAGENT_FINDER_ANDROID);
 	}
 
 	@Override
 	public boolean isAndroidCalDAVSyncAdapter(String userAgent) {
-		return userAgent.contains("CalDAV Sync Adapter");
+		return _contained(
+			userAgent, PropsValues.USERAGENT_FINDER_ANDROID_ICAL_ADAPTER);
 	}
 
 	@Override
 	public boolean isICal(String userAgent) {
-		return userAgent.contains("iCal");
+		return _contained(userAgent, PropsValues.USERAGENT_FINDER_ICAL);
 	}
 
 	@Override
 	public boolean isIOS(String userAgent) {
-		return userAgent.contains("iOS");
+		return _contained(userAgent, PropsValues.USERAGENT_FINDER_IOS);
 	}
 
 	@Override
 	public boolean isMacOSX(String userAgent) {
-		return userAgent.contains("OS+X") || userAgent.contains("Mac+OS") ||
-			   userAgent.contains("OS X") || userAgent.contains("Core") ||
-			   userAgent.contains("OS_X") || userAgent.contains("macOS");
+		return _contained(userAgent, PropsValues.USERAGENT_FINDER_MACOSX);
+
 	}
 
 	@Override
 	public boolean isOpenSync(String userAgent) {
-		return userAgent.contains("Thunderbird") ||
-			   userAgent.contains("Lightning");
+		return _contained(userAgent, PropsValues.USERAGENT_FINDER_OPENSYNC);
+
 	}
 
 	@Override
 	public boolean isThunderbird(String userAgent) {
-		return false;
+		return _contained(userAgent, PropsValues.USERAGENT_FINDER_THUNDERBIRD);
+
 	}
 
+	private boolean _contained(String userAgent, String[] values) {
+		for (String value : values) {
+			if (userAgent.contains(value)) {
+				return true;
+			}
+		}
+		return false;
+	}
 }

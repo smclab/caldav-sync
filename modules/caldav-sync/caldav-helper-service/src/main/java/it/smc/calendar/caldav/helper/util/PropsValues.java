@@ -42,4 +42,32 @@ public class PropsValues {
 		GetterUtil.getBoolean(
 			ConfigurationUtil.get(PropsKeys.PROPFIND_PROVIDE_USER_GROUPS));
 
+	public static final String[] USERAGENT_FINDER_ANDROID =
+		GetterUtil.getStringValues(
+			ConfigurationUtil.getArray(PropsKeys.USERAGENT_FINDER_ANDROID));
+
+	public static final String[] USERAGENT_FINDER_ANDROID_ICAL_ADAPTER =
+		GetterUtil.getStringValues(
+			ConfigurationUtil.getArray(
+				PropsKeys.USERAGENT_FINDER_ANDROID_ICAL_ADAPTER));
+
+	public static final String[] USERAGENT_FINDER_ICAL =
+		GetterUtil.getStringValues(
+			ConfigurationUtil.getArray(PropsKeys.USERAGENT_FINDER_ICAL));
+
+	public static final String[] USERAGENT_FINDER_IOS =
+		GetterUtil.getStringValues(
+			ConfigurationUtil.getArray(PropsKeys.USERAGENT_FINDER_IOS));
+
+	public static final String[] USERAGENT_FINDER_MACOSX =
+		GetterUtil.getStringValues(
+			ConfigurationUtil.getArray(PropsKeys.USERAGENT_FINDER_MACOSX));
+
+	public static final String[] USERAGENT_FINDER_OPENSYNC =
+		GetterUtil.getStringValues(
+			ConfigurationUtil.getArray(PropsKeys.USERAGENT_FINDER_OPENSYNC));
+
+	public static final String[] USERAGENT_FINDER_THUNDERBIRD =
+		GetterUtil.getStringValues(
+			ConfigurationUtil.getArray(PropsKeys.USERAGENT_FINDER_THUNDERBIRD));
 }

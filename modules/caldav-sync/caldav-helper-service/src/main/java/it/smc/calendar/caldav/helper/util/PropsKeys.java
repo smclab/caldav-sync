@@ -34,4 +34,24 @@ public class PropsKeys {
 	public static final String PROPFIND_PROVIDE_USER_GROUPS =
 		"propfind.provide.user.groups";
 
+	public static final String USERAGENT_FINDER_ANDROID =
+		"useragent.finder.android";
+
+	public static final String USERAGENT_FINDER_ANDROID_ICAL_ADAPTER =
+		"useragent.finder.android.ical.adapter";
+
+	public static final String USERAGENT_FINDER_ICAL =
+		"useragent.finder.ical";
+
+	public static final String USERAGENT_FINDER_IOS =
+		"useragent.finder.ios";
+
+	public static final String USERAGENT_FINDER_MACOSX =
+		"useragent.finder.macosx";
+
+	public static final String USERAGENT_FINDER_OPENSYNC =
+		"useragent.finder.opensync";
+
+	public static final String USERAGENT_FINDER_THUNDERBIRD =
+		"useragent.finder.thunderbird";
 }
