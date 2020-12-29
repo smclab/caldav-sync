@@ -387,7 +387,7 @@ public class CalDAVUtil {
 
 		if (userAgent.contains("OS+X") || userAgent.contains("Mac+OS") ||
 			userAgent.contains("OS X") || userAgent.contains("Core") ||
-			userAgent.contains("OS_X")) {
+			userAgent.contains("OS_X") || (userAgent.contains("macOS"))) {
 
 			return true;
 		}
