@@ -40,11 +40,9 @@ public class PropsKeys {
 	public static final String USERAGENT_FINDER_ANDROID_ICAL_ADAPTER =
 		"useragent.finder.android.ical.adapter";
 
-	public static final String USERAGENT_FINDER_ICAL =
-		"useragent.finder.ical";
+	public static final String USERAGENT_FINDER_ICAL = "useragent.finder.ical";
 
-	public static final String USERAGENT_FINDER_IOS =
-		"useragent.finder.ios";
+	public static final String USERAGENT_FINDER_IOS = "useragent.finder.ios";
 
 	public static final String USERAGENT_FINDER_MACOSX =
 		"useragent.finder.macosx";
@@ -54,4 +52,5 @@ public class PropsKeys {
 
 	public static final String USERAGENT_FINDER_THUNDERBIRD =
 		"useragent.finder.thunderbird";
+
 }

@@ -316,13 +316,13 @@ public class CalDAVUtil {
 	}
 
 	public static boolean isAndroid(WebDAVRequest webDAVRequest) {
-		return isUserAgent(webDAVRequest, UserAgentHelperUtil::isAndroid);
+		return _isUserAgent(webDAVRequest, UserAgentHelperUtil::isAndroid);
 	}
 
 	public static boolean isAndroidCalDAVSyncAdapter(
 		WebDAVRequest webDAVRequest) {
 
-		return isUserAgent(
+		return _isUserAgent(
 			webDAVRequest, UserAgentHelperUtil::isAndroidCalDAVSyncAdapter);
 	}
 
@@ -350,19 +350,19 @@ public class CalDAVUtil {
 	}
 
 	public static boolean isICal(WebDAVRequest webDAVRequest) {
-		return isUserAgent(webDAVRequest, UserAgentHelperUtil::isICal);
+		return _isUserAgent(webDAVRequest, UserAgentHelperUtil::isICal);
 	}
 
 	public static boolean isIOS(WebDAVRequest webDAVRequest) {
-		return isUserAgent(webDAVRequest, UserAgentHelperUtil::isIOS);
+		return _isUserAgent(webDAVRequest, UserAgentHelperUtil::isIOS);
 	}
 
 	public static boolean isMacOSX(WebDAVRequest webDAVRequest) {
-		return isUserAgent(webDAVRequest, UserAgentHelperUtil::isMacOSX);
+		return _isUserAgent(webDAVRequest, UserAgentHelperUtil::isMacOSX);
 	}
 
 	public static boolean isOpenSync(WebDAVRequest webDAVRequest) {
-		return isUserAgent(webDAVRequest, UserAgentHelperUtil::isOpenSync);
+		return _isUserAgent(webDAVRequest, UserAgentHelperUtil::isOpenSync);
 	}
 
 	public static boolean isPrincipalRequest(WebDAVRequest webDAVRequest) {
@@ -388,14 +388,14 @@ public class CalDAVUtil {
 	}
 
 	public static boolean isThunderbird(HttpServletRequest request) {
-		return isUserAgent(request, UserAgentHelperUtil::isThunderbird);
+		return _isUserAgent(request, UserAgentHelperUtil::isThunderbird);
 	}
 
 	public static boolean isThunderbird(WebDAVRequest webDAVRequest) {
-		return isUserAgent(webDAVRequest, UserAgentHelperUtil::isThunderbird);
+		return _isUserAgent(webDAVRequest, UserAgentHelperUtil::isThunderbird);
 	}
 
-	private static String getUserAgent(HttpServletRequest request) {
+	private static String _getUserAgent(HttpServletRequest request) {
 		String userAgent = request.getHeader(HttpHeaders.USER_AGENT);
 
 		if (_log.isDebugEnabled()) {
@@ -405,14 +405,14 @@ public class CalDAVUtil {
 		return userAgent;
 	}
 
-	private static String getUserAgent(WebDAVRequest webDAVRequest) {
-		return getUserAgent(webDAVRequest.getHttpServletRequest());
+	private static String _getUserAgent(WebDAVRequest webDAVRequest) {
+		return _getUserAgent(webDAVRequest.getHttpServletRequest());
 	}
 
-	private static boolean isUserAgent(
-		WebDAVRequest request, Predicate<String> predicate) {
+	private static boolean _isUserAgent(
+		HttpServletRequest request, Predicate<String> predicate) {
 
-		String userAgent = getUserAgent(request);
+		String userAgent = _getUserAgent(request);
 
 		if (Validator.isNull(userAgent)) {
 			return false;
@@ -421,10 +421,10 @@ public class CalDAVUtil {
 		return predicate.test(userAgent);
 	}
 
-	private static boolean isUserAgent(
-		HttpServletRequest request, Predicate<String> predicate) {
+	private static boolean _isUserAgent(
+		WebDAVRequest request, Predicate<String> predicate) {
 
-		String userAgent = getUserAgent(request);
+		String userAgent = _getUserAgent(request);
 
 		if (Validator.isNull(userAgent)) {
 			return false;

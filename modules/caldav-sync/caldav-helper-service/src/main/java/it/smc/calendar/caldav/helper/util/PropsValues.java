@@ -70,4 +70,5 @@ public class PropsValues {
 	public static final String[] USERAGENT_FINDER_THUNDERBIRD =
 		GetterUtil.getStringValues(
 			ConfigurationUtil.getArray(PropsKeys.USERAGENT_FINDER_THUNDERBIRD));
+
 }

@@ -77,6 +77,7 @@ public class CalendarUtil {
 			RestrictionsFactoryUtil.eq("calendarId", calendar.getCalendarId()));
 
 		List<Integer> calendarStatus = new ArrayList<>();
+
 		calendarStatus.add(WorkflowConstants.STATUS_APPROVED);
 		calendarStatus.add(WorkflowConstants.STATUS_PENDING);
 		calendarStatus.add(CalendarBookingWorkflowConstants.STATUS_MAYBE);

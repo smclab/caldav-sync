@@ -25,10 +25,12 @@ import java.util.Optional;
  */
 public interface CalendarHelper {
 
-	Optional<User> getCalendarResourceUser(CalendarResource calendarResource);
+	public Optional<User> getCalendarResourceUser(
+		CalendarResource calendarResource);
 
-	boolean isCalendarResourceUserCalendar(CalendarResource calendarResource);
+	public boolean isCalendarResourceUserCalendar(
+		CalendarResource calendarResource);
 
-	boolean isCalendarUserCalendar(Calendar calendar);
+	public boolean isCalendarUserCalendar(Calendar calendar);
 
 }
