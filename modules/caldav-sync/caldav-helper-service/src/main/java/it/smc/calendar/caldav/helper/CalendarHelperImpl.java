@@ -21,18 +21,17 @@ import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.model.User;
 import com.liferay.portal.kernel.service.UserLocalServiceUtil;
+
 import it.smc.calendar.caldav.helper.api.CalendarHelper;
-import org.osgi.service.component.annotations.Component;
 
 import java.util.Optional;
+
+import org.osgi.service.component.annotations.Component;
 
 /**
  * @author Fabio Pezzutto
  */
-@Component(
-	immediate = true,
-	service = CalendarHelper.class
-)
+@Component(immediate = true, service = CalendarHelper.class)
 public class CalendarHelperImpl implements CalendarHelper {
 
 	public Optional<User> getCalendarResourceUser(
@@ -55,17 +54,18 @@ public class CalendarHelperImpl implements CalendarHelper {
 	public boolean isCalendarResourceUserCalendar(
 		CalendarResource calendarResource) {
 
-		return calendarResource.getClassName().equals(User.class.getName());
+		return calendarResource.getClassName(
+		).equals(
+			User.class.getName()
+		);
 	}
 
-	public boolean isCalendarUserCalendar(
-		Calendar calendar) {
-
+	public boolean isCalendarUserCalendar(Calendar calendar) {
 		try {
 			return isCalendarResourceUserCalendar(
 				calendar.getCalendarResource());
 		}
-		catch(PortalException pe) {
+		catch (PortalException pe) {
 			_log.error(pe, pe);
 		}
 

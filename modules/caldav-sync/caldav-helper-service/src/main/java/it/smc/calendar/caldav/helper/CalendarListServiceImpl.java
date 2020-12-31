@@ -34,15 +34,17 @@ import com.liferay.portal.kernel.util.PortalUtil;
 import com.liferay.portal.kernel.util.SessionClicks;
 import com.liferay.portal.kernel.util.StringUtil;
 
+import it.smc.calendar.caldav.helper.api.CalendarListService;
+import it.smc.calendar.caldav.helper.util.PropsValues;
+
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
 import org.osgi.service.component.annotations.ReferencePolicyOption;
-
-import it.smc.calendar.caldav.helper.api.CalendarListService;
-import it.smc.calendar.caldav.helper.util.PropsValues;
 
 /**
  * @author rge
@@ -58,7 +60,7 @@ public class CalendarListServiceImpl implements CalendarListService {
 			PropsValues.PROPFIND_PROVIDE_SESSIONCLICKS_CALENDARS;
 		boolean hidePersonalCalendar = PropsValues.HIDE_PERSONAL_CALENDAR;
 
-		List<Calendar> calendars = new ArrayList<>();
+		Set<Calendar> calendars = new HashSet<>();
 
 		if (useSessionClicksCalendars) {
 			if (!hidePersonalCalendar) {
@@ -115,7 +117,7 @@ public class CalendarListServiceImpl implements CalendarListService {
 			List<Calendar> selectedCalendars = getSelectedCalendars(
 				permissionChecker);
 
-			if (selectedCalendars != null){
+			if (selectedCalendars != null) {
 				if (_log.isDebugEnabled()) {
 					for (Calendar calendar : selectedCalendars) {
 						_log.debug(" - " + calendar.getName());
@@ -146,7 +148,7 @@ public class CalendarListServiceImpl implements CalendarListService {
 			}
 		}
 
-		return calendars;
+		return new ArrayList<>(calendars);
 	}
 
 	public List<Calendar> getSelectedCalendars(
@@ -170,8 +172,7 @@ public class CalendarListServiceImpl implements CalendarListService {
 			StringUtil.split(calendarIdsPref));
 
 		for (long calendarId : calendarIds) {
-			Calendar calendar = _calendarLocalService.fetchCalendar(
-				calendarId);
+			Calendar calendar = _calendarLocalService.fetchCalendar(calendarId);
 
 			if (calendar == null) {
 				continue;
@@ -217,14 +218,14 @@ public class CalendarListServiceImpl implements CalendarListService {
 
 		List<CalendarResource> calendarResources =
 			_calendarResourceService.search(
-				permissionChecker.getCompanyId(), new long[] {}, new long[] {
-					classNameId
-				}, null, true, true, QueryUtil.ALL_POS, QueryUtil.ALL_POS, null);
+				permissionChecker.getCompanyId(), new long[0],
+				new long[] {classNameId}, null, true, true, QueryUtil.ALL_POS,
+				QueryUtil.ALL_POS, null);
 
 		for (CalendarResource calendarResource : calendarResources) {
 			for (Calendar calendar : calendarResource.getCalendars()) {
 				if (_calendarModelResourcePermission.contains(
-					permissionChecker, calendar, ActionKeys.VIEW)) {
+						permissionChecker, calendar, ActionKeys.VIEW)) {
 
 					calendars.add(calendar);
 				}
@@ -250,9 +251,9 @@ public class CalendarListServiceImpl implements CalendarListService {
 	@Reference(policyOption = ReferencePolicyOption.GREEDY)
 	private CalendarLocalService _calendarLocalService;
 
+	private ModelResourcePermission<Calendar> _calendarModelResourcePermission;
+
 	@Reference(policyOption = ReferencePolicyOption.GREEDY)
 	private CalendarResourceService _calendarResourceService;
-
-	private ModelResourcePermission<Calendar> _calendarModelResourcePermission;
 
 }
