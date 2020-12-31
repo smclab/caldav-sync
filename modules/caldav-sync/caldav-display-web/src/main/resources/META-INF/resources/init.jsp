@@ -26,18 +26,16 @@ taglib uri="http://liferay.com/tld/ui" prefix="liferay-ui" %>
 <%@ page import="com.liferay.calendar.constants.CalendarActionKeys" %><%@
 page import="com.liferay.calendar.model.Calendar" %><%@
 page import="com.liferay.calendar.model.CalendarResource" %><%@
-page import="it.smc.calendar.caldav.sync.util.CalendarModelPermission" %><%@
 page import="com.liferay.portal.kernel.language.LanguageUtil" %><%@
 page import="com.liferay.portal.kernel.portlet.LiferayWindowState" %><%@
 page import="com.liferay.portal.kernel.util.PortalUtil" %><%@
 page import="com.liferay.portal.kernel.util.StringPool" %>
 
 <%@ page import="it.smc.calendar.caldav.sync.util.CalDAVUtil" %><%@
+page import="it.smc.calendar.caldav.sync.util.CalendarModelPermission" %><%@
 page import="it.smc.calendar.caldav.util.CalendarUtil" %>
 
 <%@ page import="java.util.List" %>
-
-<%@ page import="javax.portlet.PortletURL" %>
 
 <liferay-theme:defineObjects />
 

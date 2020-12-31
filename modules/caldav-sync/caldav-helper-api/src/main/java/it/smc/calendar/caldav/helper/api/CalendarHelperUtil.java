@@ -17,11 +17,12 @@ package it.smc.calendar.caldav.helper.api;
 import com.liferay.calendar.model.Calendar;
 import com.liferay.calendar.model.CalendarResource;
 import com.liferay.portal.kernel.model.User;
+
+import java.util.Optional;
+
 import org.osgi.framework.Bundle;
 import org.osgi.framework.FrameworkUtil;
 import org.osgi.util.tracker.ServiceTracker;
-
-import java.util.Optional;
 
 /**
  * @author Fabio Pezzutto
@@ -34,6 +35,19 @@ public class CalendarHelperUtil {
 		return getService().getCalendarResourceUser(calendarResource);
 	}
 
+	public static CalendarHelper getService() {
+		if (_serviceTracker == null) {
+			Bundle bundle = FrameworkUtil.getBundle(CalendarHelper.class);
+
+			_serviceTracker = new ServiceTracker<>(
+				bundle.getBundleContext(), CalendarHelper.class, null);
+
+			_serviceTracker.open();
+		}
+
+		return _serviceTracker.getService();
+	}
+
 	public static boolean isCalendarResourceUserCalendar(
 		CalendarResource calendarResource) {
 
@@ -41,22 +55,7 @@ public class CalendarHelperUtil {
 	}
 
 	public static boolean isCalendarUserCalendar(Calendar calendar) {
-
 		return getService().isCalendarUserCalendar(calendar);
-	}
-
-	public static CalendarHelper getService() {
-		if (_serviceTracker == null) {
-			Bundle bundle = FrameworkUtil.getBundle(CalendarHelper.class);
-
-			_serviceTracker =
-				new ServiceTracker<CalendarHelper, CalendarHelper>(
-					bundle.getBundleContext(), CalendarHelper.class, null);
-
-			_serviceTracker.open();
-		}
-
-		return _serviceTracker.getService();
 	}
 
 	private static ServiceTracker<CalendarHelper, CalendarHelper>

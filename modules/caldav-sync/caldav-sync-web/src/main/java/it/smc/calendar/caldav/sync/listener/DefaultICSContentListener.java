@@ -185,8 +185,7 @@ public class DefaultICSContentListener implements ICSImportExportListener {
 					updateDowloadedInvitations(
 						currentUser, iCalCalendar, vEvent, calendarBooking);
 
-					updateAllDayDate(
-						vEvent, calendarBooking, currentUser);
+					updateAllDayDate(vEvent, calendarBooking, currentUser);
 
 					DateTime modifiedDate = new DateTime(
 						calendarBooking.getModifiedDate(
@@ -432,9 +431,8 @@ public class DefaultICSContentListener implements ICSImportExportListener {
 
 			TimeZone utcTimeZone = TimeZone.getTimeZone("UTC");
 
-			java.util.Calendar startJCalendar =
-				JCalendarUtil.getJCalendar(
-					calendarBooking.getStartTime(), utcTimeZone);
+			java.util.Calendar startJCalendar = JCalendarUtil.getJCalendar(
+				calendarBooking.getStartTime(), utcTimeZone);
 
 			boolean normalize = true;
 
@@ -442,8 +440,7 @@ public class DefaultICSContentListener implements ICSImportExportListener {
 				normalize = false;
 			}
 
-			java.util.Calendar endJCalendar =
-				JCalendarUtil.getJCalendar(
+			java.util.Calendar endJCalendar = JCalendarUtil.getJCalendar(
 				calendarBooking.getEndTime(), utcTimeZone);
 
 			endJCalendar.add(java.util.Calendar.DAY_OF_MONTH, 1);
@@ -458,12 +455,10 @@ public class DefaultICSContentListener implements ICSImportExportListener {
 			}
 
 			DtStart dtStart = new DtStart(
-				new net.fortuna.ical4j.model.Date(utcStart),
-				true);
+				new net.fortuna.ical4j.model.Date(utcStart), true);
 
 			DtEnd dtEnd = new DtEnd(
-				new net.fortuna.ical4j.model.Date(utcEnd),
-				true);
+				new net.fortuna.ical4j.model.Date(utcEnd), true);
 
 			propertyList.remove(vEvent.getStartDate());
 
@@ -473,6 +468,39 @@ public class DefaultICSContentListener implements ICSImportExportListener {
 
 			propertyList.add(dtEnd);
 		}
+	}
+
+	protected void updateAltDescription(
+			CalendarBooking calendarBooking, VEvent vEvent)
+		throws PortalException {
+
+		XProperty vEventXAltDesc = (XProperty)vEvent.getProperty("X-ALT-DESC");
+
+		if (vEventXAltDesc == null) {
+			return;
+		}
+
+		if (calendarBooking != null) {
+			User calendarBookingUser = getCalendarBookingUser(calendarBooking);
+
+			Locale locale = calendarBookingUser.getLocale();
+
+			String calendarBookingDescription = calendarBooking.getDescription(
+				locale);
+
+			XProperty calendarBookingXAltDesc = new XProperty(
+				"X-ALT-DESC", calendarBookingDescription);
+
+			ParameterList parameters = calendarBookingXAltDesc.getParameters();
+
+			parameters.add(new XParameter("FMTTYPE", "text/html"));
+
+			if (calendarBookingXAltDesc.equals(vEventXAltDesc)) {
+				return;
+			}
+		}
+
+		_replaceDescription(vEvent, vEventXAltDesc);
 	}
 
 	protected void updateBookingAttendees(
@@ -951,42 +979,6 @@ public class DefaultICSContentListener implements ICSImportExportListener {
 		propertyList.addAll(allAttendees);
 	}
 
-	protected void updateAltDescription(
-			CalendarBooking calendarBooking, VEvent vEvent)
-		throws PortalException {
-
-		XProperty vEventXAltDesc = (XProperty)vEvent.getProperty("X-ALT-DESC");
-
-		if (vEventXAltDesc == null) {
-			return;
-		}
-
-		if (calendarBooking != null) {
-			User calendarBookingUser =
-				getCalendarBookingUser(calendarBooking);
-
-			Locale locale = calendarBookingUser.getLocale();
-
-			String calendarBookingDescription =
-				calendarBooking.getDescription(locale);
-
-			XProperty calendarBookingXAltDesc = new XProperty(
-				"X-ALT-DESC", calendarBookingDescription);
-
-			ParameterList parameters =
-				calendarBookingXAltDesc.getParameters();
-
-			parameters.add(new XParameter("FMTTYPE", "text/html"));
-
-			if (calendarBookingXAltDesc.equals(vEventXAltDesc)) {
-				return;
-			}
-
-		}
-
-		_replaceDescription(vEvent, vEventXAltDesc);
-	}
-
 	protected void updateTitleAndDescription(
 		CalendarBooking calendarBooking, VEvent vEvent) {
 
@@ -994,8 +986,10 @@ public class DefaultICSContentListener implements ICSImportExportListener {
 
 		try {
 			Calendar calendar = calendarBooking.getCalendar();
+
 			long userId = calendar.getUserId();
 			User user = _userLocalService.getUser(userId);
+
 			locale = user.getLocale();
 		}
 		catch (PortalException e) {
@@ -1050,10 +1044,9 @@ public class DefaultICSContentListener implements ICSImportExportListener {
 				User calendarUser = _userLocalService.fetchUser(
 					calendar.getUserId());
 
-				if (calendarUser != null &&
-					calendarResourceUser != null &&
-					calendarResourceUser.getUserId() !=
-						calendarUser.getUserId()) {
+				if ((calendarUser != null) && (calendarResourceUser != null) &&
+					(calendarResourceUser.getUserId() !=
+						calendarUser.getUserId())) {
 
 					notificationRecipients.add(calendarUser.getEmailAddress());
 				}

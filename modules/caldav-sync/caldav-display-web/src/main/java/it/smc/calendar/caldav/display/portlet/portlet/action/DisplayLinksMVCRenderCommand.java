@@ -11,18 +11,21 @@
  * FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
  * details.
  */
+
 package it.smc.calendar.caldav.display.portlet.portlet.action;
+
 /**
  * @author dco
  */
-
 import com.liferay.portal.kernel.portlet.bridges.mvc.MVCRenderCommand;
+
 import it.smc.calendar.caldav.display.portlet.constants.CalDAVDisplayPortletKeys;
-import org.osgi.service.component.annotations.Component;
 
 import javax.portlet.PortletException;
 import javax.portlet.RenderRequest;
 import javax.portlet.RenderResponse;
+
+import org.osgi.service.component.annotations.Component;
 
 @Component(
 	immediate = true,
@@ -36,9 +39,10 @@ public class DisplayLinksMVCRenderCommand implements MVCRenderCommand {
 
 	@Override
 	public String render(
-		RenderRequest renderRequest, RenderResponse renderResponse)
+			RenderRequest renderRequest, RenderResponse renderResponse)
 		throws PortletException {
 
 		return "/display_links.jsp";
 	}
+
 }
