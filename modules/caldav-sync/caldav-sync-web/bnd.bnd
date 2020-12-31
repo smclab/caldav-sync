@@ -1,12 +1,10 @@
 Bundle-Activator: it.smc.calendar.caldav.sync.listener.Activator
-
 Bundle-Copyright: SMC Treviso
 Bundle-DocURL: http://www.smc.it
 Bundle-License: LGPL
-
 Bundle-Name: CalDAV Sync Web
 Bundle-SymbolicName: it.smc.calendar.caldav
-Bundle-Version: 3.1.0
+Bundle-Version: 3.1.1
 
 DynamicImport-Package: *
 Export-Package:\
