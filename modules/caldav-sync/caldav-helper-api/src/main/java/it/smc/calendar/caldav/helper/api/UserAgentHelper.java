@@ -14,23 +14,23 @@
 
 package it.smc.calendar.caldav.helper.api;
 
-import com.liferay.calendar.model.Calendar;
-import com.liferay.calendar.model.CalendarResource;
-import com.liferay.portal.kernel.model.User;
-
-import java.util.Optional;
-
 /**
- * @author Fabio Pezzutto
+ * @author Mirko Zizzari
  */
-public interface CalendarHelper {
+public interface UserAgentHelper {
 
-	public Optional<User> getCalendarResourceUser(
-		CalendarResource calendarResource);
+	public boolean isAndroid(String userAgent);
 
-	public boolean isCalendarResourceUserCalendar(
-		CalendarResource calendarResource);
+	public boolean isAndroidCalDAVSyncAdapter(String userAgent);
 
-	public boolean isCalendarUserCalendar(Calendar calendar);
+	public boolean isICal(String userAgent);
+
+	public boolean isIOS(String userAgent);
+
+	public boolean isMacOSX(String userAgent);
+
+	public boolean isOpenSync(String userAgent);
+
+	public boolean isThunderbird(String userAgent);
 
 }

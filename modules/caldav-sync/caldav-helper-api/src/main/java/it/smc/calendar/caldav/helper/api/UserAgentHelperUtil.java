@@ -14,33 +14,21 @@
 
 package it.smc.calendar.caldav.helper.api;
 
-import com.liferay.calendar.model.Calendar;
-import com.liferay.calendar.model.CalendarResource;
-import com.liferay.portal.kernel.model.User;
-
-import java.util.Optional;
-
 import org.osgi.framework.Bundle;
 import org.osgi.framework.FrameworkUtil;
 import org.osgi.util.tracker.ServiceTracker;
 
 /**
- * @author Fabio Pezzutto
+ * @author Mirko Zizzari
  */
-public class CalendarHelperUtil {
+public class UserAgentHelperUtil {
 
-	public static Optional<User> getCalendarResourceUser(
-		CalendarResource calendarResource) {
-
-		return getService().getCalendarResourceUser(calendarResource);
-	}
-
-	public static CalendarHelper getService() {
+	public static UserAgentHelper getService() {
 		if (_serviceTracker == null) {
 			Bundle bundle = FrameworkUtil.getBundle(CalendarHelper.class);
 
 			_serviceTracker = new ServiceTracker<>(
-				bundle.getBundleContext(), CalendarHelper.class, null);
+				bundle.getBundleContext(), UserAgentHelper.class, null);
 
 			_serviceTracker.open();
 		}
@@ -48,17 +36,35 @@ public class CalendarHelperUtil {
 		return _serviceTracker.getService();
 	}
 
-	public static boolean isCalendarResourceUserCalendar(
-		CalendarResource calendarResource) {
-
-		return getService().isCalendarResourceUserCalendar(calendarResource);
+	public static boolean isAndroid(String userAgent) {
+		return getService().isAndroid(userAgent);
 	}
 
-	public static boolean isCalendarUserCalendar(Calendar calendar) {
-		return getService().isCalendarUserCalendar(calendar);
+	public static boolean isAndroidCalDAVSyncAdapter(String userAgent) {
+		return getService().isAndroidCalDAVSyncAdapter(userAgent);
 	}
 
-	private static ServiceTracker<CalendarHelper, CalendarHelper>
+	public static boolean isICal(String userAgent) {
+		return getService().isICal(userAgent);
+	}
+
+	public static boolean isIOS(String userAgent) {
+		return getService().isIOS(userAgent);
+	}
+
+	public static boolean isMacOSX(String userAgent) {
+		return getService().isMacOSX(userAgent);
+	}
+
+	public static boolean isOpenSync(String userAgent) {
+		return getService().isOpenSync(userAgent);
+	}
+
+	public static boolean isThunderbird(String userAgent) {
+		return getService().isThunderbird(userAgent);
+	}
+
+	private static ServiceTracker<UserAgentHelper, UserAgentHelper>
 		_serviceTracker;
 
 }
