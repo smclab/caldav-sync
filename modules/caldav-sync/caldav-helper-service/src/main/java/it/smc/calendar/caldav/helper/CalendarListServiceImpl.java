@@ -35,6 +35,7 @@ import com.liferay.portal.kernel.util.SessionClicks;
 import com.liferay.portal.kernel.util.StringUtil;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -75,15 +76,13 @@ public class CalendarListServiceImpl implements CalendarListService {
 					List<Calendar> userCalendars = getUserCalendars(
 						permissionChecker.getUserId());
 
-					if (userCalendars != null) {
-						if (_log.isDebugEnabled()) {
-							for (Calendar calendar : userCalendars) {
-								_log.debug(" - " + calendar.getName());
-							}
+					if (_log.isDebugEnabled()) {
+						for (Calendar calendar : userCalendars) {
+							_log.debug(" - " + calendar.getName());
 						}
-
-						calendars.addAll(userCalendars);
 					}
+
+					calendars.addAll(userCalendars);
 				}
 			}
 
@@ -222,7 +221,7 @@ public class CalendarListServiceImpl implements CalendarListService {
 			_log.error(pe, pe);
 		}
 
-		return null;
+		return Collections.emptyList();
 	}
 
 	public List<Calendar> getUserGroupCalendars(
