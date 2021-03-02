@@ -117,7 +117,7 @@ public class CalendarListServiceImpl implements CalendarListService {
 			List<Calendar> selectedCalendars = getSelectedCalendars(
 				permissionChecker);
 
-			if (selectedCalendars != null){
+			if (selectedCalendars != null) {
 				if (_log.isDebugEnabled()) {
 					for (Calendar calendar : selectedCalendars) {
 						_log.debug(" - " + calendar.getName());
@@ -136,14 +136,22 @@ public class CalendarListServiceImpl implements CalendarListService {
 				QueryUtil.ALL_POS, QueryUtil.ALL_POS);
 
 			for (Calendar calendar : allCalendars) {
-				if (_calendarModelResourcePermission.contains(
+				try {
+					if (_calendarModelResourcePermission.contains(
 						permissionChecker, calendar, ActionKeys.VIEW)) {
 
-					if (_log.isDebugEnabled()) {
-						_log.debug(" - " + calendar.getName());
-					}
+						if (_log.isDebugEnabled()) {
+							_log.debug(" - " + calendar.getName());
+						}
 
-					calendars.add(calendar);
+						calendars.add(calendar);
+					}
+				}
+				catch (PortalException pe) {
+					if (_log.isWarnEnabled()) {
+						_log.warn(
+							"Can not add calendar: " + calendar.getName(), pe);
+					}
 				}
 			}
 		}
@@ -179,10 +187,18 @@ public class CalendarListServiceImpl implements CalendarListService {
 				continue;
 			}
 
-			if (_calendarModelResourcePermission.contains(
+			try {
+				if (_calendarModelResourcePermission.contains(
 					permissionChecker, calendarId, ActionKeys.VIEW)) {
 
-				calendars.add(calendar);
+					calendars.add(calendar);
+				}
+			}
+			catch (PortalException pe) {
+				if (_log.isWarnEnabled()) {
+					_log.warn(
+						"Can not add calendar: " + calendar.getName(), pe);
+				}
 			}
 		}
 
@@ -225,10 +241,18 @@ public class CalendarListServiceImpl implements CalendarListService {
 
 		for (CalendarResource calendarResource : calendarResources) {
 			for (Calendar calendar : calendarResource.getCalendars()) {
-				if (_calendarModelResourcePermission.contains(
-					permissionChecker, calendar, ActionKeys.VIEW)) {
+				try {
+					if (_calendarModelResourcePermission.contains(
+						permissionChecker, calendar, ActionKeys.VIEW)) {
 
-					calendars.add(calendar);
+						calendars.add(calendar);
+					}
+				}
+				catch (PortalException pe) {
+					if (_log.isWarnEnabled()) {
+						_log.warn(
+							"Can not add calendar: " + calendar.getName(), pe);
+					}
 				}
 			}
 		}
