@@ -10,8 +10,10 @@ Bundle-Version: 4.0.0
 
 DynamicImport-Package: *
 Export-Package:\
+	it.smc.calendar.caldav.sync.constants,\
 	it.smc.calendar.caldav.sync.util,\
 	it.smc.calendar.caldav.util
+
 Import-Package:\
 	!com.liferay.util.xml,\
 	\
