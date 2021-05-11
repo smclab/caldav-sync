@@ -1,10 +1,10 @@
 plugins {
-    id 'java-platform'
-    id 'maven-publish'
+	id 'java-platform'
+	id 'maven-publish'
 }
 
 repositories {
-    mavenCentral()
+	mavenCentral()
 }
 
 ext.pomInfo = {
@@ -68,7 +68,7 @@ publishing {
 
 						String artifactName = prj.property('archivesBaseName')
 						boolean changesMode = Boolean.valueOf(prj.property('changesMode'))
-						
+
 						def changedProjects = prj.property('changedProjects')
 
 						def pomDep = xml.dependencyManagement.dependencies.dependency.find {
@@ -114,6 +114,33 @@ dependencies {
 
 			//runtime project("${prj.path}")
 			api project("${prj.path}")
+		}
+
+		// Includo anche tutti i moduli dei profili di distribuzione
+		rootProject.configurations.each { config ->
+			if (!config.name.startsWith("dist") && !config.name.startsWith("feature")) {
+				return;
+			}
+
+			//println "config ${config}"
+
+			def resolved = config.getResolvedConfiguration()
+
+			//println "resolved ${resolved}"
+
+			resolved.getLenientConfiguration().getFirstLevelModuleDependencies().each{ dep ->
+				//println "${dep.class} ${dep.moduleGroup}:${dep.moduleName}:${dep.moduleVersion}"
+				api("${dep.moduleGroup}:${dep.moduleName}:${dep.moduleVersion}")
+			}
+
+			/*
+			config.dependencies.each { dep ->
+				if (dep instanceof ExternalDependency) {
+					ExternalDependency extDep = dep as ExternalDependency
+					api("${extDep.group}:${extDep.name}:${extDep.version}")
+				}
+			}
+			*/
 		}
 	}
 }

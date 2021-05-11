@@ -30,7 +30,7 @@ String boms = properties["product.bill.of.meterials"]
 if (boms != null) {
 	productBoms = boms.split(",")
 
-	// Create Ditribution Profile (configuration) for BoMs
+	// Create Distribution Profile (configuration) for BoMs
 	configurations {
 		distBOM {
 			transitive = false
@@ -57,18 +57,6 @@ def isChangedProject = {
 	ext.changedProjects.contains(it) ? true : false
 }
 
-
-task listProjects() {
-	doLast {
-		rootProject.subprojects.each { prj ->
-			if (!prj.subprojects.empty) return
-			if (prj.path.equals(":bom") || prj.path.startsWith(":plugins-sdk")) return
-
-			println "${prj.path}\t${prj.group}:${prj.property('archivesBaseName')}:${prj.version}"
-		}
-	}
-}
-
 gradle.beforeProject {
 	Project project ->
 
@@ -87,10 +75,46 @@ gradle.beforeProject {
 		// Add Nexus upload tasks (for binary and sources) and other
 		// useful elements or tasks
 
-		if (project.tasks.findByName("jar")) {
+		def managedType = ""
+
+		if (project.tasks.findByName("war")) {
+			if (project.path.startsWith(":wars:")) {
+				managedType = "war"
+			}
+
+			task packageForDist(dependsOn: war) {
+				// Empty. Only needed for task dependencies
+			}
+
+		}
+		else if (project.tasks.findByName("jar")) {
+			managedType = "jar"
+
 			task packageForDist(dependsOn: jar) {
 				// Empty. Only needed for task dependencies
 			}
+
+			task releaseIncrementMajor() {
+				doLast {
+					_updateBndBundleVersion(project, 1)
+				}
+			}
+
+			task releaseIncrementMinor() {
+				doLast {
+					_updateBndBundleVersion(project, 2)
+				}
+			}
+
+			task releaseIncrementMicro() {
+				doLast {
+					_updateBndBundleVersion(project, 3)
+				}
+			}
+		}
+
+		if (managedType.equals("war") || managedType.equals("jar")) {
+			//println "ext=${managedType}"
 
 			// Force encoding (for portability)
 			compileJava.options.encoding = 'UTF-8'
@@ -111,19 +135,11 @@ gradle.beforeProject {
 				}
 			}
 
-			task releaseIncrementMajor() {
-				doLast {
-					_updateBndBundleVersion(project, false)
-				}
-			}
-
-			task releaseIncrementMinor() {
-				doLast {
-					_updateBndBundleVersion(project, true)
-				}
-			}
-
 			// Set real artifact version
+
+			if (!project.hasProperty("version")) {
+				throw new GradleException("No available property 'version'")
+			}
 
 			def finalVersion = project.property('version')
 			ext.originalVersion = finalVersion
@@ -148,11 +164,21 @@ gradle.beforeProject {
 			project.plugins.withId('maven-publish') {
 				publishing {
 					publications {
-						mavenJava(MavenPublication) {
-							version = "${finalVersion}"
-							artifactId = project.property('archivesBaseName')
-							from components.java
-							artifact(tasks["sourcesJar"])
+						if (managedType.equals("war")) {
+							mavenJava(MavenPublication) {
+								version = "${finalVersion}"
+								artifactId = project.property('archivesBaseName')
+								from components.web
+								artifact(tasks["sourcesJar"])
+							}
+						}
+						else {
+							mavenJava(MavenPublication) {
+								version = "${finalVersion}"
+								artifactId = project.property('archivesBaseName')
+								from components.java
+								artifact(tasks["sourcesJar"])
+							}
 						}
 					}
 					repositories {
@@ -179,27 +205,15 @@ gradle.beforeProject {
 
 				publish.dependsOn(showPublishDetails);
 
-				publishToMavenLocal.dependsOn(showPublishDetails);
+				publishToMavenLocal.dependsOn(showPublishDetails)
 			}
 
 		}
-		else if (project.tasks.findByName("war")) {
-			task packageForDist(dependsOn: war) {
-				// Empty. Only needed for task dependencies
-			}
-
-			def finalVersion = project.property('version')
-			ext.originalVersion = finalVersion
-
-			// Force encoding (for portability)
-			compileJava.options.encoding = 'UTF-8'
-		}
-
 	}
 
 }
 
-private void _updateBndBundleVersion(Project project, boolean minorMode) {
+private void _updateBndBundleVersion(Project project, int level) {
 	def bndFile = project.file("bnd.bnd")
 
 	if (!bndFile.exists()) {
@@ -213,19 +227,30 @@ private void _updateBndBundleVersion(Project project, boolean minorMode) {
 		if (curVersions.size() != 3) {
 			println "WARNING: Non standard version ${moduleVersion} for ${project.path}"
 		}
+		
+		def curMicros = curVersions[2].tokenize("-")
 
-		def newMajor = curVersions[0].toInteger();
-		def newMinor = curVersions[1].toInteger();
+		def newMajor = curVersions[0].toInteger()
+		def newMinor = curVersions[1].toInteger()
+		def newMicro = curMicros[0].toInteger()
 
-		if (minorMode) {
-			newMinor++
+		if (level == 3) {
+			newMicro++
 		}
-		else {
+		else if (level == 2) {
+			newMinor++
+			newMicro = 0
+		}
+		else if (level == 1) {
 			newMajor++
 			newMinor = 0
+			newMicro = 0
+		}
+		else {
+			throw new GradleException("Invalid level ${level}")
 		}
 
-		def newVersion = "${newMajor}.${newMinor}.0"
+		def newVersion = "${newMajor}.${newMinor}.${newMicro}"
 
 		bndFile.withWriter('UTF-8') { writer ->
 			bndContent.each {
@@ -295,6 +320,62 @@ else if (distLocalMode == null) {
 println "** distLocalMode = ${distLocalMode}"
 
 /*
+ * List all workspace projects with artifact name and including profiles
+ */
+task listProjects() {
+	doLast {
+		def resultMap = [:]
+		int pathSize = 0
+		int refSize = 0
+
+		rootProject.subprojects.each { prj ->
+			if (!prj.subprojects.empty) return
+			if (prj.path.equals(":bom") || prj.path.startsWith(":plugins-sdk")) return
+
+			def prjRef = "${prj.group}:${prj.property('archivesBaseName')}:${prj.version}"
+
+			pathSize = Math.max(pathSize, prj.path.size())
+			refSize = Math.max(refSize, prjRef.size())
+
+			resultMap[prj.path] = [ ref : prjRef, configs : [] ]
+		}
+
+		configurations.each { config ->
+			if (!config.name.startsWith("dist") && !config.name.startsWith("feature")) {
+				return;
+			}
+
+			config.getDependencies().each{ dep ->
+				if (dep instanceof ProjectDependency) {
+					ProjectDependency projectDependency = dep as ProjectDependency
+
+					Project depPrj = projectDependency.getDependencyProject()
+
+					resultMap[depPrj.path].configs.add(config.name)
+				}
+			}
+		}
+
+		def noConfigs = []
+
+		resultMap.sort().each{ entry ->
+			println "${entry.key.padRight(pathSize)}\t${entry.value.ref.padRight(refSize)}\t${entry.value.configs}"
+
+			if (entry.value.configs.size() == 0) {
+				noConfigs.add(entry.key);
+			}
+		}
+
+		if (noConfigs.size() > 0) {
+			println ""
+			println "Projects without Distribution Profile"
+
+			noConfigs.each{ println it }
+		}
+	}
+}
+
+/*
  * List all configurations eligible as "Distribution Profile"
  */
 task listDistProfiles() {
@@ -331,15 +412,17 @@ task showDistProfiles() {
 			println ""
 			println "dependencies {"
 
+			def values = []
+
 			config.getDependencies().each{ dep ->
 				if (dep instanceof ExternalDependency) {
 					ProjectDependency projectDependency = dep as ProjectDependency
 
 					if (projectDependency.version != null) {
-						println "	compileOnly group:'${projectDependency.group}', name:'${projectDependency.name}', version:'${projectDependency.version}'"
+						values.add("compileOnly group:'${projectDependency.group}', name:'${projectDependency.name}', version:'${projectDependency.version}'")
 					}
 					else {
-						println "	compileOnly group:'${projectDependency.group}', name:'${projectDependency.name}'"
+						values.add("compileOnly group:'${projectDependency.group}', name:'${projectDependency.name}'")
 					}
 				}
 				else if (dep instanceof ProjectDependency) {
@@ -354,12 +437,14 @@ task showDistProfiles() {
 						targetVersion = prj.property('originalVersion')
 					}
 
-					println "	compileOnly group:'${projectDependency.group}', name:'${archivesBaseName}', version:'${targetVersion}'"
+					values.add("compileOnly group:'${projectDependency.group}', name:'${archivesBaseName}', version:'${targetVersion}'")
 				}
 				else {
 					println "	//??? ${dep}"
 				}
 			}
+
+			values.sort().each{ println "	${it}"}
 
 			println "}"
 			println ""
@@ -383,38 +468,31 @@ task showDistInstall() {
 			}
 
 			println "----"
-			println "Distribution Profile: ${archivesBaseName}-${productVersion} ${config.name} ${project.property('registrySuffix')}"
+			println "Distribution Profile: ${productName}-${productVersion} ${config.name} ${project.property('registrySuffix')}"
 			println ""
 
-			def taskName = config.name.capitalize()
+			def values = []
+			def resolved = config.getResolvedConfiguration();
 
-			config.getDependencies().each{ dep ->
-				if (dep instanceof ExternalDependency) {
-					// Skip.
+			resolved.getLenientConfiguration().getFirstLevelModuleDependencies().each{ dep ->
+				//println dep
+
+				if (dep.configuration.equals("platform-runtime")) {
+					return //continue
 				}
-				else if (dep instanceof ProjectDependency) {
-					ProjectDependency projectDependency = dep as ProjectDependency
 
-					Project prj = projectDependency.getDependencyProject()
+				String packaging = "jar"
 
-					String packaging = "jar"
-					String archivesBaseName = prj.properties["archivesBaseName"]
-					String targetVersion = projectDependency.version
+				dep.moduleArtifacts.any{ ma ->
+					packaging = ma.extension
 
-					if (!isChangedProject(prj.path) && prj.hasProperty('originalVersion')) {
-						targetVersion = prj.property('originalVersion')
-					}
-
-					if (prj.tasks.findByName("war")) {
-						packaging = "war"
-					}
-
-					println "mvn install:install-file -Dfile='libs/${archivesBaseName}-${targetVersion}.${packaging}' -DgroupId='${prj.group}' -DartifactId='${archivesBaseName}' -Dversion='${targetVersion}' -Dpackaging=${packaging}"
+					return true //break
 				}
-				else {
-					println "	//??? ${dep}"
-				}
+
+				values.add("mvn install:install-file -Dfile='libs/${dep.moduleName}-${dep.moduleVersion}.${packaging}' -DgroupId='${dep.moduleGroup}' -DartifactId='${dep.moduleName}' -Dversion='${dep.moduleVersion}' -Dpackaging=${packaging}")
 			}
+
+			values.sort().each{ println "${it}"}
 
 			println ""
 		}
@@ -462,7 +540,7 @@ task buildDistDepsMap() {
 				clone = config.copy()
 
 				// Ensure clone has custom BoMs
-				if (productBoms.size() > 0) {
+				if (!config.name.equals("distBOM") && productBoms.size() > 0) {
 					productBoms.each {
 						clone.dependencies.add(dependencies.platform("${it}"))
 					}
@@ -472,7 +550,7 @@ task buildDistDepsMap() {
 				clone = config.copy(distDependencySpec(true, false))
 
 				// Ensure clone has custom BoMs
-				if (productBoms.size() > 0) {
+				if (!config.name.equals("distBOM") && productBoms.size() > 0) {
 					productBoms.each {
 						clone.dependencies.add(dependencies.platform("${it}"))
 					}
@@ -487,16 +565,18 @@ task buildDistDepsMap() {
 
 						Project prj = projectDependency.getDependencyProject()
 
-						//println "${prj.path}:${prj.properties['version']}:${prj.properties['originalVersion']}"
+						//println "DBG ${prj.path}:${prj.properties['version']}:${prj.properties['originalVersion']}"
 
-						if (isChangedProject(prj.path)) {
+						if (isChangedProject(prj.path) && distLocalMode == "true") {
 							//println " has changes use local "
 							clone.dependencies.add(projectDependency)
 						}
 						else {
 							String archivesBaseName = prj.properties["archivesBaseName"]
 
-							clone.dependencies.add(dependencies.create("${projectDependency.group}:${archivesBaseName}:${prj.properties['originalVersion']}"))
+							def moduleVersion = prj.properties['originalVersion'] ?: prj.properties['version']
+
+							clone.dependencies.add(dependencies.create("${projectDependency.group}:${archivesBaseName}:${moduleVersion}"))
 						}
 					}
 					else {
@@ -537,21 +617,23 @@ configurations.each { config ->
 
 	task "tar$taskName"(type: Tar) {
 		description = "Build a tarball of runtime artifacts"
-		appendix = config.name
-		classifier = getTimeStampStr()
+		//archiveAppendix = config.name
+		archiveBaseName = productName
+		archiveClassifier = "${config.name}-${getTimeStampStr()}"
+		archiveVersion = productVersion
 		duplicatesStrategy = DuplicatesStrategy.EXCLUDE
 		compression = Compression.GZIP
-		version = productVersion
 
 		dependsOn buildDistDepsMap
 	}
 
 	task "zip$taskName"(type: Zip) {
 		description = "Build a zip of runtime artifacts"
-		appendix = config.name
-		classifier = getTimeStampStr()
+		//archiveAppendix = config.name
+		archiveBaseName = productName
+		archiveClassifier = "${config.name}-${getTimeStampStr()}"
+		archiveVersion = productVersion
 		duplicatesStrategy = DuplicatesStrategy.EXCLUDE
-		version = productVersion
 
 		dependsOn buildDistDepsMap
 	}
@@ -574,23 +656,30 @@ configurations.each { config ->
 		from clone
 	}
 
-	Task zipTargetTask = tasks.getByName("zip$taskName")
 	Task tarTargetTask = tasks.getByName("tar$taskName")
+	Task zipTargetTask = tasks.getByName("zip$taskName")
 
-	if (distLocalMode == "true" && project.properties['changesMode'] == true) {
+	//if (distLocalMode == "true" && project.properties['changesMode'] == true) {
+	if (distLocalMode == "true") {
 		config.dependencies.each { dep ->
 			if (dep instanceof ProjectDependency) {
 				ProjectDependency projectDependency = dep as ProjectDependency
 
 				Project prj = projectDependency.getDependencyProject()
 
-				if (isChangedProject(prj.path)) {
+				if (project.properties['changesMode'] == true) {
+					if (isChangedProject(prj.path)) {
+						tarTargetTask.dependsOn(prj.path + ":packageForDist")
+						zipTargetTask.dependsOn(prj.path + ":packageForDist")
+					}
+				}
+				else {
+					tarTargetTask.dependsOn(prj.path + ":packageForDist")
 					zipTargetTask.dependsOn(prj.path + ":packageForDist")
 				}
 			}
 		}
 	}
-
 }
 
 task tarDistAll() {
@@ -642,7 +731,9 @@ task checkPubStatus() {
 
 		println "Has errors = ${resolved.hasError()}"
 
-		println "INFO: modules with changes but same version is already published"
+		// List project resolved but with changes
+
+		println "INFO: modules with changes (from last release-tag) but same version is already published"
 
 		resolved.getLenientConfiguration().getFirstLevelModuleDependencies().each{ dep ->
 			def prjId = "${dep.moduleGroup}:${dep.moduleName}:${dep.moduleVersion}"

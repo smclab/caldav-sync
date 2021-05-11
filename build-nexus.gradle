@@ -165,6 +165,8 @@ if (changesModeEnabled && grgit != null) {
 		}
 	}
 
+	def changesModeType = project.properties["changes.mode.type"]
+
 	if (ext.changesMode) {
 
 		def collectChangedPath = {
@@ -189,20 +191,9 @@ if (changesModeEnabled && grgit != null) {
 				}
 
 				if (v && changesVerboseMode) {
-					println p
+					println "  ${p}"
 				}
 			}
-		}
-		
-		// Collect local uncommitted changes
-
-		def status = grgit.status();
-
-		status.staged.allChanges.each { path ->
-			collectChangedPath(path);
-		}
-		status.unstaged.allChanges.each { path ->
-			collectChangedPath(path);
 		}
 
 		def productVersion = project.properties['product.version'] ?: "1.0.0"
@@ -226,33 +217,79 @@ if (changesModeEnabled && grgit != null) {
 		println "Curr release..: ${productVersion}"
 		println "Last ReleaseTag ${lastReleaseTag.getName()} : ${lastReleaseTag.shortMessage} : ${lastReleaseTag.dateTime} : ${lastReleaseTag.commit.id}"
 
-		// Collect changes on commits ahead the tag
+		if (changesModeType != null && changesModeType.equals("diff")) {
+			def diffs = grgit.diff(oldCommit: lastReleaseTag.commit)
 
-		def commits = grgit.log {
-			range(lastReleaseTag.commit, head)
-		}
+			diffs.each{f ->
+				if (changesVerboseMode) {
+					println "${f.changeType} : ${f.oldPath} : ${f.newPath}"
+				}
 
-		commits.each{c ->
-			if (changesVerboseMode) {
-				println "${c.id} : ${c.abbreviatedId} : ${c.shortMessage}"
-			}
+				def changeType = f.changeType.toString()
 
-			grgit.show(commit: c).each{ rev ->
-				rev.getAllChanges().each { path ->
-					collectChangedPath(path);
+				if ("ADD".equals(changeType)) {
+					collectChangedPath(f.newPath)
+				}
+				else if ("MODIFY".equals(changeType)) {
+					collectChangedPath(f.oldPath)
+				}
+				else if ("DELETE".equals(changeType)) {
+					collectChangedPath(f.oldPath)
+				}
+				else if ("COPY".equals(changeType)) {
+					collectChangedPath(f.newPath)
+				}
+				else if ("RENAME".equals(changeType)) {
+					collectChangedPath(f.oldPath)
+					collectChangedPath(f.newPath)
+				}
+				else {
+					collectChangedPath(f.oldPath)
+					collectChangedPath(f.newPath)
 				}
 			}
 		}
-	}
+		else {
+			// Collect local uncommitted changes
 
-	if (ext.changesMode) {
-		println "Modules with changes:"
-		changedProjects.each { println "  ${it}" }
-		println ""
+			def status = grgit.status();
+
+			status.staged.allChanges.each { path ->
+				collectChangedPath(path);
+			}
+			status.unstaged.allChanges.each { path ->
+				collectChangedPath(path);
+			}
+
+			// Collect changes on commits ahead the tag
+
+			def commits = grgit.log {
+				range(lastReleaseTag.commit, head)
+			}
+
+			commits.each{c ->
+				if (changesVerboseMode) {
+					println "${c.id} : ${c.abbreviatedId} : ${c.shortMessage}"
+				}
+
+				grgit.show(commit: c).each{ rev ->
+					rev.getAllChanges().each { path ->
+						collectChangedPath(path);
+					}
+				}
+			}
+		}
 	}
 }
 
 ext.changedProjects = changedProjects.sort()
 
 println "** changesMode = ${changesMode}"
+
+if (ext.changesMode) {
+	println ""
+	println "Modules with changes:"
+	ext.changedProjects.each { println "  ${it}" }
+	println ""
+}
 
