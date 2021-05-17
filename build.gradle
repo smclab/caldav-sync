@@ -29,8 +29,29 @@ String boms = properties["product.bill.of.meterials"]
 
 if (boms != null) {
 	productBoms = boms.split(",")
-}
 
+	// Create Ditribution Profile (configuration) for BoMs
+	configurations {
+		distBOM {
+			transitive = false
+			visible = false
+		}
+	}
+
+	if (productBoms.size() > 0) {
+		dependencies {
+			productBoms.each {
+				String[] parts = it.split(":")
+				distBOM("${it}") {
+					artifact {
+						name = parts[1]
+						type = "pom"
+					}
+				}
+			}
+		}
+	}
+}
 
 def isChangedProject = {
 	ext.changedProjects.contains(it) ? true : false
@@ -83,7 +104,12 @@ gradle.beforeProject {
 				/* No more needed
 				// We have to force version because Liferay BOMs have conflicting versions
 				compileOnly("javax.servlet:javax.servlet-api:3.0.1") { force = true }
-				*/
+
+				if (productBoms.size() > 0) {
+					productBoms.each {
+						compileOnly platform("${it}")
+					}
+				}
 			}
 
 			task releaseIncrementMajor() {

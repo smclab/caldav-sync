@@ -34,6 +34,9 @@ import com.liferay.portal.kernel.util.PortalUtil;
 import com.liferay.portal.kernel.util.SessionClicks;
 import com.liferay.portal.kernel.util.StringUtil;
 
+import it.smc.calendar.caldav.helper.api.CalendarListService;
+import it.smc.calendar.caldav.helper.util.PropsValues;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
@@ -43,9 +46,6 @@ import java.util.Set;
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
 import org.osgi.service.component.annotations.ReferencePolicyOption;
-
-import it.smc.calendar.caldav.helper.api.CalendarListService;
-import it.smc.calendar.caldav.helper.util.PropsValues;
 
 /**
  * @author rge
@@ -179,8 +179,7 @@ public class CalendarListServiceImpl implements CalendarListService {
 			StringUtil.split(calendarIdsPref));
 
 		for (long calendarId : calendarIds) {
-			Calendar calendar = _calendarLocalService.fetchCalendar(
-				calendarId);
+			Calendar calendar = _calendarLocalService.fetchCalendar(calendarId);
 
 			if (calendar == null) {
 				continue;
@@ -234,9 +233,9 @@ public class CalendarListServiceImpl implements CalendarListService {
 
 		List<CalendarResource> calendarResources =
 			_calendarResourceService.search(
-				permissionChecker.getCompanyId(), new long[] {}, new long[] {
-					classNameId
-				}, null, true, true, QueryUtil.ALL_POS, QueryUtil.ALL_POS, null);
+				permissionChecker.getCompanyId(), new long[0],
+				new long[] {classNameId}, null, true, true, QueryUtil.ALL_POS,
+				QueryUtil.ALL_POS, null);
 
 		for (CalendarResource calendarResource : calendarResources) {
 			for (Calendar calendar : calendarResource.getCalendars()) {
@@ -275,9 +274,9 @@ public class CalendarListServiceImpl implements CalendarListService {
 	@Reference(policyOption = ReferencePolicyOption.GREEDY)
 	private CalendarLocalService _calendarLocalService;
 
+	private ModelResourcePermission<Calendar> _calendarModelResourcePermission;
+
 	@Reference(policyOption = ReferencePolicyOption.GREEDY)
 	private CalendarResourceService _calendarResourceService;
-
-	private ModelResourcePermission<Calendar> _calendarModelResourcePermission;
 
 }

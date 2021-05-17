@@ -975,17 +975,10 @@ public class DefaultICSContentListener implements ICSImportExportListener {
 			CalendarBooking calendarBooking, VEvent vEvent)
 		throws PortalException {
 
-		XProperty vEventXAltDesc = (XProperty)vEvent.getProperty("X-ALT-DESC");
+		Locale locale;
 
-		if (vEventXAltDesc == null) {
-			return;
-		}
-
-		if (calendarBooking != null) {
-			User calendarBookingUser =
-				getCalendarBookingUser(calendarBooking);
-
-			Locale locale = calendarBookingUser.getLocale();
+		try {
+			Calendar calendar = calendarBooking.getCalendar();
 
 			String calendarBookingDescriptionHTML =
 				calendarBooking.getDescription(locale);
@@ -1007,8 +1000,8 @@ public class DefaultICSContentListener implements ICSImportExportListener {
 			XProperty calendarBookingXAltDesc = new XProperty(
 				"X-ALT-DESC", calendarBookingDescriptionHTML);
 
-			ParameterList parameters =
-				calendarBookingXAltDesc.getParameters();
+		String title = calendarBooking.getTitle(locale);
+		String description = calendarBooking.getDescription(locale);
 
 			parameters.add(new XParameter("FMTTYPE", "text/html"));
 
@@ -1018,9 +1011,15 @@ public class DefaultICSContentListener implements ICSImportExportListener {
 				return;
 			}
 
+		for (Locale l : LanguageUtil.getAvailableLocales()) {
+			titleMap.put(l, title);
+			descriptionMap.put(l, description);
 		}
 
-		_replaceDescription(vEvent, vEventXAltDesc);
+		calendarBooking.setTitleMap(titleMap);
+		calendarBooking.setDescriptionMap(descriptionMap);
+
+		_calendarBookingLocalService.updateCalendarBooking(calendarBooking);
 	}
 
 	protected void updateTitleAndDescription(
