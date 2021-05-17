@@ -1,10 +1,10 @@
 plugins {
-    id 'java-platform'
-    id 'maven-publish'
+	id 'java-platform'
+	id 'maven-publish'
 }
 
 repositories {
-    mavenCentral()
+	mavenCentral()
 }
 
 ext.pomInfo = {
@@ -68,7 +68,7 @@ publishing {
 
 						String artifactName = prj.property('archivesBaseName')
 						boolean changesMode = Boolean.valueOf(prj.property('changesMode'))
-						
+
 						def changedProjects = prj.property('changedProjects')
 
 						def pomDep = xml.dependencyManagement.dependencies.dependency.find {

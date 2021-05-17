@@ -1,4 +1,4 @@
-# CalDAV Sync - Liferay Workspace for Liferay 7.3+ CE e DXP
+# CalDAV Sync - Liferay Workspace for Liferay 7.0+ CE e DXP
 
 This workspace contains the plugin "CalDAV sync" that allows Liferay to act like a CalDAV Server.
 
