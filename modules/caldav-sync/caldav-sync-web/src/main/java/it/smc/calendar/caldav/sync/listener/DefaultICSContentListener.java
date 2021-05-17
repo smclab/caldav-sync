@@ -20,7 +20,7 @@ import com.liferay.calendar.model.CalendarBooking;
 import com.liferay.calendar.model.CalendarResource;
 import com.liferay.calendar.service.CalendarBookingLocalService;
 import com.liferay.calendar.util.JCalendarUtil;
-import com.liferay.calendar.workflow.CalendarBookingWorkflowConstants;
+import com.liferay.calendar.workflow.constants.CalendarBookingWorkflowConstants;
 import com.liferay.expando.kernel.model.ExpandoBridge;
 import com.liferay.expando.kernel.model.ExpandoColumn;
 import com.liferay.expando.kernel.model.ExpandoColumnConstants;
@@ -33,12 +33,11 @@ import com.liferay.portal.kernel.io.unsync.UnsyncStringReader;
 import com.liferay.portal.kernel.language.LanguageUtil;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
-import com.liferay.portal.kernel.model.Company;
 import com.liferay.portal.kernel.model.Resource;
 import com.liferay.portal.kernel.model.ResourceConstants;
 import com.liferay.portal.kernel.model.Role;
-import com.liferay.portal.kernel.model.RoleConstants;
 import com.liferay.portal.kernel.model.User;
+import com.liferay.portal.kernel.model.role.RoleConstants;
 import com.liferay.portal.kernel.sanitizer.SanitizerException;
 import com.liferay.portal.kernel.security.auth.PrincipalThreadLocal;
 import com.liferay.portal.kernel.security.permission.ActionKeys;
@@ -46,7 +45,6 @@ import com.liferay.portal.kernel.security.permission.PermissionChecker;
 import com.liferay.portal.kernel.security.permission.PermissionCheckerFactoryUtil;
 import com.liferay.portal.kernel.security.permission.PermissionThreadLocal;
 import com.liferay.portal.kernel.security.permission.resource.ModelResourcePermission;
-import com.liferay.portal.kernel.service.CompanyLocalService;
 import com.liferay.portal.kernel.service.ResourceLocalService;
 import com.liferay.portal.kernel.service.ResourcePermissionLocalService;
 import com.liferay.portal.kernel.service.RoleLocalService;
@@ -55,21 +53,13 @@ import com.liferay.portal.kernel.service.ServiceContextThreadLocal;
 import com.liferay.portal.kernel.service.UserLocalService;
 import com.liferay.portal.kernel.util.ArrayUtil;
 import com.liferay.portal.kernel.util.GetterUtil;
-import com.liferay.portal.kernel.util.HtmlUtil;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.UnicodeProperties;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.kernel.workflow.WorkflowConstants;
 
-import it.smc.calendar.caldav.helper.api.CalendarHelperUtil;
-import it.smc.calendar.caldav.helper.util.PropsValues;
-import it.smc.calendar.caldav.sync.ical.util.AttendeeUtil;
-import it.smc.calendar.caldav.sync.util.CalDAVUtil;
-
 import java.io.IOException;
-
 import java.net.URI;
-
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -81,8 +71,15 @@ import java.util.Optional;
 import java.util.TimeZone;
 
 import javax.servlet.http.HttpServletRequest;
-import javax.swing.text.html.HTML;
 
+import org.osgi.service.component.annotations.Component;
+import org.osgi.service.component.annotations.Reference;
+import org.osgi.service.component.annotations.ReferencePolicyOption;
+
+import it.smc.calendar.caldav.helper.api.CalendarHelperUtil;
+import it.smc.calendar.caldav.helper.util.PropsValues;
+import it.smc.calendar.caldav.sync.ical.util.AttendeeUtil;
+import it.smc.calendar.caldav.sync.util.CalDAVUtil;
 import net.fortuna.ical4j.data.CalendarBuilder;
 import net.fortuna.ical4j.data.ParserException;
 import net.fortuna.ical4j.model.ComponentList;
@@ -113,10 +110,6 @@ import net.fortuna.ical4j.model.property.Transp;
 import net.fortuna.ical4j.model.property.Trigger;
 import net.fortuna.ical4j.model.property.Uid;
 import net.fortuna.ical4j.model.property.XProperty;
-
-import org.osgi.service.component.annotations.Component;
-import org.osgi.service.component.annotations.Reference;
-import org.osgi.service.component.annotations.ReferencePolicyOption;
 
 /**
  * @author Fabio Pezzutto
@@ -151,6 +144,7 @@ public class DefaultICSContentListener implements ICSImportExportListener {
 
 					if (calendarBooking != null) {
 						updateBookingAttendees(calendarBooking, vEvent);
+						updateAltDescription(calendarBooking, vEvent);
 						updateTitleAndDescription(calendarBooking, vEvent);
 					}
 				}
@@ -196,8 +190,7 @@ public class DefaultICSContentListener implements ICSImportExportListener {
 					updateDowloadedInvitations(
 						currentUser, iCalCalendar, vEvent, calendarBooking);
 
-					updateAllDayDate(
-						vEvent, calendarBooking, currentUser);
+					updateAllDayDate(vEvent, calendarBooking, currentUser);
 
 					DateTime modifiedDate = new DateTime(
 						calendarBooking.getModifiedDate(
@@ -222,9 +215,6 @@ public class DefaultICSContentListener implements ICSImportExportListener {
 					).add(
 						created
 					);
-
-					_updateAltDescription(
-						calendarBooking, vEvent, currentUser);
 				}
 			}
 
@@ -266,7 +256,7 @@ public class DefaultICSContentListener implements ICSImportExportListener {
 							_calendarBookingLocalService.fetchCalendarBooking(
 								calendar.getCalendarId(), vEventUidValue);
 
-						updateDescription(calendarBooking, vEvent);
+						updateAltDescription(calendarBooking, vEvent);
 					}
 				}
 			}
@@ -389,7 +379,7 @@ public class DefaultICSContentListener implements ICSImportExportListener {
 				propertyList.remove(propertyList.getProperty(Action.ACTION));
 			}
 			else if (vAlarm.getAction().equals(Action.EMAIL) &&
-					 !CalDAVUtil.isThunderbird(request)) {
+					!CalDAVUtil.isThunderbird(request)) {
 
 				propertyList.remove(propertyList.getProperty(Action.ACTION));
 				propertyList.add(Action.DISPLAY);
@@ -446,9 +436,8 @@ public class DefaultICSContentListener implements ICSImportExportListener {
 
 			TimeZone utcTimeZone = TimeZone.getTimeZone("UTC");
 
-			java.util.Calendar startJCalendar =
-				JCalendarUtil.getJCalendar(
-					calendarBooking.getStartTime(), utcTimeZone);
+			java.util.Calendar startJCalendar = JCalendarUtil.getJCalendar(
+				calendarBooking.getStartTime(), utcTimeZone);
 
 			boolean normalize = true;
 
@@ -456,8 +445,7 @@ public class DefaultICSContentListener implements ICSImportExportListener {
 				normalize = false;
 			}
 
-			java.util.Calendar endJCalendar =
-				JCalendarUtil.getJCalendar(
+			java.util.Calendar endJCalendar = JCalendarUtil.getJCalendar(
 				calendarBooking.getEndTime(), utcTimeZone);
 
 			endJCalendar.add(java.util.Calendar.DAY_OF_MONTH, 1);
@@ -472,12 +460,10 @@ public class DefaultICSContentListener implements ICSImportExportListener {
 			}
 
 			DtStart dtStart = new DtStart(
-				new net.fortuna.ical4j.model.Date(utcStart),
-				true);
+				new net.fortuna.ical4j.model.Date(utcStart), true);
 
 			DtEnd dtEnd = new DtEnd(
-				new net.fortuna.ical4j.model.Date(utcEnd),
-				true);
+				new net.fortuna.ical4j.model.Date(utcEnd), true);
 
 			propertyList.remove(vEvent.getStartDate());
 
@@ -487,6 +473,39 @@ public class DefaultICSContentListener implements ICSImportExportListener {
 
 			propertyList.add(dtEnd);
 		}
+	}
+
+	protected void updateAltDescription(
+			CalendarBooking calendarBooking, VEvent vEvent)
+		throws PortalException {
+
+		XProperty vEventXAltDesc = (XProperty)vEvent.getProperty("X-ALT-DESC");
+
+		if (vEventXAltDesc == null) {
+			return;
+		}
+
+		if (calendarBooking != null) {
+			User calendarBookingUser = getCalendarBookingUser(calendarBooking);
+
+			Locale locale = calendarBookingUser.getLocale();
+
+			String calendarBookingDescription = calendarBooking.getDescription(
+				locale);
+
+			XProperty calendarBookingXAltDesc = new XProperty(
+				"X-ALT-DESC", calendarBookingDescription);
+
+			ParameterList parameters = calendarBookingXAltDesc.getParameters();
+
+			parameters.add(new XParameter("FMTTYPE", "text/html"));
+
+			if (calendarBookingXAltDesc.equals(vEventXAltDesc)) {
+				return;
+			}
+		}
+
+		_replaceDescription(vEvent, vEventXAltDesc);
 	}
 
 	protected void updateBookingAttendees(
@@ -528,7 +547,7 @@ public class DefaultICSContentListener implements ICSImportExportListener {
 					attendeesEmailAddresses, attendeeEmail);
 			}
 			else if (bookingUser.isPresent() &&
-					 user.equals(bookingUser.get())) {
+					user.equals(bookingUser.get())) {
 
 				int status = AttendeeUtil.getStatus(
 					attendee, calendarBooking.getStatus());
@@ -971,57 +990,6 @@ public class DefaultICSContentListener implements ICSImportExportListener {
 		propertyList.addAll(allAttendees);
 	}
 
-	protected void updateDescription(
-			CalendarBooking calendarBooking, VEvent vEvent)
-		throws PortalException {
-
-		Locale locale;
-
-		try {
-			Calendar calendar = calendarBooking.getCalendar();
-
-			String calendarBookingDescriptionHTML =
-				calendarBooking.getDescription(locale);
-
-			Description calendarBookingDescription =
-				new Description(
-					HtmlUtil.stripHtml(calendarBookingDescriptionHTML));
-
-			Description vEventDescription =
-				(Description)vEvent.getProperty(Property.DESCRIPTION);
-
-			if (calendarBookingDescription.equals(vEventDescription)) {
-				// The client has not modified DESCRIPTION at all,
-				// so in any case the X-ALT-DESC is preferred
-				_replaceDescription(vEvent, vEventXAltDesc);
-				return;
-			}
-
-			XProperty calendarBookingXAltDesc = new XProperty(
-				"X-ALT-DESC", calendarBookingDescriptionHTML);
-
-		String title = calendarBooking.getTitle(locale);
-		String description = calendarBooking.getDescription(locale);
-
-			parameters.add(new XParameter("FMTTYPE", "text/html"));
-
-			if (calendarBookingXAltDesc.equals(vEventXAltDesc)) {
-				// The client has handled DESCRIPTION directly,
-				// in this case X-ALT-DESC can not be preferred
-				return;
-			}
-
-		for (Locale l : LanguageUtil.getAvailableLocales()) {
-			titleMap.put(l, title);
-			descriptionMap.put(l, description);
-		}
-
-		calendarBooking.setTitleMap(titleMap);
-		calendarBooking.setDescriptionMap(descriptionMap);
-
-		_calendarBookingLocalService.updateCalendarBooking(calendarBooking);
-	}
-
 	protected void updateTitleAndDescription(
 		CalendarBooking calendarBooking, VEvent vEvent) {
 
@@ -1029,8 +997,10 @@ public class DefaultICSContentListener implements ICSImportExportListener {
 
 		try {
 			Calendar calendar = calendarBooking.getCalendar();
+
 			long userId = calendar.getUserId();
 			User user = _userLocalService.getUser(userId);
+
 			locale = user.getLocale();
 		}
 		catch (PortalException e) {
@@ -1085,10 +1055,9 @@ public class DefaultICSContentListener implements ICSImportExportListener {
 				User calendarUser = _userLocalService.fetchUser(
 					calendar.getUserId());
 
-				if (calendarUser != null &&
-					calendarResourceUser != null &&
-					calendarResourceUser.getUserId() !=
-						calendarUser.getUserId()) {
+				if ((calendarUser != null) && (calendarResourceUser != null) &&
+					(calendarResourceUser.getUserId() !=
+						calendarUser.getUserId())) {
 
 					notificationRecipients.add(calendarUser.getEmailAddress());
 				}
@@ -1234,36 +1203,6 @@ public class DefaultICSContentListener implements ICSImportExportListener {
 		}
 	}
 
-	private void _updateAltDescription(
-			CalendarBooking calendarBooking, VEvent vEvent, User user)
-		throws PortalException {
-
-		// review on LPS-20825
-
-		XProperty xAltDesc = (XProperty)vEvent.getProperty("X-ALT-DESC");
-
-		if (xAltDesc == null) {
-			return;
-		}
-
-		long companyId = calendarBooking.getCompanyId();
-
-		Company company = _companyLocalService.getCompany(companyId);
-
-		String calendarBookingDescriptionHTML = StringUtil.replace(
-				calendarBooking.getDescription(user.getLocale()),
-				new String[] {"href=\"/", "src=\"/"},
-				new String[] {
-					"href=\"" +
-					company.getPortalURL(calendarBooking.getGroupId()) +
-					"/",
-					"src=\"" +
-					company.getPortalURL(calendarBooking.getGroupId()) + "/"
-				});
-
-		xAltDesc.setValue(calendarBookingDescriptionHTML);
-	}
-
 	private void _updateModelResourcePermissions(
 			long companyId, String name, long primKey, String roleName,
 			String[] actionIds)
@@ -1298,9 +1237,6 @@ public class DefaultICSContentListener implements ICSImportExportListener {
 	private CalendarBookingLocalService _calendarBookingLocalService;
 
 	private ModelResourcePermission<Calendar> _calendarModelResourcePermission;
-
-	@Reference(policyOption = ReferencePolicyOption.GREEDY)
-	private CompanyLocalService _companyLocalService;
 
 	@Reference(policyOption = ReferencePolicyOption.GREEDY)
 	private ExpandoColumnLocalService _expandoColumnLocalService;
