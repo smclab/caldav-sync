@@ -1,8 +1,6 @@
 dependencies {
-	compileOnly group: "com.liferay", name: "com.liferay.calendar.api"
 	compileOnly group: "com.liferay", name: "com.liferay.calendar.service"
-	compileOnly group: "com.liferay.portal", name: "com.liferay.portal.kernel"
-	compileOnly group: "org.osgi", name: "osgi.cmpn"
+	compileOnly group: "com.liferay.portal", name: "release.portal.api"
 
 	compileOnly project(":modules:caldav-sync:caldav-helper-api")
 }

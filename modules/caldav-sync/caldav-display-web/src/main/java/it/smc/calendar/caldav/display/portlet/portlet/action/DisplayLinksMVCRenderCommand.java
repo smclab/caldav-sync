@@ -31,7 +31,7 @@ import org.osgi.service.component.annotations.Component;
 	immediate = true,
 	property = {
 		"javax.portlet.name=" + CalDAVDisplayPortletKeys.CalDAVDisplay,
-		"mvc.command.name=/smc/calDav/display_links"
+		"mvc.command.name=/smc/calDAV/displayLinks"
 	},
 	service = MVCRenderCommand.class
 )

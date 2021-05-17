@@ -14,9 +14,9 @@
 
 package it.smc.calendar.caldav.sync.util;
 
+import com.liferay.petra.lang.CentralizedThreadLocal;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
-import com.liferay.portal.kernel.util.AutoResetThreadLocal;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.kernel.xml.Document;
 import com.liferay.portal.kernel.xml.DocumentException;
@@ -61,9 +61,9 @@ public class CalDAVRequestThreadLocal {
 	private static Log _log = LogFactoryUtil.getLog(
 		CalDAVRequestThreadLocal.class);
 
-	private static ThreadLocal<String> _content = new AutoResetThreadLocal<>(
+	private static ThreadLocal<String> _content = new CentralizedThreadLocal<>(
 		CalDAVRequestThreadLocal.class + "._content");
-	private static ThreadLocal<Document> _document = new AutoResetThreadLocal<>(
+	private static ThreadLocal<Document> _document = new CentralizedThreadLocal<>(
 		CalDAVRequestThreadLocal.class + "._document");
 
 }

@@ -19,6 +19,7 @@ package it.smc.calendar.caldav.sync.constants;
  */
 public class CaldavSyncPortletKeys {
 
-	public static final String CaldavSync = "CaldavSync";
+	public static final String CaldavSync =
+		"it_smc_calendar_caldavsync_CaldavSyncPortlet";
 
 }

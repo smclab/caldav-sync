@@ -12,14 +12,25 @@
  * details.
  */
 
-package it.smc.calendar.caldav.display.portlet.constants;
+package it.smc.calendar.caldav.display.portlet.upgrade.v2_0_0;
+
+import com.liferay.portal.kernel.upgrade.BaseUpgradePortletId;
+import it.smc.calendar.caldav.display.portlet.constants.CalDAVDisplayPortletKeys;
 
 /**
- * @author rge
+ * @author Mirko Zizzari
  */
-public class CalDAVDisplayPortletKeys {
+public class UpgradePortletId extends BaseUpgradePortletId {
 
-	public static final String CalDAVDisplay =
-		"it_smc_calendar_caldavsync_CalDAVDisplayPortlet";
+	@Override
+	protected String[][] getRenamePortletIdsArray() {
+		return new String[][] {
+			{
+				_oldPortlet,
+				CalDAVDisplayPortletKeys.CalDAVDisplay
+			}
+		};
+	}
 
+	private String _oldPortlet = "it_smc_calendar_caldav_display_portlet_portlet_CalDAVDisplayPortlet";
 }

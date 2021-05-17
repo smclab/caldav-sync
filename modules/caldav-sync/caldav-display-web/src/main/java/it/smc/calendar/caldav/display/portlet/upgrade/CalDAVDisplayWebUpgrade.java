@@ -12,13 +12,20 @@
  * details.
  */
 
-package it.smc.calendar.caldav.sync.constants;
+package it.smc.calendar.caldav.display.portlet.upgrade;
+
+import com.liferay.portal.kernel.upgrade.DummyUpgradeStep;
+import com.liferay.portal.upgrade.registry.UpgradeStepRegistrator;
+import it.smc.calendar.caldav.display.portlet.upgrade.v2_0_0.UpgradePortletId;
 
 /**
- * @author bta
+ * @author Mirko Zizzari
  */
-public class CaldavSyncPanelCategoryKeys {
+public class CalDAVDisplayWebUpgrade implements UpgradeStepRegistrator {
 
-	public static final String CONTROL_PANEL_CATEGORY = "CaldavSync";
-
+	@Override
+	public void register(Registry registry) {
+		registry.register("0.0.0", "1.0.0", new DummyUpgradeStep());
+		registry.register("1.0.0", "2.0.0", new UpgradePortletId());
+	}
 }
