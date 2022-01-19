@@ -398,7 +398,7 @@ public abstract class BasePropsProcessor implements PropsProcessor {
 	protected void processDAVCreationDate() {
 		DocUtil.add(
 			successPropElement, CalDAVProps.DAV_CREATIONDATE,
-			resource.getCreateDate());
+			resource.getCreateDateString());
 	}
 
 	protected void processDAVCurrentUserPrincipal() {
