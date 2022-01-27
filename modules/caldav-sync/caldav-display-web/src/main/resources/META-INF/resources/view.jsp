@@ -34,6 +34,7 @@ showlinks.on(
 	'click', function() {
 		Liferay.Util.openWindow({
 			dialog: {
+				destroyOnHide: true,
 				constrain: true,
 				modal: true,
 				width: 1000
