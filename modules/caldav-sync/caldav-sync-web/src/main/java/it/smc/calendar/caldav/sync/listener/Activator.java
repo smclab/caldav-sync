@@ -53,9 +53,6 @@ public class Activator
 
 	@Override
 	protected void doPortalDestroy() throws Exception {
-		if (_storage != null) {
-			WebDAVUtil.deleteStorage(_storage);
-		}
 
 		if (_methodFactory != null) {
 			MethodFactoryRegistryUtil.unregisterMethodFactory(_methodFactory);
@@ -64,17 +61,11 @@ public class Activator
 
 	@Override
 	protected void doPortalInit() throws Exception {
-		_storage = new LiferayCalDAVStorageImpl();
-		_storage.setToken(WebKeys.CALDAV_TOKEN);
-
-		WebDAVUtil.addStorage(_storage);
-
 		_methodFactory = new CalDAVMethodFactory();
 
 		MethodFactoryRegistryUtil.registerMethodFactory(_methodFactory);
 	}
 
 	private MethodFactory _methodFactory;
-	private WebDAVStorage _storage;
 
 }

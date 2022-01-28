@@ -24,7 +24,7 @@ List<Calendar> calendars = CalendarUtil.getAllCalendars(permissionChecker);
 String userCalDAVURL = portalURL + CalDAVUtil.getPrincipalURL(themeDisplay.getUserId());
 %>
 
-<div class="container-fluid-1280 ">
+<div class="container-fluid">
 	<h2>
 		<liferay-ui:message key="caldav-url-for-collection" />
 
@@ -43,7 +43,7 @@ String userCalDAVURL = portalURL + CalDAVUtil.getPrincipalURL(themeDisplay.getUs
 if (!calendars.isEmpty()) {
 %>
 
-	<div class="container-fluid-1280 ">
+	<div class="container-fluid">
 		<h2>
 			<liferay-ui:message key="caldav-url-without-collection" />
 
