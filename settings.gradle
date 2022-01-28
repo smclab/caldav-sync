@@ -1,6 +1,9 @@
 buildscript {
 	dependencies {
-		classpath group: "com.liferay", name: "com.liferay.gradle.plugins.workspace", version: "3.0.11"
+		classpath group: "biz.aQute.bnd", name: "biz.aQute.bnd", version: "5.2.0"
+		classpath(group: "com.liferay", name: "com.liferay.gradle.plugins.workspace", version: "3.4.16") {
+			exclude group: "biz.aQute.bnd", module: "biz.aQute.bnd"
+		}
 		classpath group: "net.saliman", name: "gradle-properties-plugin", version: "1.4.6"
 	}
 

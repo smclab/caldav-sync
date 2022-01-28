@@ -145,7 +145,7 @@ if (changesModeEnabled && grgit != null) {
 	def head = grgit.head();
 	logger.debug("KK head=${head}")
 
-	// Identity the most recent release tag reachable. 
+	// Identity the most recent release tag reachable.
 	// WARNING: Seems GitHut release Tag are not annotated tags
 	def describeTag = grgit.describe(longDescr: true, match: ["rel_*"], tags: true)
 
@@ -154,7 +154,7 @@ if (changesModeEnabled && grgit != null) {
 	}
 	else {
 		ext.changesMode = true;
-		
+
 		File smcChangesBarrier = new File(rootDir, ".smc_changes_barrier")
 
 		if (smcChangesBarrier.exists()) {

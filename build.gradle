@@ -85,7 +85,36 @@ gradle.beforeProject {
 			task packageForDist(dependsOn: war) {
 				// Empty. Only needed for task dependencies
 			}
+		
+			def warVersion = project.property('version')
+			
+			if (warVersion.equals("unspecified")) {
+				
+				// gestisco caso di plugin con "liferay-plugin-package.properties"
+				
+				def liferayPluginPackage = project.file("src/main/webapp/WEB-INF/liferay-plugin-package.properties")
 
+				if (liferayPluginPackage.exists()) {
+					def pluginProps = new Properties()
+					
+					liferayPluginPackage.withInputStream { 
+						pluginProps.load(it) 
+					}
+
+					if (pluginProps.containsKey('Bundle-Version')) {
+						warVersion = pluginProps.getProperty('Bundle-Version')
+					}
+					else {
+						println "   WARN: no 'Bundle-Version' into liferay-plugin-package.properties"
+					}
+				}
+				
+				if (warVersion.equals("unspecified")) {
+					warVersion  = "1.0.0"
+				}
+				
+				project['version'] = warVersion
+			}			
 		}
 		else if (project.tasks.findByName("jar")) {
 			managedType = "jar"
@@ -434,8 +463,10 @@ task showDistProfiles() {
 					String archivesBaseName = prj.properties["archivesBaseName"]
 					String targetVersion = projectDependency.version
 
-					if (!isChangedProject(prj.path) && prj.hasProperty('originalVersion')) {
-						targetVersion = prj.property('originalVersion')
+					if (changesMode) {
+						if (!isChangedProject(prj.path) && prj.hasProperty('originalVersion')) {
+							targetVersion = prj.property('originalVersion')
+						}
 					}
 
 					values.add("compileOnly group:'${projectDependency.group}', name:'${archivesBaseName}', version:'${targetVersion}'")
