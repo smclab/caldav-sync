@@ -24,6 +24,8 @@ List<Calendar> calendars = CalendarUtil.getAllCalendars(permissionChecker);
 String userCalDAVURL = portalURL + CalDAVUtil.getPrincipalURL(themeDisplay.getUserId());
 %>
 
+<liferay-util:dynamic-include key="it.smc.calendar.caldav.display#/caldav/display_links.jsp#pre" />
+
 <div class="container-fluid">
 	<h2>
 		<liferay-ui:message key="caldav-url-for-collection" />
