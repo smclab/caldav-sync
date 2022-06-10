@@ -19,7 +19,6 @@ import com.liferay.calendar.model.Calendar;
 import com.liferay.calendar.model.CalendarBooking;
 import com.liferay.calendar.model.CalendarResource;
 import com.liferay.calendar.service.CalendarBookingLocalService;
-import com.liferay.calendar.util.JCalendarUtil;
 import com.liferay.calendar.workflow.constants.CalendarBookingWorkflowConstants;
 import com.liferay.expando.kernel.model.ExpandoBridge;
 import com.liferay.expando.kernel.model.ExpandoColumn;
@@ -57,25 +56,6 @@ import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.UnicodeProperties;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.kernel.workflow.WorkflowConstants;
-
-import java.io.IOException;
-import java.net.URI;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Optional;
-import java.util.TimeZone;
-
-import javax.servlet.http.HttpServletRequest;
-
-import org.osgi.service.component.annotations.Component;
-import org.osgi.service.component.annotations.Reference;
-import org.osgi.service.component.annotations.ReferencePolicyOption;
-
 import it.smc.calendar.caldav.helper.api.CalendarHelperUtil;
 import it.smc.calendar.caldav.helper.util.PropsValues;
 import it.smc.calendar.caldav.sync.ical.util.AttendeeUtil;
@@ -88,6 +68,8 @@ import net.fortuna.ical4j.model.Parameter;
 import net.fortuna.ical4j.model.ParameterList;
 import net.fortuna.ical4j.model.Property;
 import net.fortuna.ical4j.model.PropertyList;
+import net.fortuna.ical4j.model.TimeZoneRegistry;
+import net.fortuna.ical4j.model.TimeZoneRegistryFactory;
 import net.fortuna.ical4j.model.component.VAlarm;
 import net.fortuna.ical4j.model.component.VEvent;
 import net.fortuna.ical4j.model.parameter.Cn;
@@ -110,6 +92,25 @@ import net.fortuna.ical4j.model.property.Transp;
 import net.fortuna.ical4j.model.property.Trigger;
 import net.fortuna.ical4j.model.property.Uid;
 import net.fortuna.ical4j.model.property.XProperty;
+import org.osgi.service.component.annotations.Component;
+import org.osgi.service.component.annotations.Reference;
+import org.osgi.service.component.annotations.ReferencePolicyOption;
+
+import javax.servlet.http.HttpServletRequest;
+import java.io.IOException;
+import java.net.URI;
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Optional;
+import java.util.TimeZone;
 
 /**
  * @author Fabio Pezzutto
@@ -145,7 +146,18 @@ public class DefaultICSContentListener implements ICSImportExportListener {
 					if (calendarBooking != null) {
 						updateBookingAttendees(calendarBooking, vEvent);
 						updateAltDescription(calendarBooking, vEvent);
-						updateTitleAndDescription(calendarBooking, vEvent);
+
+
+						long userId = PrincipalThreadLocal.getUserId();
+
+						if (userId == 0) {
+							userId = PermissionThreadLocal.getPermissionChecker(
+							).getUserId();
+						}
+
+						User currentUser = _userLocalService.getUser(userId);
+						updateCalendarBookingImport(
+							calendarBooking, currentUser, vEvent);
 					}
 				}
 			}
@@ -190,7 +202,8 @@ public class DefaultICSContentListener implements ICSImportExportListener {
 					updateDowloadedInvitations(
 						currentUser, iCalCalendar, vEvent, calendarBooking);
 
-					updateAllDayDate(vEvent, calendarBooking, currentUser);
+					updateAllDayDateExport(
+						vEvent, calendarBooking, currentUser);
 
 					DateTime modifiedDate = new DateTime(
 						calendarBooking.getModifiedDate(
@@ -426,53 +439,62 @@ public class DefaultICSContentListener implements ICSImportExportListener {
 		}
 	}
 
-	protected void updateAllDayDate(
+	protected void updateAllDayDateExport(
 		VEvent vEvent, CalendarBooking calendarBooking, User user) {
 
+		DtStart dtStart = null;
+		DtEnd dtEnd = null;
+
+		PropertyList propertyList = vEvent.getProperties();
+
+		TimeZone userTimeZone = user.getTimeZone();
+		ZoneId userZoneId = ZoneId.of(userTimeZone.getID());
+
+		Instant instantStartTime =
+			Instant.ofEpochMilli(calendarBooking.getStartTime());
+
 		if (calendarBooking.isAllDay()) {
-			PropertyList propertyList = vEvent.getProperties();
 
-			TimeZone userTimeZone = user.getTimeZone();
+			Instant instantEndTime =
+				Instant.ofEpochMilli(calendarBooking.getEndTime());
 
-			TimeZone utcTimeZone = TimeZone.getTimeZone("UTC");
+			ZonedDateTime startZoneDateTime =
+				ZonedDateTime.ofInstant(instantStartTime, userZoneId);
+			ZonedDateTime endZoneDateTime =
+				ZonedDateTime.ofInstant(instantEndTime, userZoneId);
 
-			java.util.Calendar startJCalendar = JCalendarUtil.getJCalendar(
-				calendarBooking.getStartTime(), utcTimeZone);
+			long zdtStartMillis =
+				(startZoneDateTime.toEpochSecond() +
+				    startZoneDateTime.getOffset().getTotalSeconds()) * 1000;
+			long zdtEndMillis =
+				(endZoneDateTime.toEpochSecond() +
+					endZoneDateTime.getOffset().getTotalSeconds()) * 1000;
 
-			boolean normalize = true;
+			zdtEndMillis += _SIXTY_SECONDS_DELAY_IN_MILLIS;
 
-			if (startJCalendar.get(java.util.Calendar.HOUR) == 0) {
-				normalize = false;
-			}
+			dtStart = new DtStart(
+				new net.fortuna.ical4j.model.Date(zdtStartMillis), true);
 
-			java.util.Calendar endJCalendar = JCalendarUtil.getJCalendar(
-				calendarBooking.getEndTime(), utcTimeZone);
+			dtEnd = new DtEnd(
+				new net.fortuna.ical4j.model.Date(zdtEndMillis), true);
 
-			endJCalendar.add(java.util.Calendar.DAY_OF_MONTH, 1);
+		} else {
+			dtStart = new DtStart(
+				_toICalDateTime(calendarBooking.getStartTime(), userTimeZone));
 
-			long utcStart = startJCalendar.getTimeInMillis();
+			dtEnd = new DtEnd(
+				_toICalDateTime(calendarBooking.getEndTime(), userTimeZone));
 
-			long utcEnd = endJCalendar.getTimeInMillis();
-
-			if (normalize) {
-				utcStart += userTimeZone.getRawOffset();
-				utcEnd += userTimeZone.getRawOffset();
-			}
-
-			DtStart dtStart = new DtStart(
-				new net.fortuna.ical4j.model.Date(utcStart), true);
-
-			DtEnd dtEnd = new DtEnd(
-				new net.fortuna.ical4j.model.Date(utcEnd), true);
-
-			propertyList.remove(vEvent.getStartDate());
-
-			propertyList.remove(vEvent.getEndDate());
-
-			propertyList.add(dtStart);
-
-			propertyList.add(dtEnd);
 		}
+
+		propertyList.remove(vEvent.getStartDate());
+
+		propertyList.remove(vEvent.getEndDate());
+
+		propertyList.add(dtStart);
+
+		propertyList.add(dtEnd);
+
 	}
 
 	protected void updateAltDescription(
@@ -990,22 +1012,11 @@ public class DefaultICSContentListener implements ICSImportExportListener {
 		propertyList.addAll(allAttendees);
 	}
 
-	protected void updateTitleAndDescription(
-		CalendarBooking calendarBooking, VEvent vEvent) {
+	protected void updateCalendarBookingImport(
+		CalendarBooking calendarBooking, User user, VEvent vEvent ) {
 
-		Locale locale;
-
-		try {
-			Calendar calendar = calendarBooking.getCalendar();
-
-			long userId = calendar.getUserId();
-			User user = _userLocalService.getUser(userId);
-
-			locale = user.getLocale();
-		}
-		catch (PortalException e) {
-			locale = Locale.getDefault();
-		}
+		Locale locale = user.getLocale();
+		TimeZone userTimeZone = user.getTimeZone();
 
 		String title = calendarBooking.getTitle(locale);
 		String description = calendarBooking.getDescription(locale);
@@ -1020,6 +1031,53 @@ public class DefaultICSContentListener implements ICSImportExportListener {
 
 		calendarBooking.setTitleMap(titleMap);
 		calendarBooking.setDescriptionMap(descriptionMap);
+
+		//Ricalcolo start time and End time
+		long startDate = calendarBooking.getStartTime();
+		long endDate = calendarBooking.getEndTime();
+		ZoneId userZoneId = ZoneId.of(userTimeZone.getID());
+
+		Instant instantStartTime = Instant.ofEpochMilli(startDate);
+		Instant instantEndTime = Instant.ofEpochMilli(endDate);
+
+		ZonedDateTime startZoneDateTime =
+			ZonedDateTime.ofInstant(instantStartTime, userZoneId);
+		ZonedDateTime endZoneDateTime =
+			ZonedDateTime.ofInstant(instantEndTime, userZoneId);
+
+		if (calendarBooking.isAllDay()){
+			startDate +=
+				(startZoneDateTime.getOffset().getTotalSeconds() * -1000);
+
+			endDate += _23HOURS_59MINUTES_IN_MILLIS +
+				(endZoneDateTime.getOffset().getTotalSeconds() * -1000);;
+
+		}else{
+			DtStart dtStart = vEvent.getStartDate();
+			DtEnd dtEnd = vEvent.getEndDate();
+
+			TimeZone utcTimeZone = TimeZone.getTimeZone("UTC");
+
+			Instant utcinstantStartTime =
+				Instant.ofEpochMilli(dtStart.getDate().getTime());
+			Instant utcinstantEndTime =
+				Instant.ofEpochMilli(dtEnd.getDate().getTime());
+
+			ZoneId utcZoneId = ZoneId.of(utcTimeZone.getID());
+
+			ZonedDateTime utcstartZoneDateTime =
+				ZonedDateTime.ofInstant(utcinstantStartTime, utcZoneId);
+			ZonedDateTime utcendZoneDateTime =
+				ZonedDateTime.ofInstant(utcinstantEndTime, utcZoneId);
+
+			startDate +=
+				(utcstartZoneDateTime.getOffset().getTotalSeconds() * -1000);
+			endDate +=
+				(utcendZoneDateTime.getOffset().getTotalSeconds() * -1000);
+		}
+
+		calendarBooking.setStartTime(startDate);
+		calendarBooking.setEndTime(endDate);
 
 		_calendarBookingLocalService.updateCalendarBooking(calendarBooking);
 	}
@@ -1082,6 +1140,17 @@ public class DefaultICSContentListener implements ICSImportExportListener {
 		}
 
 		return notificationRecipients;
+	}
+
+	private TimeZoneRegistry _getTimeZoneRegistry() {
+		if (_timeZoneRegistry == null) {
+			TimeZoneRegistryFactory timeZoneRegistryFactory =
+				TimeZoneRegistryFactory.getInstance();
+
+			_timeZoneRegistry = timeZoneRegistryFactory.createRegistry();
+		}
+
+		return _timeZoneRegistry;
 	}
 
 	private void _replaceDescription(VEvent vEvent, XProperty vEventXAltDesc) {
@@ -1172,6 +1241,29 @@ public class DefaultICSContentListener implements ICSImportExportListener {
 		return attendee;
 	}
 
+	private DateTime _toICalDateTime(long time, TimeZone timeZone) {
+		DateTime dateTime = new DateTime();
+
+		dateTime.setTime(time);
+
+		if (timeZone == null) {
+			dateTime.setUtc(true);
+		}
+		else {
+			dateTime.setTimeZone(_toICalTimeZone(timeZone));
+		}
+
+		return dateTime;
+	}
+
+	private net.fortuna.ical4j.model.TimeZone _toICalTimeZone(
+		TimeZone timeZone) {
+
+		TimeZoneRegistry timeZoneRegistry = _getTimeZoneRegistry();
+
+		return timeZoneRegistry.getTimeZone(timeZone.getID());
+	}
+
 	private void _updateAllBookingModifiedDate(
 			CalendarBooking calendarBooking, Date date)
 		throws PortalException {
@@ -1232,6 +1324,12 @@ public class DefaultICSContentListener implements ICSImportExportListener {
 
 	private static Log _log = LogFactoryUtil.getLog(
 		DefaultICSContentListener.class);
+
+	private static TimeZoneRegistry _timeZoneRegistry;
+
+	private static long _SIXTY_SECONDS_DELAY_IN_MILLIS = 60000;
+
+	private static long _23HOURS_59MINUTES_IN_MILLIS = (86340 * 1000);
 
 	@Reference(policyOption = ReferencePolicyOption.GREEDY)
 	private CalendarBookingLocalService _calendarBookingLocalService;
