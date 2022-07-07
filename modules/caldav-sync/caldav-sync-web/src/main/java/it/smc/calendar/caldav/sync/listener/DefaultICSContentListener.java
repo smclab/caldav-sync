@@ -51,7 +51,10 @@ import com.liferay.portal.kernel.service.ServiceContext;
 import com.liferay.portal.kernel.service.ServiceContextThreadLocal;
 import com.liferay.portal.kernel.service.UserLocalService;
 import com.liferay.portal.kernel.util.ArrayUtil;
+import com.liferay.portal.kernel.util.CacheResourceBundleLoader;
+import com.liferay.portal.kernel.util.ClassResourceBundleLoader;
 import com.liferay.portal.kernel.util.GetterUtil;
+import com.liferay.portal.kernel.util.ResourceBundleLoader;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.UnicodeProperties;
 import com.liferay.portal.kernel.util.Validator;
@@ -105,12 +108,16 @@ import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.TimeZone;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * @author Fabio Pezzutto
@@ -145,8 +152,6 @@ public class DefaultICSContentListener implements ICSImportExportListener {
 
 					if (calendarBooking != null) {
 						updateBookingAttendees(calendarBooking, vEvent);
-						updateAltDescription(calendarBooking, vEvent);
-
 
 						long userId = PrincipalThreadLocal.getUserId();
 
@@ -156,6 +161,10 @@ public class DefaultICSContentListener implements ICSImportExportListener {
 						}
 
 						User currentUser = _userLocalService.getUser(userId);
+
+						updateAltDescription(calendarBooking, vEvent,
+							currentUser);
+
 						updateCalendarBookingImport(
 							calendarBooking, currentUser, vEvent);
 					}
@@ -198,6 +207,9 @@ public class DefaultICSContentListener implements ICSImportExportListener {
 					}
 
 					updateICSExternalAttendees(vEvent, calendarBooking);
+
+					_updateDescription(
+						vEvent, calendarBooking, currentUser.getLocale());
 
 					updateDowloadedInvitations(
 						currentUser, iCalCalendar, vEvent, calendarBooking);
@@ -269,7 +281,19 @@ public class DefaultICSContentListener implements ICSImportExportListener {
 							_calendarBookingLocalService.fetchCalendarBooking(
 								calendar.getCalendarId(), vEventUidValue);
 
-						updateAltDescription(calendarBooking, vEvent);
+						long userId = PrincipalThreadLocal.getUserId();
+
+						if (userId == 0) {
+							userId = PermissionThreadLocal.getPermissionChecker(
+							).getUserId();
+						}
+
+						User currentUser = _userLocalService.getUser(userId);
+
+						updateAltDescription(
+							calendarBooking, vEvent, currentUser);
+
+						_removeAttendeesDuplicated(calendarBooking, vEvent);
 					}
 				}
 			}
@@ -498,13 +522,21 @@ public class DefaultICSContentListener implements ICSImportExportListener {
 	}
 
 	protected void updateAltDescription(
-			CalendarBooking calendarBooking, VEvent vEvent)
+			CalendarBooking calendarBooking, VEvent vEvent, User currentUser)
 		throws PortalException {
-
 		XProperty vEventXAltDesc = (XProperty)vEvent.getProperty("X-ALT-DESC");
 
+		String descriptionSanitized = StringPool.BLANK;
+
 		if (vEventXAltDesc == null) {
-			return;
+			Description description = (Description) vEvent.getProperties()
+				.getProperty(Property.DESCRIPTION);
+
+			descriptionSanitized = _replaceDescSanitied(
+				description.getValue(), currentUser.getLocale());
+
+		}else {
+			descriptionSanitized = vEventXAltDesc.getValue();
 		}
 
 		if (calendarBooking != null) {
@@ -527,7 +559,7 @@ public class DefaultICSContentListener implements ICSImportExportListener {
 			}
 		}
 
-		_replaceDescription(vEvent, vEventXAltDesc);
+		_replaceDescription(vEvent, descriptionSanitized);
 	}
 
 	protected void updateBookingAttendees(
@@ -537,8 +569,8 @@ public class DefaultICSContentListener implements ICSImportExportListener {
 		PropertyList attendeeList = vEvent.getProperties(Property.ATTENDEE);
 
 		Iterator iterator = attendeeList.iterator();
-		String[] attendees = new String[0];
-		String[] attendeesEmailAddresses = new String[0];
+		Set<String> attendees = new HashSet<>();
+		Set<String> attendeesEmailAddresses = new HashSet<>();
 
 		while (iterator.hasNext()) {
 			Attendee attendee = (Attendee)iterator.next();
@@ -563,10 +595,9 @@ public class DefaultICSContentListener implements ICSImportExportListener {
 					calendarBooking.getCalendarResource());
 
 			if (user == null) {
-				attendees = ArrayUtil.append(attendees, attendee.toString());
+				attendees.add(attendee.toString());
 
-				attendeesEmailAddresses = ArrayUtil.append(
-					attendeesEmailAddresses, attendeeEmail);
+				attendeesEmailAddresses.add(attendeeEmail);
 			}
 			else if (bookingUser.isPresent() &&
 					user.equals(bookingUser.get())) {
@@ -646,16 +677,18 @@ public class DefaultICSContentListener implements ICSImportExportListener {
 				calendarBooking, invitedUsersLabelCustomFieldName);
 		}
 
-		if (!ArrayUtil.isEmpty(attendees)) {
+		if (!attendees.isEmpty()) {
 			calendarBookingExpando.setAttribute(
-				invitedUsersCustomFieldName, attendees, Boolean.FALSE);
+				invitedUsersCustomFieldName, attendees.toArray(),
+				Boolean.FALSE);
 		}
 
 		if (Validator.isNotNull(invitedUsersLabelCustomFieldName) &&
-			!ArrayUtil.isEmpty(attendeesEmailAddresses)) {
+			!attendeesEmailAddresses.isEmpty()) {
 
 			calendarBookingExpando.setAttribute(
-				invitedUsersLabelCustomFieldName, attendeesEmailAddresses,
+				invitedUsersLabelCustomFieldName,
+				attendeesEmailAddresses.toArray(),
 				Boolean.FALSE);
 		}
 	}
@@ -1019,7 +1052,9 @@ public class DefaultICSContentListener implements ICSImportExportListener {
 		TimeZone userTimeZone = user.getTimeZone();
 
 		String title = calendarBooking.getTitle(locale);
-		String description = calendarBooking.getDescription(locale);
+		Description descriptionEvent = (Description) vEvent.getProperties()
+			.getProperty(Property.DESCRIPTION);
+		String description = descriptionEvent.getValue();
 
 		Map<Locale, String> titleMap = new HashMap<>();
 		Map<Locale, String> descriptionMap = new HashMap<>();
@@ -1142,6 +1177,16 @@ public class DefaultICSContentListener implements ICSImportExportListener {
 		return notificationRecipients;
 	}
 
+	private ResourceBundleLoader _getResourceBundleLoader() {
+		if (_resourceBundleLoader == null) {
+			_resourceBundleLoader = new CacheResourceBundleLoader(
+				new ClassResourceBundleLoader(
+					"content.Language", getClass()));
+		}
+
+		return _resourceBundleLoader;
+	}
+
 	private TimeZoneRegistry _getTimeZoneRegistry() {
 		if (_timeZoneRegistry == null) {
 			TimeZoneRegistryFactory timeZoneRegistryFactory =
@@ -1153,8 +1198,53 @@ public class DefaultICSContentListener implements ICSImportExportListener {
 		return _timeZoneRegistry;
 	}
 
-	private void _replaceDescription(VEvent vEvent, XProperty vEventXAltDesc) {
-		String vEventAltDescValue = vEventXAltDesc.getValue();
+	private void _removeAttendeesDuplicated(
+		CalendarBooking calendarBooking, VEvent vEvent) throws PortalException {
+
+		Set<String> attendeeEmailPresent = new HashSet<>();
+		if (calendarBooking != null) {
+			for (CalendarBooking childCalendarBooking :
+				calendarBooking.getChildCalendarBookings()) {
+				long userId = childCalendarBooking.getUserId();
+
+				User user = _userLocalService.fetchUser(userId);
+				if (user != null){
+					attendeeEmailPresent.add(
+						StringUtil.toLowerCase(user.getEmailAddress()));
+				}
+			}
+		}
+
+		PropertyList attendeeListOriginal = vEvent.getProperties(Property.ATTENDEE);
+		PropertyList attendeeList = vEvent.getProperties(Property.ATTENDEE);
+		Iterator iterator = attendeeList.iterator();
+		Set<String> attendeesEmailAddresses = new HashSet<>();
+
+		while (iterator.hasNext()) {
+			Attendee attendee = (Attendee) iterator.next();
+
+			if (Validator.isNull(attendee.getValue())) {
+				continue;
+			}
+
+			String attendeeEmail = StringUtil.replace(
+				StringUtil.toLowerCase(attendee.getValue()), "mailto:",
+				StringPool.BLANK);
+
+			if (attendeesEmailAddresses.contains(attendeeEmail) ||
+			    attendeeEmailPresent.contains(attendeeEmail)){
+				iterator.remove();
+			}
+			attendeesEmailAddresses.add(attendeeEmail);
+		}
+
+		//attendee list corretta
+		vEvent.getProperties().removeAll(attendeeListOriginal);
+		vEvent.getProperties().addAll(attendeeList);
+
+	}
+
+	private void _replaceDescription(VEvent vEvent, String vEventAltDescValue) {
 
 		Property vEventDescription = vEvent.getProperty(Property.DESCRIPTION);
 
@@ -1165,6 +1255,39 @@ public class DefaultICSContentListener implements ICSImportExportListener {
 		Description description = new Description(vEventAltDescValue);
 
 		vEventProperties.add(description);
+	}
+
+	private String _replaceDescSanitied(String value, Locale locale) {
+
+		Pattern descPattern = Pattern.compile(
+			"([\\\"]*)(<http[s]?:\\/\\/[a-zA-Z.0-9:\\/?=&%-_#]+>)");
+
+		String sanitized = value;
+		Matcher matcher = descPattern.matcher(sanitized);
+
+		while (matcher.find()) {
+			String check = matcher.group(1);
+			if(!check.isEmpty()){
+				continue;
+			}
+
+			String linkOriginal = matcher.group(2);
+			String link = matcher.group(2);
+			if (!link.isEmpty()){
+				link = link.replace(StringPool.LESS_THAN, StringPool.BLANK);
+				link =
+					link.replace(StringPool.GREATER_THAN, StringPool.BLANK);
+				link ="<a href='"+ link +"'>" + LanguageUtil.get(
+					_getResourceBundleLoader().loadResourceBundle(locale),
+					"click-me") + "</a>";
+
+			}
+
+			sanitized = StringUtil.replace(
+				sanitized, linkOriginal, link);
+		}
+
+		return sanitized;
 	}
 
 	private void _setExpandoColumnUserPermissions(
@@ -1306,6 +1429,15 @@ public class DefaultICSContentListener implements ICSImportExportListener {
 			companyId, name, primKey, role.getRoleId(), actionIds);
 	}
 
+	private void _updateDescription(
+		VEvent vEvent, CalendarBooking calendarBooking, Locale locale) {
+
+		String descriptionSanitized = calendarBooking.getDescription(locale);
+
+		_replaceDescription(vEvent, descriptionSanitized);
+
+	}
+
 	private void _updateModelResourcePermissions(
 			long companyId, String name, long primKey, long roleId,
 			String[] actionIds)
@@ -1353,5 +1485,7 @@ public class DefaultICSContentListener implements ICSImportExportListener {
 
 	@Reference(policyOption = ReferencePolicyOption.GREEDY)
 	private UserLocalService _userLocalService;
+
+	private ResourceBundleLoader _resourceBundleLoader;
 
 }
