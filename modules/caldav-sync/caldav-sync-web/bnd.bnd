@@ -4,7 +4,7 @@ Bundle-DocURL: http://www.smc.it
 Bundle-License: LGPL
 Bundle-Name: CalDAV Sync Web
 Bundle-SymbolicName: it.smc.calendar.caldav
-Bundle-Version: 4.0.1
+Bundle-Version: 4.0.2
 
 DynamicImport-Package: *
 Export-Package:\
