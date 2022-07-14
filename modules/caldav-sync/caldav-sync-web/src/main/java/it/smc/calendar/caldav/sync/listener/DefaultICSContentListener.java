@@ -1030,7 +1030,16 @@ public class DefaultICSContentListener implements ICSImportExportListener {
 		// add new emails ad attendee
 
 		for (String attendeeEmail : visibleAttendeeEmails) {
-			URI uri = URI.create("mailto:" + attendeeEmail);
+			String safeAttendeeUsername = StringPool.BLANK;
+
+			if (Validator.isNotNull(attendeeEmail)
+			    && attendeeEmail.contains(StringPool.AT)) {
+				safeAttendeeUsername =
+					attendeeEmail.substring(0,
+						attendeeEmail.indexOf(StringPool.AT));
+			}
+
+			URI uri = URI.create("mailto:" + safeAttendeeUsername);
 
 			Attendee attendee = new Attendee(uri);
 
