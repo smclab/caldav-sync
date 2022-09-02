@@ -528,22 +528,16 @@ public class DefaultICSContentListener implements ICSImportExportListener {
 
 		String descriptionSanitized = StringPool.BLANK;
 
-		if (vEventXAltDesc == null) {
-			try {
-				Description description = (Description) vEvent.getProperties()
-					.getProperty(Property.DESCRIPTION);
-				descriptionSanitized = _replaceDescSanitied(
-					description.getValue(), currentUser.getLocale());
+		Description description = (Description) vEvent.getProperties()
+			.getProperty(Property.DESCRIPTION);
 
-			}catch (Exception e){
-				if (_log.isDebugEnabled()){
-					_log.debug(e, e);
-				}
-				return;
-			}
-
-		}else {
+		if (vEventXAltDesc == null && description != null) {
+			descriptionSanitized = _replaceDescSanitied(
+				description.getValue(), currentUser.getLocale());
+		}else if (vEventXAltDesc != null) {
 			descriptionSanitized = vEventXAltDesc.getValue();
+		}else {
+			return;
 		}
 
 		if (calendarBooking != null) {
@@ -1060,15 +1054,12 @@ public class DefaultICSContentListener implements ICSImportExportListener {
 
 		String title = calendarBooking.getTitle(locale);
 		String description = calendarBooking.getDescription(locale);
-		try {
-			Description descriptionEvent = (Description) vEvent.getProperties()
-				.getProperty(Property.DESCRIPTION);
-			description = descriptionEvent.getValue();
 
-		}catch (Exception e){
-			if (_log.isDebugEnabled()){
-				_log.debug(e, e);
-			}
+		Description descriptionEvent = (Description) vEvent.getProperties()
+			.getProperty(Property.DESCRIPTION);
+
+		if (description != null) {
+			description = descriptionEvent.getValue();
 		}
 
 		Map<Locale, String> titleMap = new HashMap<>();
