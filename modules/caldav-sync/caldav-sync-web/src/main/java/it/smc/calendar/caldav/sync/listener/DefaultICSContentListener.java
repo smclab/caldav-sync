@@ -529,11 +529,18 @@ public class DefaultICSContentListener implements ICSImportExportListener {
 		String descriptionSanitized = StringPool.BLANK;
 
 		if (vEventXAltDesc == null) {
-			Description description = (Description) vEvent.getProperties()
-				.getProperty(Property.DESCRIPTION);
+			try {
+				Description description = (Description) vEvent.getProperties()
+					.getProperty(Property.DESCRIPTION);
+				descriptionSanitized = _replaceDescSanitied(
+					description.getValue(), currentUser.getLocale());
 
-			descriptionSanitized = _replaceDescSanitied(
-				description.getValue(), currentUser.getLocale());
+			}catch (Exception e){
+				if (_log.isDebugEnabled()){
+					_log.debug(e, e);
+				}
+				return;
+			}
 
 		}else {
 			descriptionSanitized = vEventXAltDesc.getValue();
@@ -1052,9 +1059,17 @@ public class DefaultICSContentListener implements ICSImportExportListener {
 		TimeZone userTimeZone = user.getTimeZone();
 
 		String title = calendarBooking.getTitle(locale);
-		Description descriptionEvent = (Description) vEvent.getProperties()
-			.getProperty(Property.DESCRIPTION);
-		String description = descriptionEvent.getValue();
+		String description = calendarBooking.getDescription(locale);
+		try {
+			Description descriptionEvent = (Description) vEvent.getProperties()
+				.getProperty(Property.DESCRIPTION);
+			description = descriptionEvent.getValue();
+
+		}catch (Exception e){
+			if (_log.isDebugEnabled()){
+				_log.debug(e, e);
+			}
+		}
 
 		Map<Locale, String> titleMap = new HashMap<>();
 		Map<Locale, String> descriptionMap = new HashMap<>();
