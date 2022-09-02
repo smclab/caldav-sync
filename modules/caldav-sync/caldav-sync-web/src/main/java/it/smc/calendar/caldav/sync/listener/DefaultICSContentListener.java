@@ -1058,7 +1058,7 @@ public class DefaultICSContentListener implements ICSImportExportListener {
 		Description descriptionEvent = (Description) vEvent.getProperties()
 			.getProperty(Property.DESCRIPTION);
 
-		if (description != null) {
+		if (descriptionEvent != null) {
 			description = descriptionEvent.getValue();
 		}
 
