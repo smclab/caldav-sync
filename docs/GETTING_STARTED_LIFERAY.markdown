@@ -48,6 +48,12 @@ my-project $ blade gw distBundleTar
 my-project $ blade gw distBundleZip
 ```
 
+### Creating multiple bundles
+```
+my-project $ blade gw distBundleTarAll
+my-project $ blade gw distBundleZipAll
+```
+
 ### Creating a docker image
 ```
 my-project $ blade gw buildDockerImage
@@ -135,6 +141,22 @@ You can organize environment settings and generate an environment installation
 with those settings. There are five environments: common, dev, docker, local,
 prod, and uat. The default value is `local`.
 
+#### liferay.workspace.bundle.dist.include.metadata
+Set this to true to append metadata for the current environment settings and
+timestamp. The default value is `false`.
+
+#### liferay.workspace.docker.local.registry.address
+Set this to the host and port of the local Docker registry. This will enable the user to interact with a Docker registry other than DockerHub (e.g. myregistryaddress.org:5000).
+
+#### liferay.workspace.docker.pull.policy
+Set this to false to pull the user's local Docker cache first. The default value is true.
+
+#### liferay.workspace.docker.username
+Set this property to the registered user name on DockerHub to avoid conflicts with DockerHub.
+
+#### liferay.workspace.docker.user.access.token
+See https://docs.docker.com/docker-hub/access-tokens on how to generate a Docker access token.
+
 #### liferay.workspace.ext.dir
 Set the folder that contains all Ext OSGi modules and Ext plugins. The default
 value is `ext`.
@@ -156,8 +178,8 @@ Set this to true to compile the JSP files in OSGi modules and have them added
 to the distributable Zip/Tar. The default value is `false`.
 
 #### liferay.workspace.node.package.manager
-Set this property to `yarn` to build Node.js-style projects using Yarn. The
-default value is `npm`.
+Set this property to `npm` to build Node.js-style projects using NPM. The
+default value is `yarn`.
 
 #### liferay.workspace.plugins.sdk.dir
 Set the folder that contains the Plugins SDK environment. The default value is
@@ -170,6 +192,10 @@ Set the folder that contains Node.js-style theme projects. The default value is
 #### liferay.workspace.themes.java.build
 Set this to true to build the theme projects using the Liferay Portal Tools
 Theme Builder. The default value is `false`.
+
+#### liferay.workspace.wars.dir
+Set the folder that contains all legacy WAR projects. Set to `*` to search all
+subdirectories. The default value is `modules`.
 
 #### microsoft.translator.subscription.key
 Set the subscription key for Microsoft Translation integration. This is service

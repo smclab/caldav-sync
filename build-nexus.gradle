@@ -166,6 +166,10 @@ if (changesModeEnabled && grgit != null) {
 	}
 
 	def changesModeType = project.properties["changes.mode.type"]
+	def matchNames = [
+		"/package.json", "/package-loack.json", "/gulpfile.js", "/build.gradle",
+		"/bnd.bnd"
+	]
 
 	if (ext.changesMode) {
 
@@ -177,17 +181,80 @@ if (changesModeEnabled && grgit != null) {
 				if (p.equals("/modules/build.gradle")) {
 					v = false
 				}
-				else if (p.endsWith("/bnd.bnd")) {
+				else if (p.contains("/src/")) {
 					v = true
-					changedProjects.add(p.minus("/bnd.bnd").replaceAll("/", ":"))
+					changedProjects.add(p.minus(~/\/src\/.*$/).replaceAll("/", ":"))
 				}
-				else if (p.endsWith("build.gradle")) {
-					v = true
-					changedProjects.add(p.minus("/build.gradle").replaceAll("/", ":"))
+				else {
+					matchNames.each {
+						if (!v && p.endsWith(it)) {
+							v = true
+							changedProjects.add(p.minus(it).replaceAll("/", ":"))
+						}
+					}
+				}
+
+				if (v && changesVerboseMode) {
+					println "  ${p}"
+				}
+			}
+			else if (p.startsWith("/themes/")) {
+				if (p.equals("/themes/build.gradle")) {
+					v = false
 				}
 				else if (p.contains("/src/")) {
 					v = true
 					changedProjects.add(p.minus(~/\/src\/.*$/).replaceAll("/", ":"))
+				}
+				else {
+					matchNames.each {
+						if (!v && p.endsWith(it)) {
+							v = true
+							changedProjects.add(p.minus(it).replaceAll("/", ":"))
+						}
+					}
+				}
+
+				if (v && changesVerboseMode) {
+					println "  ${p}"
+				}
+			}
+			else if (p.startsWith("/wars/")) {
+				if (p.equals("/wars/build.gradle")) {
+					v = false
+				}
+				else if (p.contains("/src/")) {
+					v = true
+					changedProjects.add(p.minus(~/\/src\/.*$/).replaceAll("/", ":"))
+				}
+				else {
+					matchNames.each {
+						if (!v && p.endsWith(it)) {
+							v = true
+							changedProjects.add(p.minus(it).replaceAll("/", ":"))
+						}
+					}
+				}
+
+				if (v && changesVerboseMode) {
+					println "  ${p}"
+				}
+			}
+			else if (p.startsWith("/ext/")) {
+				if (p.equals("/ext/build.gradle")) {
+					v = false
+				}
+				else if (p.contains("/src/")) {
+					v = true
+					changedProjects.add(p.minus(~/\/src\/.*$/).replaceAll("/", ":"))
+				}
+				else {
+					matchNames.each {
+						if (!v && p.endsWith(it)) {
+							v = true
+							changedProjects.add(p.minus(it).replaceAll("/", ":"))
+						}
+					}
 				}
 
 				if (v && changesVerboseMode) {

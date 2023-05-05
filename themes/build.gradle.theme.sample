@@ -1,46 +1,23 @@
 apply plugin: 'war'
 
-// WARNING: Module Version is defined inside package.json
+// Is preferrable to use workspace NodeJS e NPM versions. Use following properties to change it
+//node.nodeVersion = "10.15.1"
+//node.npmVersion = "6.4.1"
 
-def finalVersion = "${project.property('version')}${project.property('registrySuffix')}"
-def nexusRepository = project.property('nexus.snapshots.url')
-
-if (!finalVersion.endsWith("-SNAPSHOT")) {
-	nexusRepository = project.property('nexus.releases.url');
-}
-
-publishing {
-	publications {
-		mavenJava(MavenPublication) {
-			version = "${finalVersion}"
-			artifactId = project.property('archivesBaseName')
-			artifact("dist/${project.name}.war")
-		}
-	}
-	repositories {
-		maven {
-			url = nexusRepository
-			credentials {
-				username project.property('registryUsername')
-				password project.property('registryPassword')
-			}
-		}
-	}
-}
-
-task showPublishDetails() {
-	def msg =
-		"${project.property('group')}:${project.property('archivesBaseName')}:${project.property('version')}" +
-		" (suffix ${project.property('registrySuffix')})" +
-		" on ${nexusRepository} as ${project.property('registryUsername')}"
-
-	doLast {
-		println "Published ${msg}"
-	}
-}
+// Gradle build depends on javascript tools
 
 war.dependsOn gulpBuild
 
-publish.dependsOn(gulpBuild, showPublishDetails);
+// Distributions. We have to adjust something to allow war to be considered
 
-publishToMavenLocal.dependsOn(gulpBuild, showPublishDetails);
+jar.archiveExtension.set('war');
+
+task packageForDist(type: Copy, dependsOn: war) {
+	def warVersion = project.property('version')
+
+	from file("dist/${project.name}.war")
+	into "build_gradle/libs"
+	rename { "${project.name}-${warVersion}.war" }
+
+	//println "DBG terget ${project.name}-${warVersion}.war"
+}

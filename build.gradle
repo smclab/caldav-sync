@@ -20,14 +20,27 @@ buildscript {
 
 apply from: "build-nexus.gradle"
 
-allprojects {
-	group = "it.smc.marketplace.caldav-sync"
+
+if (!project.hasProperty('product.group')) {
+	throw new GradleException("Please define 'product.group' inside 'gradle.properties'")
+}
+else {
+	String productGroup = project.getProperty('product.group')
+
+	if (productGroup.trim().size() > 0) {
+		allprojects {
+			group = productGroup.trim()
+		}
+	}
+	else {
+		throw new GradleException("Please define 'product.group' inside 'gradle.properties'")
+	}
 }
 
 def productBoms = []
 String boms = properties["product.bill.of.meterials"]
 
-if (boms != null) {
+if (boms != null && boms.trim().size() > 0) {
 	productBoms = boms.split(",")
 
 	// Create Distribution Profile (configuration) for BoMs
@@ -76,29 +89,38 @@ gradle.beforeProject {
 		// useful elements or tasks
 
 		def managedType = ""
+		def managedTypeTheme = false
+		def managedTypeExt = false
 
 		if (project.tasks.findByName("war")) {
-			if (project.path.startsWith(":wars:")) {
-				managedType = "war"
+			managedType = "war"
+
+			if (project.path.startsWith(":modules:")) {
+				println "   WARN: Please wars modules inside 'wars' folder"
+			}
+			else if (project.path.startsWith(":themes:")) {
+				managedTypeTheme = true
 			}
 
-			task packageForDist(dependsOn: war) {
-				// Empty. Only needed for task dependencies
+			if (!managedTypeTheme) {
+				task packageForDist(dependsOn: war) {
+					// Empty. Only needed for task dependencies
+				}
 			}
-		
+
 			def warVersion = project.property('version')
-			
+
 			if (warVersion.equals("unspecified")) {
-				
+
 				// gestisco caso di plugin con "liferay-plugin-package.properties"
-				
+
 				def liferayPluginPackage = project.file("src/main/webapp/WEB-INF/liferay-plugin-package.properties")
 
 				if (liferayPluginPackage.exists()) {
 					def pluginProps = new Properties()
-					
-					liferayPluginPackage.withInputStream { 
-						pluginProps.load(it) 
+
+					liferayPluginPackage.withInputStream {
+						pluginProps.load(it)
 					}
 
 					if (pluginProps.containsKey('Bundle-Version')) {
@@ -108,38 +130,50 @@ gradle.beforeProject {
 						println "   WARN: no 'Bundle-Version' into liferay-plugin-package.properties"
 					}
 				}
-				
+
 				if (warVersion.equals("unspecified")) {
 					warVersion  = "1.0.0"
 				}
-				
+
 				project['version'] = warVersion
-			}			
+			}
 		}
 		else if (project.tasks.findByName("jar")) {
 			managedType = "jar"
 
+			if (project.path.startsWith(":ext:")) {
+				managedTypeExt = true
+			}
+			
 			task packageForDist(dependsOn: jar) {
 				// Empty. Only needed for task dependencies
 			}
 
-			task releaseIncrementMajor() {
-				doLast {
-					_updateBndBundleVersion(project, 1)
+			if (!managedTypeExt) {
+				task releaseIncrementMajor(group: "SMC", description: "Increment module version. The 'major' part") {
+					doLast {
+						_updateBndBundleVersion(project, 1)
+					}
 				}
-			}
 
-			task releaseIncrementMinor() {
-				doLast {
-					_updateBndBundleVersion(project, 2)
+				task releaseIncrementMinor(group: "SMC", description: "Increment module version. The 'minor' part") {
+					doLast {
+						_updateBndBundleVersion(project, 2)
+					}
 				}
-			}
 
-			task releaseIncrementMicro() {
-				doLast {
-					_updateBndBundleVersion(project, 3)
+				task releaseIncrementMicro(group: "SMC", description: "Increment module version. The 'micro' part") {
+					doLast {
+						_updateBndBundleVersion(project, 3)
+					}
 				}
 			}
+		}
+		else if (project.path.startsWith(":themes:")) {
+			managedType = "war"
+			managedTypeTheme = true
+
+			project.pluginManager.apply("war")
 		}
 
 		if (managedType.equals("war") || managedType.equals("jar")) {
@@ -148,19 +182,20 @@ gradle.beforeProject {
 			// Force encoding (for portability)
 			compileJava.options.encoding = 'UTF-8'
 
-			task sourcesJar(type: Jar, dependsOn:classes) {
-				classifier = 'sources'
-				from sourceSets.main.allSource
-			}
+			if (!managedTypeTheme) {
+				task sourcesJar(type: Jar, dependsOn:classes) {
+					classifier = 'sources'
+					from sourceSets.main.allSource
+				}
 
-			dependencies {
-				/* No more needed
-				// We have to force version because Liferay BOMs have conflicting versions
-				compileOnly("javax.servlet:javax.servlet-api:3.0.1") { force = true }
-				*/
-				if (productBoms.size() > 0) {
-					productBoms.each {
-						compileOnly platform("${it}")
+				dependencies {
+					// We can use 'enforcedPlatform' to fix Liferay BOMs problems
+					//implementation enforcedPlatform(group: "javax.servlet", name: "javax.servlet-api", version: "3.0.1")
+
+					if (productBoms.size() > 0) {
+						productBoms.each {
+							compileOnly platform("${it}")
+						}
 					}
 				}
 			}
@@ -194,7 +229,15 @@ gradle.beforeProject {
 			project.plugins.withId('maven-publish') {
 				publishing {
 					publications {
-						if (managedType.equals("war")) {
+						if (managedType.equals("war") && managedTypeTheme) {
+							mavenJava(MavenPublication) {
+								version = "${finalVersion}"
+								artifactId = project.property('archivesBaseName')
+								artifact("dist/${project.name}.war")
+							}
+							//println("kk ${project.name}")
+						}
+						else if (managedType.equals("war")) {
 							mavenJava(MavenPublication) {
 								version = "${finalVersion}"
 								artifactId = project.property('archivesBaseName')
@@ -207,7 +250,9 @@ gradle.beforeProject {
 								version = "${finalVersion}"
 								artifactId = project.property('archivesBaseName')
 								from components.java
-								artifact(tasks["sourcesJar"])
+								if (!managedTypeTheme) {
+									artifact(tasks["sourcesJar"])
+								}
 							}
 						}
 					}
@@ -233,9 +278,14 @@ gradle.beforeProject {
 					}
 				}
 
-				publish.dependsOn(showPublishDetails);
-
-				publishToMavenLocal.dependsOn(showPublishDetails)
+				if (managedTypeTheme) {
+					publish.dependsOn(gulpBuild, showPublishDetails)
+					publishToMavenLocal.dependsOn(gulpBuild, showPublishDetails)
+				}
+				else {
+					publish.dependsOn(showPublishDetails)
+					publishToMavenLocal.dependsOn(showPublishDetails)
+				}
 			}
 
 		}
@@ -257,7 +307,7 @@ private void _updateBndBundleVersion(Project project, int level) {
 		if (curVersions.size() != 3) {
 			println "WARNING: Non standard version ${moduleVersion} for ${project.path}"
 		}
-		
+
 		def curMicros = curVersions[2].tokenize("-")
 
 		def newMajor = curVersions[0].toInteger()
@@ -352,7 +402,7 @@ println "** distLocalMode = ${distLocalMode}"
 /*
  * List all workspace projects with artifact name and including profiles
  */
-task listProjects() {
+task listProjects(group: "SMC", description: "List all workspace projects with artifact name and including profiles") {
 	doLast {
 		def resultMap = [:]
 		int pathSize = 0
@@ -408,7 +458,7 @@ task listProjects() {
 /*
  * List all configurations eligible as "Distribution Profile"
  */
-task listDistProfiles() {
+task listDistProfiles(group: "SMC", description: "List all configurations eligible as 'Distribution Profile'" ) {
 	doLast {
 		configurations.each { config ->
 			if (!config.name.startsWith("dist") && !config.name.startsWith("feature")) {
@@ -426,7 +476,11 @@ task listDistProfiles() {
  * as dependency
  * TODO: Find a way to resolve bom versions
  */
-task showDistProfiles() {
+task showDistProfiles(
+		group: "SMC",
+		description: "Describe all 'Distribution Profile' in a way usable in build-dist.gradle as dependencies"
+	) {
+
 	if (distLocalMode == "true") {
 		dependsOn configurations.archives.artifacts
 	}
@@ -488,7 +542,11 @@ task showDistProfiles() {
  * Describe "Distribution Profile" in a way usable to materialize a
  * local maven repository
  */
-task showDistInstall() {
+task showDistInstall(
+		group: "SMC",
+		description: "Describe all 'Distribution Profile' in a way usable to materialize a local maven repository"
+	) {
+
 	if (distLocalMode == "true") {
 		dependsOn configurations.archives.artifacts
 	}
@@ -535,7 +593,11 @@ task showDistInstall() {
  * This task is useful on local developer environment to deploy project
  * core element on local Liferay.
  */
-task deployCoreDependencies(type: Copy) {
+task deployCoreLibs(
+		type: Copy, group: "SMC",
+		description: "This task is useful on local developer environment to deploy project core element on local Liferay"
+	) {
+
 	into "${localBundleDir}/deploy"
 	from configurations.distCoreLibs
 }
@@ -647,7 +709,7 @@ configurations.each { config ->
 	tarProfiles.add("tar$taskName")
 	zipProfiles.add("zip$taskName")
 
-	task "tar$taskName"(type: Tar) {
+	task "tar$taskName"(type: Tar, group: "SMC") {
 		description = "Build a tarball of runtime artifacts"
 		//archiveAppendix = config.name
 		archiveBaseName = productName
@@ -659,7 +721,7 @@ configurations.each { config ->
 		dependsOn buildDistDepsMap
 	}
 
-	task "zip$taskName"(type: Zip) {
+	task "zip$taskName"(type: Zip, group: "SMC") {
 		description = "Build a zip of runtime artifacts"
 		//archiveAppendix = config.name
 		archiveBaseName = productName
@@ -670,8 +732,8 @@ configurations.each { config ->
 		dependsOn buildDistDepsMap
 	}
 
-	task "deploy$taskName"(type: Copy) {
-		description = "Deploy dependencies on local Liferay"
+	task "deploy$taskName"(type: Copy, group: "SMC") {
+		description = "Deploy artifacts on local Liferay"
 
 		Configuration clone = config.copy(distDependencySpec(true, false));
 
@@ -714,18 +776,21 @@ configurations.each { config ->
 	}
 }
 
-task tarDistAll() {
+task tarDistAll(group: "SMC", description: "Execute all 'tarDist*' tasks") {
 	dependsOn tarProfiles
 }
 
-task zipDistAll() {
+task zipDistAll(group: "SMC", description: "Execute all 'zipDist*' tasks") {
 	dependsOn zipProfiles
 }
 
 /*
  * List projects which artifact isn't already published to Maven Repository
  */
-task checkPubStatus() {
+task checkPubStatus(
+		group: "SMC",
+		description: "List projects which artifact isn't already published to Package Registry"
+	) {
 
 	doLast {
 		def prjMap = [:]
@@ -763,7 +828,7 @@ task checkPubStatus() {
 
 		println "Has errors = ${resolved.hasError()}"
 
-		// Show resolved modules with changes
+		// Evidenzio i progetti risolti con cambiamenti
 
 		println "INFO: modules with changes (from last release-tag) but same version is already published"
 

@@ -10,7 +10,8 @@ repositories {
 ext.pomInfo = {
 	delegate.licenses {
 		delegate.license {
-			delegate.name 'GNU LESSER GENERAL PUBLIC LICENSE 2.1'
+			delegate.name 'Unpublished Copyright SMC TREVISO SRL.'
+			//delegate.url 'https://www.smc.it/licenses/XXXX.txt'
 			delegate.distribution 'repo'
 		}
 	}
@@ -114,6 +115,33 @@ dependencies {
 
 			//runtime project("${prj.path}")
 			api project("${prj.path}")
+		}
+
+		// Includo anche tutti i moduli dei profili di distribuzione
+		rootProject.configurations.each { config ->
+			if (!config.name.startsWith("dist") && !config.name.startsWith("feature")) {
+				return;
+			}
+
+			//println "config ${config}"
+
+			def resolved = config.getResolvedConfiguration()
+
+			//println "resolved ${resolved}"
+
+			resolved.getLenientConfiguration().getFirstLevelModuleDependencies().each{ dep ->
+				//println "${dep.class} ${dep.moduleGroup}:${dep.moduleName}:${dep.moduleVersion}"
+				api("${dep.moduleGroup}:${dep.moduleName}:${dep.moduleVersion}")
+			}
+
+			/*
+			config.dependencies.each { dep ->
+				if (dep instanceof ExternalDependency) {
+					ExternalDependency extDep = dep as ExternalDependency
+					api("${extDep.group}:${extDep.name}:${extDep.version}")
+				}
+			}
+			*/
 		}
 	}
 }
