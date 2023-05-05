@@ -17,7 +17,6 @@ package it.smc.calendar.caldav.sync;
 import com.liferay.calendar.model.Calendar;
 import com.liferay.calendar.model.CalendarResource;
 import com.liferay.calendar.service.CalendarResourceLocalServiceUtil;
-import com.liferay.petra.xml.DocUtil;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.model.User;
@@ -26,7 +25,6 @@ import com.liferay.portal.kernel.util.PortalUtil;
 import com.liferay.portal.kernel.webdav.Resource;
 import com.liferay.portal.kernel.webdav.WebDAVRequest;
 import com.liferay.portal.kernel.xml.Element;
-
 import it.smc.calendar.caldav.sync.util.CalDAVProps;
 import it.smc.calendar.caldav.sync.util.CalDAVUtil;
 import it.smc.calendar.caldav.sync.util.CalendarResourceModelPermission;
@@ -47,8 +45,8 @@ public class PrincipalPropsProcessor extends BasePropsProcessor {
 
 	@Override
 	protected void processCalDAVCalendarHomeSet() {
-		Element calendarHomeSetElement = DocUtil.add(
-			successPropElement, CalDAVProps.CALDAV_CALENDAR_HOME_SET);
+		Element calendarHomeSetElement = successPropElement.addElement(
+			CalDAVProps.CALDAV_CALENDAR_HOME_SET);
 
 		try {
 			if (CalDAVUtil.isIOS(webDAVRequest) ||
@@ -66,8 +64,9 @@ public class PrincipalPropsProcessor extends BasePropsProcessor {
 				}
 
 				if (calendarResource != null) {
-					DocUtil.add(
-						calendarHomeSetElement, CalDAVProps.createQName("href"),
+					calendarHomeSetElement.addElement(
+						CalDAVProps.createQName("href"));
+					calendarHomeSetElement.addText(
 						CalDAVUtil.getCalendarResourceURL(calendarResource));
 
 					return;
@@ -93,8 +92,9 @@ public class PrincipalPropsProcessor extends BasePropsProcessor {
 						webDAVRequest.getPermissionChecker(), calendarResource,
 						ActionKeys.VIEW)) {
 
-					DocUtil.add(
-						calendarHomeSetElement, CalDAVProps.createQName("href"),
+					calendarHomeSetElement.addElement(
+						CalDAVProps.createQName("href"));
+					calendarHomeSetElement.addText(
 						CalDAVUtil.getCalendarResourceURL(calendarResource));
 				}
 			}
@@ -106,19 +106,18 @@ public class PrincipalPropsProcessor extends BasePropsProcessor {
 
 	@Override
 	protected void processDAVOwner() {
-		DocUtil.add(
-			successPropElement, CalDAVProps.DAV_OWNER,
+		successPropElement.addElement(CalDAVProps.DAV_OWNER);
+		successPropElement.addText(
 			CalDAVUtil.getPrincipalURL(CalDAVUtil.getUserId(webDAVRequest)));
 	}
 
 	@Override
 	protected void processDAVResourceType() {
-		Element resourceTypeElement = DocUtil.add(
-			successPropElement, CalDAVProps.DAV_RESOURCETYPE);
+		Element resourceTypeElement = successPropElement.addElement(
+			CalDAVProps.DAV_RESOURCETYPE);
 
-		DocUtil.add(resourceTypeElement, CalDAVProps.createQName("collection"));
-
-		DocUtil.add(resourceTypeElement, CalDAVProps.createQName("principal"));
+		resourceTypeElement.addElement(CalDAVProps.createQName("collection"));
+		resourceTypeElement.addElement(CalDAVProps.createQName("principal"));
 	}
 
 	private static Log _log = LogFactoryUtil.getLog(

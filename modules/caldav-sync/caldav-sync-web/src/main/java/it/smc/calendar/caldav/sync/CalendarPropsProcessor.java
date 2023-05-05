@@ -17,7 +17,6 @@ package it.smc.calendar.caldav.sync;
 import com.liferay.calendar.model.Calendar;
 import com.liferay.calendar.model.CalendarResource;
 import com.liferay.petra.string.StringPool;
-import com.liferay.petra.xml.DocUtil;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.io.unsync.UnsyncStringWriter;
 import com.liferay.portal.kernel.log.Log;
@@ -27,7 +26,6 @@ import com.liferay.portal.kernel.security.permission.ActionKeys;
 import com.liferay.portal.kernel.webdav.Resource;
 import com.liferay.portal.kernel.webdav.WebDAVRequest;
 import com.liferay.portal.kernel.xml.Element;
-
 import com.liferay.portal.upload.LiferayInputStream;
 import it.smc.calendar.caldav.helper.api.CalendarHelperUtil;
 import it.smc.calendar.caldav.sync.util.CalDAVProps;
@@ -36,11 +34,10 @@ import it.smc.calendar.caldav.sync.util.CalendarModelPermission;
 import it.smc.calendar.caldav.sync.util.ICalUtil;
 import it.smc.calendar.caldav.sync.util.WebKeys;
 import it.smc.calendar.caldav.util.PropsValues;
-
-import java.util.Optional;
-
 import net.fortuna.ical4j.data.CalendarOutputter;
 import net.fortuna.ical4j.model.ComponentList;
+
+import java.util.Optional;
 
 /**
  * @author Fabio Pezzutto
@@ -66,15 +63,14 @@ public class CalendarPropsProcessor extends BasePropsProcessor {
 			color = color.concat("FF");
 		}
 
-		DocUtil.add(
-			successPropElement, CalDAVProps.CALDAV_CALENDAR_COLOR, color);
+		successPropElement.addElement(CalDAVProps.CALDAV_CALENDAR_COLOR);
+		successPropElement.addText(color);
 	}
 
 	@Override
 	protected void processCalDAVCalendarDescription() {
-		DocUtil.add(
-			successPropElement, CalDAVProps.CALDAV_CALENDAR_DESCRIPTION,
-			_calendar.getDescription(locale));
+		successPropElement.addElement(CalDAVProps.CALDAV_CALENDAR_DESCRIPTION);
+		successPropElement.addText(_calendar.getDescription(locale));
 	}
 
 	@Override
@@ -90,11 +86,10 @@ public class CalendarPropsProcessor extends BasePropsProcessor {
 			return;
 		}
 
-		Element calendarHomeSetElement = DocUtil.add(
-			successPropElement, CalDAVProps.CALDAV_CALENDAR_HOME_SET);
-
-		DocUtil.add(
-			calendarHomeSetElement, CalDAVProps.createQName("href"),
+		Element calendarHomeSetElement = successPropElement.addElement(
+			CalDAVProps.CALDAV_CALENDAR_HOME_SET);
+		calendarHomeSetElement.addElement(CalDAVProps.createQName("href"));
+		calendarHomeSetElement.addText(
 			CalDAVUtil.getCalendarResourceURL(calendarResource));
 	}
 
@@ -103,8 +98,8 @@ public class CalendarPropsProcessor extends BasePropsProcessor {
 		net.fortuna.ical4j.model.Calendar iCalCalendar =
 			ICalUtil.getVTimeZoneCalendar();
 
-		Element calendarTimeZoneElement = DocUtil.add(
-			successPropElement, CalDAVProps.CALDAV_CALENDAR_TIMEZONE);
+		Element calendarTimeZoneElement = successPropElement.addElement(
+			CalDAVProps.CALDAV_CALENDAR_TIMEZONE);
 
 		try {
 			calendarTimeZoneElement.addCDATA(vTimeZoneToString(iCalCalendar));
@@ -139,53 +134,48 @@ public class CalendarPropsProcessor extends BasePropsProcessor {
 					).getEmailAddress();
 		}
 
-		Element calendarUserAddressSetElement = DocUtil.add(
-			successPropElement, CalDAVProps.CALDAV_CALENDAR_USER_ADDRESS_SET);
+		Element calendarUserAddressSetElement = successPropElement.addElement(
+			CalDAVProps.CALDAV_CALENDAR_USER_ADDRESS_SET);
 
-		DocUtil.add(
-			calendarUserAddressSetElement, CalDAVProps.createQName("href"),
-			address);
+		calendarUserAddressSetElement.addElement(
+			CalDAVProps.createQName("href"));
+		calendarUserAddressSetElement.addText(address);
 	}
 
 	@Override
 	protected void processCalDAVGetCTag() {
-		DocUtil.add(
-			successPropElement, CalDAVProps.CALDAV_GETCTAG,
-			CalDAVUtil.getResourceETag(resource));
+		successPropElement.addElement( CalDAVProps.CALDAV_GETCTAG);
+		successPropElement.addText(CalDAVUtil.getResourceETag(resource));
 	}
 
 	@Override
 	protected void processCalDAVMaxResourceSize() {
 		long maxResourceSize = LiferayInputStream.THRESHOLD_SIZE / 8;
-
-		DocUtil.add(
-			successPropElement, CalDAVProps.CALDAV_MAX_RESOURCE_SIZE,
-			maxResourceSize);
+		successPropElement.addElement(CalDAVProps.CALDAV_MAX_RESOURCE_SIZE);
+		successPropElement.addText(String.valueOf(maxResourceSize));
 	}
 
 	@Override
 	protected void processCalDAVSupportedCalendarComponentSet() {
-		Element supportedCalendarComponentSet = DocUtil.add(
-			successPropElement,
+		Element supportedCalendarComponentSet = successPropElement.addElement(
 			CalDAVProps.CALDAV_SUPPORTED_CALENDAR_COMPONENT_SET);
 
-		Element el = DocUtil.add(
-			supportedCalendarComponentSet, CalDAVProps.DAV_COMP);
+		Element el = supportedCalendarComponentSet.addElement(
+			CalDAVProps.DAV_COMP);
 
 		el.addAttribute("name", WebKeys.VCALENDAR);
 
-		el = DocUtil.add(supportedCalendarComponentSet, CalDAVProps.DAV_COMP);
+		el = supportedCalendarComponentSet.addElement(CalDAVProps.DAV_COMP);
 
 		el.addAttribute("name", WebKeys.VEVENT);
 	}
 
 	@Override
 	protected void processCalDAVSupportedCalendarData() {
-		Element supportedCalendarDataElement = DocUtil.add(
-			successPropElement, CalDAVProps.CALDAV_SUPPORTED_CALENDAR_DATA);
+		Element supportedCalendarDataElement = successPropElement.addElement(
+			CalDAVProps.CALDAV_SUPPORTED_CALENDAR_DATA);
 
-		Element calendarDataElement = DocUtil.add(
-			supportedCalendarDataElement,
+		Element calendarDataElement = supportedCalendarDataElement.addElement(
 			CalDAVProps.createCalendarQName("calendar-data"));
 
 		calendarDataElement.addAttribute(
@@ -196,8 +186,8 @@ public class CalendarPropsProcessor extends BasePropsProcessor {
 
 	@Override
 	protected void processCalDAVValidCalendarData() {
-		Element validCalendarDataElement = DocUtil.add(
-			successPropElement, CalDAVProps.CALDAV_VALID_CALENDAR_DATA);
+		Element validCalendarDataElement = successPropElement.addElement(
+			CalDAVProps.CALDAV_VALID_CALENDAR_DATA);
 
 		net.fortuna.ical4j.model.Calendar iCalCalendar =
 			ICalUtil.getVTimeZoneCalendar();
@@ -212,23 +202,23 @@ public class CalendarPropsProcessor extends BasePropsProcessor {
 
 	@Override
 	protected void processDAVCurrentUserPrivilegeSet() {
-		Element currentUserPrivilegeSetElement = DocUtil.add(
-			successPropElement, CalDAVProps.DAV_CURRENT_USER_PRIVILEGE_SET);
+		Element currentUserPrivilegeSetElement = successPropElement.addElement(
+			CalDAVProps.DAV_CURRENT_USER_PRIVILEGE_SET);
 
-		Element readPrivilegeElement = DocUtil.add(
-			currentUserPrivilegeSetElement,
-			CalDAVProps.createQName("privilege"));
+		Element readPrivilegeElement =
+			currentUserPrivilegeSetElement.addElement(
+				CalDAVProps.createQName("privilege"));
 
-		DocUtil.add(readPrivilegeElement, CalDAVProps.createQName("read"));
+		readPrivilegeElement.addElement(CalDAVProps.createQName("read"));
 
 		if (CalendarModelPermission.contains(
 				webDAVRequest.getPermissionChecker(), _calendar,
 				ActionKeys.UPDATE)) {
 
-			DocUtil.add(readPrivilegeElement, CalDAVProps.createQName("write"));
+			readPrivilegeElement.addElement(CalDAVProps.createQName("write"));
 
-			DocUtil.add(
-				readPrivilegeElement, CalDAVProps.createQName("write-content"));
+			readPrivilegeElement.addElement(
+				CalDAVProps.createQName("write-content"));
 		}
 	}
 
@@ -254,56 +244,51 @@ public class CalendarPropsProcessor extends BasePropsProcessor {
 
 			sb.append(_calendar.getName(locale));
 
-			DocUtil.add(
-				successPropElement, CalDAVProps.DAV_DISPLAYNAME, sb.toString());
+			successPropElement.addElement(CalDAVProps.DAV_DISPLAYNAME);
+			successPropElement.addText(sb.toString());
 		}
 		else {
-			DocUtil.add(
-				successPropElement, CalDAVProps.DAV_DISPLAYNAME,
-				_calendar.getName(
-					locale
-				).replaceAll(
-					StringPool.SPACE, StringPool.BLANK
-				));
+			successPropElement.addElement(CalDAVProps.DAV_DISPLAYNAME);
+			successPropElement.addText(
+				_calendar.getName(locale).replaceAll(
+					StringPool.SPACE, StringPool.BLANK));
 		}
 	}
 
 	@Override
 	protected void processDAVGetContentLength() {
-		DocUtil.add(
-			successPropElement, CalDAVProps.DAV_GETCONTENTLENGTH,
-			resource.getSize());
+		successPropElement.addElement(CalDAVProps.DAV_GETCONTENTLENGTH);
+		successPropElement.addText(String.valueOf(resource.getSize()));
 	}
 
 	@Override
 	protected void processDAVOwner() {
-		DocUtil.add(
-			successPropElement, CalDAVProps.DAV_OWNER,
+		successPropElement.addElement(CalDAVProps.DAV_OWNER);
+		successPropElement.addText(
 			CalDAVUtil.getPrincipalURL(_calendar.getUserId()));
 	}
 
 	@Override
 	protected void processDAVResourceId() {
-		Element resourceIdElement = DocUtil.add(
-			successPropElement, CalDAVProps.DAV_RESOURCE_ID);
+		Element resourceIdElement = successPropElement.addElement(
+			CalDAVProps.DAV_RESOURCE_ID);
 
-		DocUtil.add(
-			resourceIdElement, CalDAVProps.createQName("href"),
-			"urn:uuid:".concat(_calendar.getUuid()));
+		resourceIdElement.addElement(CalDAVProps.createQName("href"));
+		resourceIdElement.addText("urn:uuid:".concat(_calendar.getUuid()));
 	}
 
 	@Override
 	protected void processDAVResourceType() {
-		Element resourceTypeElement = DocUtil.add(
-			successPropElement, CalDAVProps.DAV_RESOURCETYPE);
+		Element resourceTypeElement = successPropElement.addElement(
+			CalDAVProps.DAV_RESOURCETYPE);
 
 		if (!CalDAVUtil.isThunderbird(webDAVRequest)) {
-			DocUtil.add(
-				resourceTypeElement, CalDAVProps.createQName("collection"));
+			resourceTypeElement.addElement(
+				CalDAVProps.createQName("collection"));
 		}
 
-		DocUtil.add(
-			resourceTypeElement, CalDAVProps.createCalendarQName("calendar"));
+		resourceTypeElement.addElement(
+			CalDAVProps.createCalendarQName("calendar"));
 	}
 
 	protected String vTimeZoneToString(

@@ -15,13 +15,11 @@
 package it.smc.calendar.caldav.sync;
 
 import com.liferay.calendar.model.CalendarResource;
-import com.liferay.petra.xml.DocUtil;
 import com.liferay.portal.kernel.model.User;
 import com.liferay.portal.kernel.security.permission.ActionKeys;
 import com.liferay.portal.kernel.webdav.Resource;
 import com.liferay.portal.kernel.webdav.WebDAVRequest;
 import com.liferay.portal.kernel.xml.Element;
-
 import it.smc.calendar.caldav.helper.api.CalendarHelperUtil;
 import it.smc.calendar.caldav.sync.util.CalDAVProps;
 import it.smc.calendar.caldav.sync.util.CalDAVUtil;
@@ -44,18 +42,20 @@ public class CalendarResourcePropsProcessor extends BasePropsProcessor {
 
 	@Override
 	protected void processCalDAVCalendarHomeSet() {
-		Element calendarHomeSetElement = DocUtil.add(
-			successPropElement, CalDAVProps.CALDAV_CALENDAR_HOME_SET);
 
-		DocUtil.add(
-			calendarHomeSetElement, CalDAVProps.createQName("href"),
-			CalDAVUtil.getCalendarResourceURL(_calendarResource));
+		Element calendarHomeSetElement = successPropElement.addElement(
+			CalDAVProps.CALDAV_CALENDAR_HOME_SET);
+
+		calendarHomeSetElement.addElement(
+			CalDAVProps.createQName("href")).addText(
+				CalDAVUtil.getCalendarResourceURL(_calendarResource));
 	}
 
 	@Override
 	protected void processCalDAVCalendarUserAddressSet() {
-		Element calendarHomeSetElement = DocUtil.add(
-			successPropElement, CalDAVProps.CALDAV_CALENDAR_USER_ADDRESS_SET);
+
+		Element calendarHomeSetElement = successPropElement.addElement(
+			CalDAVProps.CALDAV_CALENDAR_USER_ADDRESS_SET);
 
 		String address = CalDAVUtil.getCalendarResourceURL(_calendarResource);
 
@@ -69,45 +69,43 @@ public class CalendarResourcePropsProcessor extends BasePropsProcessor {
 					).getEmailAddress();
 		}
 
-		DocUtil.add(
-			calendarHomeSetElement, CalDAVProps.createQName("href"), address);
+		calendarHomeSetElement.addElement(
+			CalDAVProps.createQName("href")).addText(address);
 	}
 
 	@Override
 	protected void processDAVCurrentUserPrivilegeSet() {
-		Element currentUserPrivilegeSetElement = DocUtil.add(
-			successPropElement, CalDAVProps.DAV_CURRENT_USER_PRIVILEGE_SET);
+		Element currentUserPrivilegeSetElement = successPropElement.addElement(
+			 CalDAVProps.DAV_CURRENT_USER_PRIVILEGE_SET);
 
-		Element readPrivilegeElement = DocUtil.add(
-			currentUserPrivilegeSetElement,
-			CalDAVProps.createQName("privilege"));
+		Element readPrivilegeElement =
+			currentUserPrivilegeSetElement.addElement(
+				CalDAVProps.createQName("privilege"));
 
-		DocUtil.add(readPrivilegeElement, CalDAVProps.createQName("read"));
+		readPrivilegeElement.addElement( CalDAVProps.createQName("read"));
 
 		if (CalendarResourceModelPermission.contains(
 				webDAVRequest.getPermissionChecker(), _calendarResource,
 				ActionKeys.UPDATE)) {
 
-			DocUtil.add(readPrivilegeElement, CalDAVProps.createQName("write"));
-
-			DocUtil.add(
-				readPrivilegeElement, CalDAVProps.createQName("write-content"));
+			readPrivilegeElement.addElement(CalDAVProps.createQName("write"));
+			readPrivilegeElement.addElement(
+				CalDAVProps.createQName("write-content"));
 		}
 	}
 
 	@Override
 	protected void processDAVOwner() {
-		DocUtil.add(
-			successPropElement, CalDAVProps.DAV_OWNER,
+		successPropElement.addElement(CalDAVProps.DAV_OWNER);
+		successPropElement.addText(
 			CalDAVUtil.getPrincipalURL(_calendarResource.getUserId()));
 	}
 
 	protected void processDAVResourceId() {
-		Element resourceIdElement = DocUtil.add(
-			successPropElement, CalDAVProps.DAV_RESOURCE_ID);
-
-		DocUtil.add(
-			resourceIdElement, CalDAVProps.createQName("href"),
+		Element resourceIdElement = successPropElement.addElement(
+			CalDAVProps.DAV_RESOURCE_ID);
+		resourceIdElement.addElement(CalDAVProps.createQName("href"));
+		resourceIdElement.addText(
 			"urn:uuid:".concat(_calendarResource.getUuid()));
 	}
 

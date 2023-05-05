@@ -14,13 +14,13 @@
 
 package it.smc.calendar.caldav.sync.upgrade.v2_0_0;
 
-import com.liferay.portal.kernel.upgrade.BaseUpgradePortletId;
+import com.liferay.portal.kernel.upgrade.BasePortletIdUpgradeProcess;
 import it.smc.calendar.caldav.sync.constants.CaldavSyncPortletKeys;
 
 /**
  * @author Mirko Zizzari
  */
-public class UpgradePortletId extends BaseUpgradePortletId {
+public class UpgradePortletId extends BasePortletIdUpgradeProcess {
 
 	@Override
 	protected String[][] getRenamePortletIdsArray() {
