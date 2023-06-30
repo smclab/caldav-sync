@@ -1,5 +1,5 @@
 # Themes uses NodeJS. I have to ignore files locking dependency resolution
-*/package-lock.json
 */liferay-theme.json
-dist
 */build_gradle
+.yo-rc.json
+dist

@@ -18,7 +18,6 @@ import com.liferay.calendar.exporter.CalendarDataFormat;
 import com.liferay.calendar.model.Calendar;
 import com.liferay.calendar.model.CalendarBooking;
 import com.liferay.calendar.service.CalendarBookingLocalServiceUtil;
-import com.liferay.petra.xml.DocUtil;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.webdav.Resource;
@@ -27,7 +26,6 @@ import com.liferay.portal.kernel.webdav.WebDAVStorage;
 import com.liferay.portal.kernel.xml.Element;
 import com.liferay.portal.kernel.xml.Node;
 import com.liferay.portal.kernel.xml.QName;
-
 import it.smc.calendar.caldav.sync.listener.ICSContentImportExportFactoryUtil;
 import it.smc.calendar.caldav.sync.listener.ICSImportExportListener;
 import it.smc.calendar.caldav.sync.util.CalDAVProps;
@@ -37,7 +35,6 @@ import it.smc.calendar.caldav.util.CalendarUtil;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -62,59 +59,59 @@ public class ReportMethodImpl extends PropfindMethodImpl {
 
 		data = icsContentListener.beforeContentExported(data, calendarBooking);
 
-		Element responseElement = DocUtil.add(
-			multistatusElement, CalDAVProps.createQName("response"));
+		Element responseElement = multistatusElement.addElement(
+			CalDAVProps.createQName("response"));
 
-		DocUtil.add(
-			responseElement, CalDAVProps.createQName("href"),
+		responseElement.addElement(CalDAVProps.createQName("href"));
+		responseElement.addText(
 			CalDAVUtil.getCalendarBookingURL(calendarBooking));
 
-		Element propStatElement = DocUtil.add(
-			responseElement, CalDAVProps.createQName("propstat"));
+		Element propStatElement = responseElement.addElement(
+			CalDAVProps.createQName("propstat"));
 
-		Element propElement = DocUtil.add(
-			propStatElement, CalDAVProps.createQName("prop"));
+		Element propElement = propStatElement.addElement(
+			CalDAVProps.createQName("prop"));
 
 		String getetag = CalDAVUtil.buildETag(
 			String.valueOf(calendarBooking.getPrimaryKey()),
 			calendarBooking.getModifiedDate());
 
-		DocUtil.add(propElement, CalDAVProps.createQName("getetag"), getetag);
+		propElement.addElement(CalDAVProps.createQName("getetag"));
+		propElement.addText(getetag);
 
-		Element calendarDataEl = DocUtil.add(
-			propElement, CalDAVProps.createCalendarQName("calendar-data"));
+		Element calendarDataEl = propElement.addElement(
+			CalDAVProps.createCalendarQName("calendar-data"));
 
 		calendarDataEl.addCDATA(data);
 
 		icsContentListener.afterContentExported(data, calendarBooking);
 
-		DocUtil.add(
-			propStatElement, CalDAVProps.createQName("status"),
-			"HTTP/1.1 200 OK");
+		propStatElement.addElement(CalDAVProps.createQName("status"));
+		propStatElement.addText("HTTP/1.1 200 OK");
 	}
 
 	protected void addCalendarObjResourceNotFound(
 		String href, Element multistatusElement) {
 
-		Element responseElement = DocUtil.add(
-			multistatusElement, CalDAVProps.createQName("response"));
+		Element responseElement = multistatusElement.addElement(
+			CalDAVProps.createQName("response"));
 
-		DocUtil.add(responseElement, CalDAVProps.createQName("href"), href);
+		responseElement.addElement(CalDAVProps.createQName("href"));
+		responseElement.addText(href);
 
-		Element propStatElement = DocUtil.add(
-			responseElement, CalDAVProps.createQName("propstat"));
+		Element propStatElement = responseElement.addElement(
+			CalDAVProps.createQName("propstat"));
 
-		Element propElement = DocUtil.add(
-			propStatElement, CalDAVProps.createQName("prop"));
+		Element propElement = propStatElement.addElement(
+			CalDAVProps.createQName("prop"));
 
-		DocUtil.add(propElement, CalDAVProps.createQName("getetag"));
+		propElement.addElement(CalDAVProps.createQName("getetag"));
 
-		DocUtil.add(
-			propElement, CalDAVProps.createCalendarQName("calendar-data"));
+		propElement.addElement(
+			CalDAVProps.createCalendarQName("calendar-data"));
 
-		DocUtil.add(
-			propStatElement, CalDAVProps.createQName("status"),
-			"HTTP/1.1 404 Not Found");
+		propStatElement.addElement(CalDAVProps.createQName("status"));
+		propStatElement.addText("HTTP/1.1 404 Not Found");
 	}
 
 	@Override

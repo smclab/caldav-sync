@@ -14,11 +14,9 @@
 
 package it.smc.calendar.caldav.sync;
 
-import com.liferay.petra.xml.DocUtil;
 import com.liferay.portal.kernel.webdav.Resource;
 import com.liferay.portal.kernel.webdav.WebDAVRequest;
 import com.liferay.portal.kernel.xml.Element;
-
 import it.smc.calendar.caldav.sync.util.CalDAVProps;
 import it.smc.calendar.caldav.sync.util.CalDAVUtil;
 
@@ -35,14 +33,13 @@ public class CalendarBookingPropsProcessor extends BasePropsProcessor {
 
 	@Override
 	protected void processCalDAVGetCTag() {
-		DocUtil.add(
-			successPropElement, CalDAVProps.CALDAV_GETCTAG,
-			CalDAVUtil.getResourceETag(resource));
+		successPropElement.addElement(CalDAVProps.CALDAV_GETCTAG);
+		successPropElement.addText(CalDAVUtil.getResourceETag(resource));
 	}
 
 	@Override
 	protected void processDAVResourceType() {
-		DocUtil.add(successPropElement, CalDAVProps.DAV_RESOURCETYPE);
+		successPropElement.addElement(CalDAVProps.DAV_RESOURCETYPE);
 	}
 
 }

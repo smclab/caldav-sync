@@ -26,7 +26,7 @@ String userCalDAVURL = portalURL + CalDAVUtil.getPrincipalURL(themeDisplay.getUs
 portletDisplay.setShowBackIcon(true);
 %>
 
-<div class="container-fluid-1280 ">
+<clay:container-fluid>
 	<h2>
 		<liferay-ui:message key="caldav-url-for-collection" />
 
@@ -39,13 +39,13 @@ portletDisplay.setShowBackIcon(true);
 			<span class="entry-url"><%= userCalDAVURL %></span>
 		</p>
 	</aui:fieldset>
-</div>
+</clay:container-fluid>
 
 <%
 if (!calendars.isEmpty()) {
 %>
 
-	<div class="container-fluid-1280 ">
+	<clay:container-fluid>
 		<h2>
 			<liferay-ui:message key="caldav-url-without-collection" />
 
@@ -92,5 +92,5 @@ if (!calendars.isEmpty()) {
 			%>
 
 		</aui:fieldset>
-	</div>
+	</clay:container-fluid>
 	<%} %>

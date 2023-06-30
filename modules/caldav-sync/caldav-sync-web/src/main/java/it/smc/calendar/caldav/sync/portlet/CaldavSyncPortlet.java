@@ -44,7 +44,8 @@ import org.osgi.service.component.annotations.Component;
 		"javax.portlet.name=" + CaldavSyncPortletKeys.CaldavSync,
 		"javax.portlet.resource-bundle=content.Language",
 		"javax.portlet.security-role-ref=power-user,user",
-		"javax.portlet.supports.mime-type=text/html"
+		"javax.portlet.supports.mime-type=text/html",
+		"javax.portlet.version=3.0"
 	},
 	service = Portlet.class
 )
