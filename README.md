@@ -1,4 +1,4 @@
-# CalDAV Sync - Liferay Workspace for Liferay 7.0+ CE e DXP
+# CalDAV Sync - Liferay Workspace for Liferay 7.0 CE e DXP
 
 * [Getting Started Liferay Workspace](docs/GETTING_STARTED_LIFERAY.markdown)
 * [Gradle Workspace hints](docs/GRADLE.md)
