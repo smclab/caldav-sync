@@ -38,6 +38,7 @@ import it.smc.calendar.caldav.helper.api.CalendarListService;
 import it.smc.calendar.caldav.helper.util.PropsValues;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -75,15 +76,13 @@ public class CalendarListServiceImpl implements CalendarListService {
 					List<Calendar> userCalendars = getUserCalendars(
 						permissionChecker.getUserId());
 
-					if (userCalendars != null) {
-						if (_log.isDebugEnabled()) {
-							for (Calendar calendar : userCalendars) {
-								_log.debug(" - " + calendar.getName());
-							}
+					if (_log.isDebugEnabled()) {
+						for (Calendar calendar : userCalendars) {
+							_log.debug(" - " + calendar.getName());
 						}
-
-						calendars.addAll(userCalendars);
 					}
+
+					calendars.addAll(userCalendars);
 				}
 			}
 
@@ -136,14 +135,22 @@ public class CalendarListServiceImpl implements CalendarListService {
 				QueryUtil.ALL_POS, QueryUtil.ALL_POS);
 
 			for (Calendar calendar : allCalendars) {
-				if (_calendarModelResourcePermission.contains(
+				try {
+					if (_calendarModelResourcePermission.contains(
 						permissionChecker, calendar, ActionKeys.VIEW)) {
 
-					if (_log.isDebugEnabled()) {
-						_log.debug(" - " + calendar.getName());
-					}
+						if (_log.isDebugEnabled()) {
+							_log.debug(" - " + calendar.getName());
+						}
 
-					calendars.add(calendar);
+						calendars.add(calendar);
+					}
+				}
+				catch (PortalException pe) {
+					if (_log.isWarnEnabled()) {
+						_log.warn(
+							"Can not add calendar: " + calendar.getName(), pe);
+					}
 				}
 			}
 		}
@@ -178,10 +185,18 @@ public class CalendarListServiceImpl implements CalendarListService {
 				continue;
 			}
 
-			if (_calendarModelResourcePermission.contains(
+			try {
+				if (_calendarModelResourcePermission.contains(
 					permissionChecker, calendarId, ActionKeys.VIEW)) {
 
-				calendars.add(calendar);
+					calendars.add(calendar);
+				}
+			}
+			catch (PortalException pe) {
+				if (_log.isWarnEnabled()) {
+					_log.warn(
+						"Can not add calendar: " + calendar.getName(), pe);
+				}
 			}
 		}
 
@@ -205,7 +220,7 @@ public class CalendarListServiceImpl implements CalendarListService {
 			_log.error(pe, pe);
 		}
 
-		return null;
+		return Collections.emptyList();
 	}
 
 	public List<Calendar> getUserGroupCalendars(
@@ -224,10 +239,18 @@ public class CalendarListServiceImpl implements CalendarListService {
 
 		for (CalendarResource calendarResource : calendarResources) {
 			for (Calendar calendar : calendarResource.getCalendars()) {
-				if (_calendarModelResourcePermission.contains(
+				try {
+					if (_calendarModelResourcePermission.contains(
 						permissionChecker, calendar, ActionKeys.VIEW)) {
 
-					calendars.add(calendar);
+						calendars.add(calendar);
+					}
+				}
+				catch (PortalException pe) {
+					if (_log.isWarnEnabled()) {
+						_log.warn(
+							"Can not add calendar: " + calendar.getName(), pe);
+					}
 				}
 			}
 		}

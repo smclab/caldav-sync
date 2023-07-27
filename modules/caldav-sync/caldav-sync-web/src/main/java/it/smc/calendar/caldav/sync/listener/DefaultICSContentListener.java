@@ -22,23 +22,31 @@ import com.liferay.calendar.service.CalendarBookingLocalService;
 import com.liferay.calendar.util.JCalendarUtil;
 import com.liferay.calendar.workflow.CalendarBookingWorkflowConstants;
 import com.liferay.expando.kernel.model.ExpandoBridge;
+import com.liferay.expando.kernel.model.ExpandoColumn;
 import com.liferay.expando.kernel.model.ExpandoColumnConstants;
+import com.liferay.expando.kernel.model.ExpandoTable;
+import com.liferay.expando.kernel.service.ExpandoColumnLocalService;
+import com.liferay.expando.kernel.service.ExpandoTableLocalService;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.io.unsync.UnsyncStringReader;
 import com.liferay.portal.kernel.language.LanguageUtil;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
+import com.liferay.portal.kernel.model.Resource;
 import com.liferay.portal.kernel.model.ResourceConstants;
 import com.liferay.portal.kernel.model.Role;
 import com.liferay.portal.kernel.model.RoleConstants;
 import com.liferay.portal.kernel.model.User;
 import com.liferay.portal.kernel.sanitizer.SanitizerException;
 import com.liferay.portal.kernel.security.auth.PrincipalThreadLocal;
+import com.liferay.portal.kernel.security.permission.ActionKeys;
 import com.liferay.portal.kernel.security.permission.PermissionChecker;
 import com.liferay.portal.kernel.security.permission.PermissionCheckerFactoryUtil;
 import com.liferay.portal.kernel.security.permission.PermissionThreadLocal;
 import com.liferay.portal.kernel.security.permission.resource.ModelResourcePermission;
+import com.liferay.portal.kernel.service.ResourceLocalService;
+import com.liferay.portal.kernel.service.ResourcePermissionLocalService;
 import com.liferay.portal.kernel.service.RoleLocalService;
 import com.liferay.portal.kernel.service.ServiceContext;
 import com.liferay.portal.kernel.service.ServiceContextThreadLocal;
@@ -601,6 +609,9 @@ public class DefaultICSContentListener implements ICSImportExportListener {
 
 			calendarBookingExpando.setAttributeProperties(
 				invitedUsersCustomFieldName, hiddenProperties, Boolean.FALSE);
+
+			_setExpandoColumnUserPermissions(
+				calendarBooking, invitedUsersCustomFieldName);
 		}
 
 		if (Validator.isNotNull(invitedUsersLabelCustomFieldName) &&
@@ -611,6 +622,9 @@ public class DefaultICSContentListener implements ICSImportExportListener {
 				invitedUsersLabelCustomFieldName,
 				ExpandoColumnConstants.STRING_ARRAY, new String[0],
 				Boolean.FALSE);
+
+			_setExpandoColumnUserPermissions(
+				calendarBooking, invitedUsersLabelCustomFieldName);
 		}
 
 		if (!ArrayUtil.isEmpty(attendees)) {
@@ -1087,6 +1101,26 @@ public class DefaultICSContentListener implements ICSImportExportListener {
 		vEventProperties.add(description);
 	}
 
+	private void _setExpandoColumnUserPermissions(
+			CalendarBooking calendarBooking,
+			String invitedUsersCustomFieldName)
+		throws PortalException {
+
+		ExpandoTable expandoTable =
+			_expandoTableLocalService.getDefaultTable(
+				calendarBooking.getCompanyId(),
+				CalendarBooking.class.getName());
+
+		ExpandoColumn expandoColumn =
+			_expandoColumnLocalService.getColumn(
+				expandoTable.getTableId(), invitedUsersCustomFieldName);
+
+		_updateModelResourcePermissions(
+			expandoColumn.getCompanyId(), ExpandoColumn.class.getName(),
+			expandoColumn.getColumnId(), RoleConstants.USER,
+			new String[]{ActionKeys.VIEW, ActionKeys.UPDATE});
+	}
+
 	private Attendee _toICalAttendee(String attendeeString)
 		throws SanitizerException {
 
@@ -1172,6 +1206,33 @@ public class DefaultICSContentListener implements ICSImportExportListener {
 		}
 	}
 
+	private void _updateModelResourcePermissions(
+			long companyId, String name, long primKey, String roleName,
+			String[] actionIds)
+		throws PortalException {
+
+		Role role = _roleLocalService.getRole(companyId, roleName);
+
+		_updateModelResourcePermissions(
+			companyId, name, primKey, role.getRoleId(), actionIds);
+	}
+
+	private void _updateModelResourcePermissions(
+			long companyId, String name, long primKey, long roleId,
+			String[] actionIds)
+		throws PortalException {
+
+		String primKeyStr = String.valueOf(primKey);
+
+		Resource resource = _resourceLocalService.getResource(
+			companyId, name, ResourceConstants.SCOPE_INDIVIDUAL, primKeyStr);
+
+		_resourcePermissionLocalService.setResourcePermissions(
+			resource.getCompanyId(), resource.getName(), resource.getScope(),
+			resource.getPrimKey(), roleId, actionIds);
+	}
+
+
 	private static Log _log = LogFactoryUtil.getLog(
 		DefaultICSContentListener.class);
 
@@ -1181,7 +1242,19 @@ public class DefaultICSContentListener implements ICSImportExportListener {
 	private ModelResourcePermission<Calendar> _calendarModelResourcePermission;
 
 	@Reference(policyOption = ReferencePolicyOption.GREEDY)
+	private ExpandoColumnLocalService _expandoColumnLocalService;
+
+	@Reference(policyOption = ReferencePolicyOption.GREEDY)
+	private ExpandoTableLocalService _expandoTableLocalService;
+
+	@Reference(policyOption = ReferencePolicyOption.GREEDY)
 	private RoleLocalService _roleLocalService;
+
+	@Reference(policyOption = ReferencePolicyOption.GREEDY)
+	private ResourceLocalService _resourceLocalService;
+
+	@Reference(policyOption = ReferencePolicyOption.GREEDY)
+	private ResourcePermissionLocalService _resourcePermissionLocalService;
 
 	@Reference(policyOption = ReferencePolicyOption.GREEDY)
 	private UserLocalService _userLocalService;
