@@ -19,6 +19,7 @@ import com.liferay.portal.kernel.webdav.WebDAVRequest;
 import com.liferay.portal.kernel.xml.Element;
 import it.smc.calendar.caldav.sync.util.CalDAVProps;
 import it.smc.calendar.caldav.sync.util.CalDAVUtil;
+import it.smc.calendar.caldav.sync.util.DocUtil;
 
 /**
  * @author Fabio Pezzutto
