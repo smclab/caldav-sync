@@ -15,14 +15,10 @@
 package it.smc.calendar.caldav.sync.listener;
 
 import com.liferay.portal.kernel.util.BasePortalLifecycle;
-import com.liferay.portal.kernel.webdav.WebDAVStorage;
-import com.liferay.portal.kernel.webdav.WebDAVUtil;
 import com.liferay.portal.kernel.webdav.methods.MethodFactory;
 import com.liferay.portal.kernel.webdav.methods.MethodFactoryRegistryUtil;
 
 import it.smc.calendar.caldav.sync.CalDAVMethodFactory;
-import it.smc.calendar.caldav.sync.LiferayCalDAVStorageImpl;
-import it.smc.calendar.caldav.sync.util.WebKeys;
 
 import org.osgi.framework.BundleActivator;
 import org.osgi.framework.BundleContext;
@@ -53,7 +49,6 @@ public class Activator
 
 	@Override
 	protected void doPortalDestroy() throws Exception {
-
 		if (_methodFactory != null) {
 			MethodFactoryRegistryUtil.unregisterMethodFactory(_methodFactory);
 		}

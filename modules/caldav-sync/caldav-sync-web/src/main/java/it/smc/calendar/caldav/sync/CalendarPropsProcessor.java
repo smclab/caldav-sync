@@ -31,6 +31,7 @@ import it.smc.calendar.caldav.helper.api.CalendarHelperUtil;
 import it.smc.calendar.caldav.sync.util.CalDAVProps;
 import it.smc.calendar.caldav.sync.util.CalDAVUtil;
 import it.smc.calendar.caldav.sync.util.CalendarModelPermission;
+import it.smc.calendar.caldav.sync.util.DocUtil;
 import it.smc.calendar.caldav.sync.util.ICalUtil;
 import it.smc.calendar.caldav.sync.util.WebKeys;
 import it.smc.calendar.caldav.util.PropsValues;
