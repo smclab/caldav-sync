@@ -2,9 +2,6 @@
 
 * [Getting Started Liferay Workspace](docs/GETTING_STARTED_LIFERAY.markdown)
 * [Gradle Workspace hints](docs/GRADLE.md)
-* [Appunti Utili](#appunti-utili)
-* [Note di Sviluppo](#note-di-sviluppo-prodotto-standard)
-* [Note di Sviluppo](#note-di-sviluppo-progetto-cliente)
 
 This workspace contains the plugin "CalDAV sync" that allows Liferay to act like a CalDAV Server.
 
@@ -22,7 +19,7 @@ Please visit our link for documentations and manuals:
 Some hints for contributors:
 * this repository manages and maintains compatibility with both the CE and DXP versions of Liferay
 * in this branch the basic compatibility, managed through BOM in the gradle.properties file, is:
-    - **JDK 8** (preferire versione da adoptium.net)
-    - Liferay 7.4 CE GA23
-    - Liferay 7.4 DXP U23
+    - **JDK 8** (prefer ones from adoptium.net)
+    - Liferay 7.4 CE GA64
+    - Liferay 7.4 DXP U64
 * any compatibility issues with GA or subsequent fixpacks must be managed through new targeted artifacts
