@@ -28,6 +28,7 @@ import com.liferay.portal.kernel.xml.Element;
 import it.smc.calendar.caldav.sync.util.CalDAVProps;
 import it.smc.calendar.caldav.sync.util.CalDAVUtil;
 import it.smc.calendar.caldav.sync.util.CalendarResourceModelPermission;
+import it.smc.calendar.caldav.sync.util.DocUtil;
 import it.smc.calendar.caldav.util.CalendarUtil;
 
 import java.util.List;
