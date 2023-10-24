@@ -103,7 +103,7 @@ public class DefaultICSContentListener implements ICSImportExportListener {
 
 					if (calendarBooking != null) {
 						updateBookingAttendees(calendarBooking, vEvent);
-						updateAltDescription(calendarBooking, vEvent);
+						updateAltDescription(calendarBooking, vEvent, calendar);
 
 						long userId = PrincipalThreadLocal.getUserId();
 
@@ -226,7 +226,7 @@ public class DefaultICSContentListener implements ICSImportExportListener {
 							_calendarBookingLocalService.fetchCalendarBooking(
 								calendar.getCalendarId(), vEventUidValue);
 
-						updateAltDescription(calendarBooking, vEvent);
+						updateAltDescription(calendarBooking, vEvent, calendar);
 					}
 				}
 			}
@@ -455,7 +455,7 @@ public class DefaultICSContentListener implements ICSImportExportListener {
 	}
 
 	protected void updateAltDescription(
-			CalendarBooking calendarBooking, VEvent vEvent)
+			CalendarBooking calendarBooking, VEvent vEvent, Calendar calendar)
 		throws PortalException {
 
 		XProperty vEventXAltDesc = (XProperty)vEvent.getProperty("X-ALT-DESC");
@@ -466,8 +466,10 @@ public class DefaultICSContentListener implements ICSImportExportListener {
 
 		if (calendarBooking != null) {
 			User calendarBookingUser = getCalendarBookingUser(calendarBooking);
-
-			Locale locale = calendarBookingUser.getLocale();
+			
+			Locale locale = Validator.isNotNull(calendarBookingUser) ?
+				calendarBookingUser.getLocale() :
+				LocaleUtil.fromLanguageId(calendar.getDefaultLanguageId());
 
 			String calendarBookingDescription = calendarBooking.getDescription(
 				locale);
