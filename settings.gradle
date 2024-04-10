@@ -1,10 +1,6 @@
 buildscript {
 	dependencies {
-		classpath group: "biz.aQute.bnd", name: "biz.aQute.bnd", version: "5.2.0"
-		classpath(group: "com.liferay", name: "com.liferay.gradle.plugins.workspace", version: "4.0.30") {
-			exclude group: "biz.aQute.bnd", module: "biz.aQute.bnd"
-		}
-		classpath group: "net.saliman", name: "gradle-properties-plugin", version: "1.4.6"
+		classpath group: "com.liferay", name: "com.liferay.gradle.plugins.workspace", version: "9.0.12"
 	}
 
 	repositories {
@@ -20,7 +16,6 @@ buildscript {
 	}
 }
 
-apply plugin: "net.saliman.properties"
 apply plugin: "com.liferay.workspace"
 
 include 'bom'

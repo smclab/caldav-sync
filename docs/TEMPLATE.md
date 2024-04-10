@@ -17,8 +17,8 @@ o nel Nexus Repository configurato. E di indicarlo anche in questo file.
 Alcuni dettagli importanti:
 * questo repository gestisce e mantiene la compatibilit&agrave; sia con la versione CE che DXP di Liferay
 * in questo branch la compatibilit&agrave; base, gestita tramite BOM, &egrave;
-    - Liferay 7.4 CE GA1
-    - Liferay 7.4 DXP GA1
+    - Liferay 7.4 CE GA102
+    - Liferay 7.4 DXP U102
 * eventuali problematiche di compatibilit&agrave; con GA o fixpack successivi dovrannno
 essere gestiti attraverso nuovi artefatti mirati
 * il *group* di pubblicazione degli artefatti su [Nexus](https://registry.smc.it)

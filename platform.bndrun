@@ -15,12 +15,12 @@
 	osgi.service;objectClass:List<String>='com.liferay.portal.kernel.portlet.PortletURLFactory',\
 	osgi.service;objectClass:List<String>='com.liferay.portal.kernel.service.persistence.LayoutSetPersistence',\
 	osgi.service;objectClass:List<String>='com.liferay.portal.kernel.util.File',\
-	osgi.service;objectClass:List<String>='com.liferay.portal.kernel.util.Html',\
 	osgi.service;objectClass:List<String>='com.liferay.portal.kernel.util.Http',\
 	osgi.service;objectClass:List<String>='com.liferay.portal.kernel.util.MimeTypes',\
 	osgi.service;objectClass:List<String>='com.liferay.portal.kernel.util.Portal',\
 	osgi.service;objectClass:List<String>='com.liferay.portal.kernel.util.PrefsProps',\
 	osgi.service;objectClass:List<String>='com.liferay.portal.kernel.util.Props',\
+	osgi.service;objectClass:List<String>='com.liferay.portal.kernel.uuid.PortalUUID',\
 	osgi.service;objectClass:List<String>='com.liferay.portal.kernel.xml.SAXReader',\
 	osgi.service;objectClass:List<String>='com.liferay.portal.kernel.zip.ZipReaderFactory',\
 	osgi.service;objectClass:List<String>='javax.servlet.ServletContext',\

@@ -25,6 +25,12 @@ ext.pomInfo = {
 
 def verboseMode = Boolean.valueOf(project.properties["bom.verbose.mode"])
 
+ext.bomPackageName = project.findProperty('product.bom.package.name')?.trim() ?: project.findProperty('product.name')?.trim() ?: ''
+
+if (bomPackageName.trim().size() == 0) {
+	throw new GradleException("Please define 'product.bom.package.name' or 'product.name' inside 'gradle.properties'")
+}
+
 publishing {
 	afterEvaluate {
 		repositories {
@@ -46,102 +52,126 @@ publishing {
 		publications {
 			maven(MavenPublication) {
 				version "${productVersion}${registrySuffix}"
-				artifactId "${productName}.bom"
-				from components.javaPlatform
+				artifactId "${bomPackageName}.bom"
 
 				project.ext.finalArtifact = "${group}:${artifactId}:${version}"
 				//println "I will publish '${group}:${artifactId}:${version}'"
 
+				def changedProjects = project.property('changedProjects')
+				def boolean changesMode = Boolean.valueOf(project.property('changesMode'))
+
+				Set deps = []
+				Map resolvedDeps = [:]
+
 				pom.withXml {
-					def xml = asNode()
+					asNode().children().last() + {
+						resolveStrategy = Closure.DELEGATE_FIRST
 
-					xml.children().find {
-						it.name().localPart == 'packaging'
-					} + pomInfo
+						name "${productName} BoM"
 
-					// println "withXml"
+						dependencyManagement {
+							dependencies {
+								println "--changesMode=${changesMode}"
 
-					// Replace project name with Bundle-SymbolicName
+								// All SubProjects
 
-					rootProject.subprojects.each { prj ->
-						if (!prj.subprojects.empty) return
-						if (prj.path.startsWith(":bom") || prj.path.startsWith(":plugins-sdk")) return
+								rootProject.subprojects.each { prj ->
+									if (!prj.subprojects.empty) return
+									if (prj.path.startsWith(":bom") || prj.path.startsWith(":plugins-sdk")) return
 
-						String artifactName = prj.property('archivesBaseName')
-						boolean changesMode = Boolean.valueOf(prj.property('changesMode'))
+									String artifactName = prj.property('archivesBaseName')
 
-						def changedProjects = prj.property('changedProjects')
+									if (changesMode && !changedProjects.contains(prj.path)) {
+										def targetVersion = prj.hasProperty('originalVersion') ? prj.property('originalVersion') : prj.version
 
-						def pomDep = xml.dependencyManagement.dependencies.dependency.find {
-							it.artifactId.text() == prj.name && it.groupId.text() == group
-						}
+										if (verboseMode) {
+											println "LR ${prj.group}:${artifactName}:${targetVersion}"
+										}
 
-						if (pomDep != null) {
-							if (artifactName != null) {
-								pomDep.artifactId.first().setValue(artifactName)
-							}
-							if (changesMode && !changedProjects.contains(prj.path)) {
-								def targetVersion = prj.hasProperty('originalVersion') ? prj.property('originalVersion') : prj.version
+										deps.add("${prj.group}:${artifactName}:${targetVersion}")
+									}
+									else {
+										if (verboseMode) {
+											println "LC ${prj.group}:${artifactName}:${prj.version}"
+										}
 
-								pomDep.version.first().setValue(targetVersion)
-
-								if (verboseMode) {
-									println "${prj.name} ${artifactName} ${targetVersion}"
+										deps.add("${prj.group}:${artifactName}:${prj.version}")
+									}
 								}
-							}
-							else if (verboseMode) {
-								println "${prj.name} ${artifactName} ${prj.version}"
+
+								// Distribution Profiles dependencies
+
+								rootProject.configurations.each { conf ->
+									if (conf.name.equals("distBOM")) {
+										return
+									}
+									else if (!conf.name.startsWith("dist") && !conf.name.startsWith("feature")) {
+										return
+									}
+
+									def resolved = conf.getResolvedConfiguration()
+
+									resolved.getLenientConfiguration().getFirstLevelModuleDependencies().each{ dep ->
+										resolvedDeps["${dep.moduleGroup}:${dep.moduleName}"] = "${dep.moduleGroup}:${dep.moduleName}:${dep.moduleVersion}"
+									}
+
+									conf.dependencies.each { dep ->
+										if (dep instanceof ExternalDependency) {
+											String key = "${dep.group}:${dep.name}"
+
+											if (resolvedDeps.containsKey(key)) {
+												String value = resolvedDeps[key]
+
+												if (verboseMode) {
+													println "CE ${dep.group}:${dep.name}:${dep.version} -> ${value}"
+												}
+												deps.add("${value}")
+											}
+											else {
+												println "NotResolved ${dep.group}:${dep.name}:${dep.version}"
+											}
+										}
+										else if (dep instanceof ProjectDependency) {
+											ProjectDependency projectDependency = dep as ProjectDependency
+
+											Project prj = projectDependency.getDependencyProject()
+
+											String archivesBaseName = prj.properties["archivesBaseName"]
+											String targetVersion = projectDependency.version
+
+											if (changesMode && !changedProjects.contains(prj.path)) {
+												targetVersion = prj.hasProperty('originalVersion') ? prj.property('originalVersion') : prj.version
+												if (verboseMode) {
+													println "CP ${dep.group}:${archivesBaseName}:${targetVersion}"
+												}
+											}
+											else if (verboseMode) {
+												println "CM ${dep.group}:${archivesBaseName}:${targetVersion}"
+											}
+
+											deps.add("${dep.group}:${archivesBaseName}:${targetVersion}")
+										}
+										else {
+											println "	//??? ${dep}"
+										}
+									}
+								}
+
+								deps.each { dep ->
+									String[] parts = dep.split(":")
+
+									dependency {
+										groupId "${parts[0]}"
+										artifactId "${parts[1]}"
+										version "${parts[2]}"
+									}
+								}
+
 							}
 						}
-
 					}
-
-					// println "done"
-
 				}
 			}
-		}
-	}
-}
-
-dependencies {
-	constraints {
-		//println "Inject dependencies"
-
-		rootProject.subprojects.each { prj ->
-			//println prj
-			if (!prj.subprojects.empty) return
-			if (prj.path.startsWith(":bom") || prj.path.startsWith(":plugins-sdk")) return
-
-			//runtime project("${prj.path}")
-			api project("${prj.path}")
-		}
-
-		// Includo anche tutti i moduli dei profili di distribuzione
-		rootProject.configurations.each { config ->
-			if (!config.name.startsWith("dist") && !config.name.startsWith("feature")) {
-				return;
-			}
-
-			//println "config ${config}"
-
-			def resolved = config.getResolvedConfiguration()
-
-			//println "resolved ${resolved}"
-
-			resolved.getLenientConfiguration().getFirstLevelModuleDependencies().each{ dep ->
-				//println "${dep.class} ${dep.moduleGroup}:${dep.moduleName}:${dep.moduleVersion}"
-				api("${dep.moduleGroup}:${dep.moduleName}:${dep.moduleVersion}")
-			}
-
-			/*
-			config.dependencies.each { dep ->
-				if (dep instanceof ExternalDependency) {
-					ExternalDependency extDep = dep as ExternalDependency
-					api("${extDep.group}:${extDep.name}:${extDep.version}")
-				}
-			}
-			*/
 		}
 	}
 }

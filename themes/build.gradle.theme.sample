@@ -1,8 +1,8 @@
 apply plugin: 'war'
 
 // Is preferrable to use workspace NodeJS e NPM versions. Use following properties to change it
-//node.nodeVersion = "10.15.1"
-//node.npmVersion = "6.4.1"
+//node.nodeVersion = "16.13.0"
+//node.npmVersion = "8.1.0"
 
 // Gradle build depends on javascript tools
 

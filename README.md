@@ -20,6 +20,6 @@ Some hints for contributors:
 * this repository manages and maintains compatibility with both the CE and DXP versions of Liferay
 * in this branch the basic compatibility, managed through BOM in the gradle.properties file, is:
     - **JDK 8** (prefer ones from adoptium.net)
-    - Liferay 7.4 CE GA64
-    - Liferay 7.4 DXP U64
+    - Liferay 7.4 CE GA102
+    - Liferay 7.4 DXP U102
 * any compatibility issues with GA or subsequent fixpacks must be managed through new targeted artifacts
