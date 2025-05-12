@@ -66,6 +66,10 @@ if (boms != null && boms.trim().size() > 0) {
 	}
 }
 
+def isProductBom = {
+	productBoms.contains(it) ? true : false
+}
+
 def isChangedProject = {
 	ext.changedProjects.contains(it) ? true : false
 }
@@ -183,10 +187,10 @@ gradle.beforeProject {
 			compileJava.options.encoding = 'UTF-8'
 
 			if (!managedTypeTheme) {
-				task sourcesJar(type: Jar, dependsOn:classes) {
+				/*task sourcesJar(type: Jar, dependsOn:classes) {
 					classifier = 'sources'
 					from sourceSets.main.allSource
-				}
+				}*/
 
 				dependencies {
 					// We can use 'enforcedPlatform' to fix Liferay BOMs problems
@@ -238,21 +242,21 @@ gradle.beforeProject {
 							//println("kk ${project.name}")
 						}
 						else if (managedType.equals("war")) {
-							mavenJava(MavenPublication) {
+						/*	mavenJava(MavenPublication) {
 								version = "${finalVersion}"
 								artifactId = project.property('archivesBaseName')
 								from components.web
 								artifact(tasks["sourcesJar"])
-							}
+							}*/
 						}
 						else {
 							mavenJava(MavenPublication) {
 								version = "${finalVersion}"
 								artifactId = project.property('archivesBaseName')
 								from components.java
-								if (!managedTypeTheme) {
+								/*if (!managedTypeTheme) {
 									artifact(tasks["sourcesJar"])
-								}
+								}*/
 							}
 						}
 					}
@@ -365,8 +369,11 @@ configurations.each { config ->
 			}
 		}
 	}
+	else if (config.name.equals("distBOM")) {
+		return
+	}
 	else if (!config.name.startsWith("dist") && !config.name.startsWith("feature")) {
-		return;
+		return
 	}
 
 	if (productBoms.size() > 0) {
@@ -497,16 +504,22 @@ task showDistProfiles(
 			println "dependencies {"
 
 			def values = []
+			boolean isDistBom = config.name.equals("distBOM")
 
 			config.getDependencies().each{ dep ->
 				if (dep instanceof ExternalDependency) {
-					ProjectDependency projectDependency = dep as ProjectDependency
+					ExternalDependency externalDependency = dep as ExternalDependency
 
-					if (projectDependency.version != null) {
-						values.add("compileOnly group:'${projectDependency.group}', name:'${projectDependency.name}', version:'${projectDependency.version}'")
+					boolean isBom = isProductBom("${externalDependency.group}:${externalDependency.name}:${externalDependency.version}")
+
+					if (isBom && !isDistBom) {
+						// Ignore
+					}
+					else if (externalDependency.version != null) {
+						values.add("compileOnly group:'${externalDependency.group}', name:'${externalDependency.name}', version:'${externalDependency.version}'")
 					}
 					else {
-						values.add("compileOnly group:'${projectDependency.group}', name:'${projectDependency.name}'")
+						values.add("compileOnly group:'${externalDependency.group}', name:'${externalDependency.name}'")
 					}
 				}
 				else if (dep instanceof ProjectDependency) {
@@ -553,8 +566,11 @@ task showDistInstall(
 
 	doLast {
 		configurations.each { config ->
-			if (!config.name.startsWith("dist") && !config.name.startsWith("feature")) {
-				return;
+			if (config.name.equals("distBOM")) {
+				return
+			}
+			else if (!config.name.startsWith("dist") && !config.name.startsWith("feature")) {
+				return
 			}
 
 			println "----"

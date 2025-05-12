@@ -65,8 +65,8 @@ if (grgit != null) {
 	ext.gitBranchName = grgit.branch.current().name
 
 	if (ext.gitBranchName.startsWith("release")) {
-		ext.gitSnapshotsBranch = false
-		ext.registrySuffix = ""
+		ext.gitSnapshotsBranch = true
+		ext.registrySuffix = "-SNAPSHOT"
 	}
 	else if (ext.gitBranchName.startsWith("development")) {
 		ext.gitSnapshotsBranch = true

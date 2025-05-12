@@ -41,14 +41,19 @@ import com.liferay.portal.kernel.util.FileUtil;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.PortalUtil;
 import com.liferay.portal.kernel.util.StringUtil;
-import com.liferay.portal.kernel.webdav.BaseWebDAVStorageImpl;
 import com.liferay.portal.kernel.webdav.Resource;
 import com.liferay.portal.kernel.webdav.WebDAVException;
 import com.liferay.portal.kernel.webdav.WebDAVRequest;
 import com.liferay.portal.kernel.webdav.WebDAVStorage;
-import com.liferay.portal.kernel.webdav.methods.MethodFactory;
-import com.liferay.portal.kernel.webdav.methods.MethodFactoryRegistryUtil;
 import com.liferay.portal.kernel.workflow.WorkflowConstants;
+import com.liferay.portal.webdav.BaseWebDAVStorageImpl;
+import org.osgi.service.component.annotations.Component;
+import org.osgi.service.component.annotations.Reference;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Locale;
+import java.util.Optional;
+import javax.servlet.http.HttpServletResponse;
 
 import it.smc.calendar.caldav.helper.api.CalendarHelperUtil;
 import it.smc.calendar.caldav.sync.listener.ICSContentImportExportFactoryUtil;
@@ -58,16 +63,6 @@ import it.smc.calendar.caldav.sync.util.CalDAVRequestThreadLocal;
 import it.smc.calendar.caldav.sync.util.CalDAVUtil;
 import it.smc.calendar.caldav.sync.util.ResourceNotFoundException;
 import it.smc.calendar.caldav.util.CalendarUtil;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Locale;
-import java.util.Optional;
-
-import javax.servlet.http.HttpServletResponse;
-
-import org.osgi.service.component.annotations.Component;
-import org.osgi.service.component.annotations.Reference;
 
 /**
  * @author Fabio Pezzutto
@@ -144,12 +139,6 @@ public class LiferayCalDAVStorageImpl extends BaseWebDAVStorageImpl {
 		catch (Exception e) {
 			throw new WebDAVException(e);
 		}
-	}
-
-	@Override
-	public MethodFactory getMethodFactory() {
-		return MethodFactoryRegistryUtil.getMethodFactory(
-			CalDAVMethodFactory.class.getName());
 	}
 
 	@Override
@@ -563,5 +552,4 @@ public class LiferayCalDAVStorageImpl extends BaseWebDAVStorageImpl {
 		LiferayCalDAVStorageImpl.class);
 
 	private ModelResourcePermission<Calendar> _calendarModelResourcePermission;
-
 }
